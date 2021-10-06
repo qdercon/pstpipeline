@@ -1,0 +1,20 @@
+Package: pstpipeline
+Type: Package
+Title: Probabilistic Selection Task (PST) pipeline: parses, analyses, and plots data collected online.
+Version: 0.1.0
+Author: Quentin Dercon
+Maintainer: <quentindercon@gmail.com>
+Description: Series of functions to replicate our results.
+Depends: R (>= 3.5.2)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Imports:
+    dplyr (>= 1.0.0),
+    tidyr,
+    ggplot2,
+    jsonlite,
+    runner,
+    ggsci,
+    magrittr
+RoxygenNote: 7.1.2
