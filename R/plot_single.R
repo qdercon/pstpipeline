@@ -11,6 +11,7 @@
 #'
 #' @importFrom magrittr %>%
 #' @export
+
 plot_single <-
   function(subjID, parsed_multiple, plot_type=c("tr20", "tr60", "tr_all", "tr_questions",
                                                 "happy", "confident","engaged", "test_perf")) {
