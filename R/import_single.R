@@ -4,13 +4,17 @@
 #'
 #' @param jatos_txt_file JATOS text file path
 #' @param accuracy Include final block AB accuracy < 0.6 as part of exclusion criteria?
-#' @param task_excl Use digit span == 0 or > 95\% preference for one button as exclusion criteria?
+#' @param task_excl Use digit span of 0 or > 95\% preference for one button as exclusion criteria?
 #' @param hbayesDM Return additional df with training data formatted for hBayesDM?
 #' @param qstns_gillan Return formatted subset of questionnaire questions?
 #' @param prolific Use prolific IDs as subjID?
 #' @param combine Combine everything into a single data.frame?
 #' @param issues Return feedback from end of experiment?
 #' @param incomplete Is the text file of interest incomplete?
+#' @param add_sex Add sex to participant info? Imputes (assumed) birth-assigned sex for non-binary
+#' individuals from Prolific export - workaround to enable it to be more reasonably controlled for
+#' in models (given very low numbers of non-binary individuals).
+#' @param prolific_export Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.
 #' @param plot Return plot(s) of training/test performance?
 #' @param plot_type What plots should be outputted?
 #' @param ... Other arguments (used by \code{pstpipeline::import_multiple}).
@@ -22,9 +26,11 @@
 
 import_single <-
   function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = TRUE, qstns_gillan = TRUE,
-           prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, plot = FALSE,
-           plot_type =
-             c("tr20", "tr60", "tr_all","tr_questions", "happy", "confident", "engaged", "test_perf"),
+           prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,
+           prolific_export = "data/prolific_export_complete.csv", plot = FALSE,
+           plot_type = c(
+             "tr20", "tr60", "tr_all","tr_questions", "happy", "confident", "engaged", "test_perf"
+           ),
            ...) {
 
   l <- list(...)
@@ -157,6 +163,9 @@ import_single <-
 
   ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span, catch_questions,
                     demographics)
+
+  if (add_sex & prolific) id_gender <- ppt_info %>% dplyr::select(subjID, gender)
+
   questionnaires_tr <- cbind(subjID, sessionID, studyID, questionnaires_tr)
 
 
@@ -325,6 +334,18 @@ import_single <-
 
   ppt_info$keypress_percent = keypress_percent
   ppt_info$mean_rt = mean(training$rt, na.rm=T)
+
+  if (add_sex & prolific) {
+    id_sex <- read.csv(prolific_export) %>%
+      dplyr::filter(participant_id == subjID) %>%
+      dplyr::select(participant_id, Sex) %>%
+      dplyr::rename(subjID = participant_id, sex_prolific = Sex) %>%
+      dplyr::right_join(id_gender, by = "subjID") %>%
+      dplyr::mutate(sex = ifelse(gender == "Non-binary", sex_prolific, gender))
+    sex <- id_sex[["sex"]]
+    demographics <- cbind(sex, demographics)
+  }
+
 
   if (l$multiple) {
     ret$ppt_info <- tidyr::as_tibble(cbind(ppt_info, digit_span, catch_questions, demographics))

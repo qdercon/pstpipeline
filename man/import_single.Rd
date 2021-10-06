@@ -14,6 +14,8 @@ import_single(
   combine = FALSE,
   issues = FALSE,
   incomplete = FALSE,
+  add_sex = FALSE,
+  prolific_export = "data/prolific_export_complete.csv",
   plot = FALSE,
   plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident",
     "engaged", "test_perf"),
@@ -25,7 +27,7 @@ import_single(
 
 \item{accuracy}{Include final block AB accuracy < 0.6 as part of exclusion criteria?}
 
-\item{task_excl}{Use digit span == 0 or > 95\% preference for one button as exclusion criteria?}
+\item{task_excl}{Use digit span of 0 or > 95\% preference for one button as exclusion criteria?}
 
 \item{hbayesDM}{Return additional df with training data formatted for hBayesDM?}
 
@@ -38,6 +40,12 @@ import_single(
 \item{issues}{Return feedback from end of experiment?}
 
 \item{incomplete}{Is the text file of interest incomplete?}
+
+\item{add_sex}{Add sex to participant info? Imputes (assumed) birth-assigned sex for non-binary
+individuals from Prolific export - workaround to enable it to be more reasonably controlled for
+in models (given very low numbers of non-binary individuals).}
+
+\item{prolific_export}{Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.}
 
 \item{plot}{Return plot(s) of training/test performance?}
 

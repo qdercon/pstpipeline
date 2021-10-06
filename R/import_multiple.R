@@ -20,13 +20,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
                             ret_incomplete = FALSE, ...) {
 
   l <- list(...)
-  if (is.null(l$hbayesDM)) hbayesDM <- TRUE
-  if (is.null(l$qstns_gillan)) qstns_gillan <- TRUE
-  if (is.null(l$prolific)) prolific <- TRUE
-  if (is.null(l$accuracy)) accuracy <- TRUE
-  if (is.null(l$task_excl)) task_excl <- TRUE
-  if (is.null(l$combine)) combine <- FALSE
-  if (is.null(l$issues)) issues <- FALSE
+  if (is.null(l$hbayesDM)) l$hbayesDM <- TRUE
+  if (is.null(l$qstns_gillan)) l$qstns_gillan <- TRUE
+  if (is.null(l$prolific)) l$prolific <- TRUE
+  if (is.null(l$accuracy)) l$accuracy <- TRUE
+  if (is.null(l$task_excl)) l$task_excl <- TRUE
+  if (is.null(l$combine)) l$combine <- FALSE
+  if (is.null(l$issues)) l$issues <- FALSE
+  if (is.null(l$add_sex)) l$add_sex <- FALSE
 
   message("Reading text file...")
 
@@ -65,8 +66,9 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
   if (length(indiv_res_incomplete)>0 & !ret_incomplete) {
     message(
-    "One or more incomplete datasets have been omitted. Set incomplete=T to retrieve these data"+
-      " (will require manual parsing).")
+      strwrap("One or more incomplete datasets have been omitted. Set incomplete=T to retrieve
+              these data (will require manual parsing).", prefix = " ", initial = "")
+    )
   }
 
   if (separate) {
@@ -101,13 +103,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       res <- pstpipeline::import_single(
         indiv_res_complete[[i]],
         multiple = TRUE,
-        accuracy = accuracy,
-        task_excl = task_excl,
-        hbayesDM = hbayesDM,
-        prolific = prolific,
-        qstns_gillan = qstns_gillan,
-        combine = combine,
-        issues = issues
+        accuracy = l$accuracy,
+        task_excl = l$task_excl,
+        hbayesDM = l$hbayesDM,
+        prolific = l$prolific,
+        qstns_gillan = l$qstns_gillan,
+        combine = l$combine,
+        issues = l$issues,
+        add_sex = l$add_sex
       )
 
       if (res$ppt_info$distanced) {
@@ -139,13 +142,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       parsed_results[[i]] <- pstpipeline::import_single(
         indiv_res_complete[[i]],
         multiple = TRUE,
-        accuracy = accuracy,
-        task_excl = task_excl,
-        hbayesDM = hbayesDM,
-        prolific = prolific,
-        qstns_gillan = qstns_gillan,
-        combine = combine,
-        issues = issues
+        accuracy = l$accuracy,
+        task_excl = l$task_excl,
+        hbayesDM = l$hbayesDM,
+        prolific = l$prolific,
+        qstns_gillan = l$qstns_gillan,
+        combine = l$combine,
+        issues = l$issues,
+        add_sex = l$add_sex
       )
       names(parsed_results)[i] <- paste0("ID",parsed_results[[i]]$ppt_info$subjID)
 
@@ -216,7 +220,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
     ret$non_distanced$test <- dplyr::bind_rows(test_nd)
     ret$distanced$test <- dplyr::bind_rows(test_d)
 
-    if (hbayesDM) {
+    if (l$hbayesDM) {
       qlearning_data_nd <- list()
       qlearning_data_d <- list()
 
@@ -247,7 +251,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       }
     }
 
-    if (qstns_gillan) {
+    if (l$qstns_gillan) {
       gillan_questions_nd <- list()
       gillan_questions_d <- list()
 
@@ -278,7 +282,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       }
     }
 
-    if (combine) {
+    if (l$combine) {
       combined_nd <- list()
       combined_d <- list()
 
@@ -291,7 +295,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       ret$distanced$full_data <- dplyr::bind_rows(combined_d)
     }
 
-    if (issues) {
+    if (l$issues) {
       issues_nd <- list()
       issues_d <- list()
 
@@ -355,7 +359,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
                    function(i) test[[i]] <- parsed_results[[i]]$test)
     ret$test <- dplyr::bind_rows(test)
 
-    if (hbayesDM) {
+    if (l$hbayesDM) {
       qlearning_data <- list()
       qlearning_data <- lapply(seq_along(parsed_results),
                                function(i) qlearning_data[[i]] <- parsed_results[[i]]$qlearning_data)
@@ -369,7 +373,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       }
     }
 
-    if (qstns_gillan) {
+    if (l$qstns_gillan) {
       gillan_questions <- list()
       gillan_questions <- lapply(seq_along(parsed_results),
                                  function(i) gillan_questions[[i]] <- parsed_results[[i]]$gillan_questions)
@@ -385,14 +389,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       }
     }
 
-    if (combine) {
+    if (l$combine) {
       combined <- list()
       combined <- lapply(seq_along(parsed_results),
                          function(i) combined[[i]] <- parsed_results[[i]]$full_data)
       ret$full_data <- dplyr::bind_rows(combined)
     }
 
-    if (issues) {
+    if (l$issues) {
       issues <- list()
       issues <- lapply(seq_along(parsed_results),
                        function(i) issues[[i]] <- parsed_results[[i]]$issues_comments)
