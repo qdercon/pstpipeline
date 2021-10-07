@@ -9,7 +9,7 @@
 #' @param indiv Return individual-level data? This can then be passed to the plot_single function
 #' and plotted for one individual at a time.
 #' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
-#' @param ... Other arguments, see \code{?pstpipeline::import_single} for details and defaults.
+#' @param ... Other arguments passed to \code{?pstpipeline::import_single}.
 #'
 #' @return \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
 #'
@@ -23,7 +23,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
   if (is.null(l$hbayesDM)) l$hbayesDM <- TRUE
   if (is.null(l$qstns_gillan)) l$qstns_gillan <- TRUE
   if (is.null(l$prolific)) l$prolific <- TRUE
-  if (is.null(l$accuracy)) l$accuracy <- TRUE
+  if (is.null(l$accuracy)) l$accuracy <- FALSE
   if (is.null(l$task_excl)) l$task_excl <- TRUE
   if (is.null(l$combine)) l$combine <- FALSE
   if (is.null(l$issues)) l$issues <- FALSE
@@ -37,11 +37,11 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
         readLines(jatos_txt_file, encoding = "UTF-8", warn = F), collapse = ',')
         )
       )
-  res_splits <- which(
-    lapply(1:length(all_comp),
-           function (i) any(
-             grepl("Welcome to the experiment.", all_comp[[i]], fixed=T)
-             )) %in% TRUE
+  res_splits <-
+    which(
+      lapply(1:length(all_comp),
+             function (i) any(grepl("Welcome to the experiment.", all_comp[[i]], fixed = T)))
+      %in% TRUE
     )
     # look along the list of individual component results, note down the list numbers where
     # "Welcome to the experiment." occurs. If all results complete, should be every 5
@@ -270,15 +270,26 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
         gillan_questions_d <-
           dplyr::left_join(dplyr::bind_rows(gillan_questions_d), exclusion_list_d, by="subjID")
 
-        ret$non_distanced$gillan_questions <- gillan_questions_nd %>%
+        gillan_questions_nd <- gillan_questions_nd %>%
           dplyr::filter(exclusion==0) %>%
           dplyr::select(-exclusion)
-        ret$distanced$gillan_questions <- gillan_questions_d %>%
+        gillan_questions_nd[is.na(gillan_questions_nd)] <- 0
+        ret$non_distanced$gillan_questions <- gillan_questions_nd
+
+        gillan_questions_d <- gillan_questions_d %>%
           dplyr::filter(exclusion==0) %>%
           dplyr::select(-exclusion)
+        gillan_questions_d[is.na(gillan_questions_d)] <-0
+        ret$distanced$gillan_questions <- gillan_questions_d
+
       } else {
-        ret$non_distanced$gillan_questions <- dplyr::bind_rows(gillan_questions_nd)
-        ret$distanced$gillan_questions <- dplyr::bind_rows(gillan_questions_d)
+        gillan_questions_nd <- dplyr::bind_rows(gillan_questions_nd)
+        gillan_questions_nd[is.na(gillan_questions_nd)] <- 0
+        ret$non_distanced$gillan_questions <- gillan_questions_nd
+
+        gillan_questions_d <- dplyr::bind_rows(gillan_questions_d)
+        gillan_questions_d[is.na(gillan_questions_d)] <- 0
+        ret$distanced$gillan_questions <- gillan_questions_d
       }
     }
 
@@ -381,11 +392,17 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
         gillan_questions <- dplyr::left_join(
           dplyr::bind_rows(gillan_questions), exclusion_list, by="subjID"
         )
-        ret$gillan_questions <- gillan_questions %>%
+        gillan_questions <- gillan_questions %>%
           dplyr::filter(exclusion==0) %>%
           dplyr::select(-exclusion)
+
+        gillan_questions[is.na(gillan_questions)] <- 0
+        ret$gillan_questions <- gillan_questions
+
       } else {
-        ret$gillan_questions <- dplyr::bind_rows(gillan_questions)
+        gillan_questions <- dplyr::bind_rows(gillan_questions)
+        gillan_questions[is.na(gillan_questions)] <- 0
+        ret$gillan_questions <- gillan_questions
       }
     }
 

@@ -25,7 +25,7 @@ and plotted for one individual at a time.}
 
 \item{ret_incomplete}{Return incomplete datasets? They may require manual parsing.}
 
-\item{...}{Other arguments, see \code{?pstpipeline::import_single} for details and defaults.}
+\item{...}{Other arguments passed to \code{?pstpipeline::import_single}.}
 }
 \value{
 \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
