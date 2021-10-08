@@ -16,6 +16,10 @@
 #' in models (given very low numbers of non-binary individuals).
 #' @param prolific_export Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.
 #' @param plot Return plot(s) of training/test performance?
+#' @param pal Define a custom colour palette for the plots - need at least 4 values.
+#' @param font Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
+#' be run first.
+#' @param font_size Base plot font size passed to \code{ggplot2::theme_gray}.
 #' @param plot_type What plots should be outputted?
 #' @param ... Other arguments (used by \code{pstpipeline::import_multiple}).
 #'
@@ -27,10 +31,9 @@
 import_single <-
   function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = TRUE, qstns_gillan = TRUE,
            prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,
-           prolific_export = "data/prolific_export_complete.csv", plot = FALSE,
-           plot_type = c(
-             "tr20", "tr60", "tr_all","tr_questions", "happy", "confident", "engaged", "test_perf"
-           ),
+           prolific_export = "data/prolific_export_complete.csv", plot = FALSE, pal = NULL, font = NULL,
+           font_size = 14, plot_type = c("tr20", "tr60", "tr_all","tr_questions", "happy", "confident",
+                                         "engaged", "test_perf"),
            ...) {
 
   l <- list(...)
@@ -446,6 +449,20 @@ import_single <-
 
   if (plot) {
 
+    ret$plots <- list()
+
+    if (is.null(pal)) {
+      message("No colour palette selected (pal=NULL), reverting to defaults.")
+      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
+    } else if (!is.null(pal) & length(pal) < 4) {
+      message("Need at least 4 colours, reverting to defaults.")
+      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
+    }
+
+    if (!is.null(font)) {
+      extrafont::loadfonts(device = "win", quiet = TRUE)
+    }
+
     if (any(plot_type=="tr20")) {
       plot20 <- training %>%
         ggplot2::ggplot(ggplot2::aes(x=trial_no, y=cum_prob_l20, color=factor(type))) +
@@ -459,12 +476,15 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type", labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("20-trial lagged cumulative probabilities of picking correct stimulus")
 
-      ret$plot_20 <- plot20
+      ret$plots$training_lag_20 <- plot20
 
     }
 
@@ -481,13 +501,15 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type",
-                                  labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("60-trial lagged cumulative probabilities of picking correct stimulus")
 
-      ret$plot_60 <- plot60
+      ret$plots$training_lag_60 <- plot60
 
     }
 
@@ -504,12 +526,15 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type", labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("Overall cumulative probabilities of picking correct stimulus")
 
-      ret$plot_all <- plot_full
+      ret$plots$training_all <- plot_full
 
     }
 
@@ -532,12 +557,18 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Affect noun", labels = c("Happiness", "Confidence",
-                                                                 "Engagement", "Fatigue")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(
+          name = "Affect noun",
+          labels = c("Happiness", "Confidence", "Engagement", "Fatigue"),
+          values = pal
+        ) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective affect over training")
 
-      ret$plot_questions <- plot_tr_q
+      ret$plots$affect_questions <- plot_tr_q
     }
 
     if (any(plot_type=="happy")) {
@@ -555,11 +586,14 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective happiness in rewarded and non-rewarded trials")
 
-      ret$plot_happy <- plot_happy
+      ret$plots$happy <- plot_happy
     }
 
     if (any(plot_type=="engaged")) {
@@ -577,11 +611,14 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective engagement in rewarded and non-rewarded trials")
 
-      ret$plot_engaged <- plot_engaged
+      ret$plots$engaged <- plot_engaged
     }
 
     if (any(plot_type=="confident")) {
@@ -599,11 +636,14 @@ import_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective confidence in rewarded and non-rewarded trials")
 
-      ret$plot_confident <- plot_conf
+      ret$plots$confidence <- plot_conf
     }
 
     if (any(plot_type=="test_perf")) {
@@ -612,26 +652,24 @@ import_single <-
                                               levels=c("chooseA","avoidB", "novel", "training")),
                    fill=factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_bar() +
-        ggplot2::geom_text(stat = "count",
-                           ggplot2::aes(label = after_stat(count),
+        ggplot2::geom_text(stat = "count", family = ifelse(!is.null(font), font, ""),
+                           ggplot2::aes(label = ggplot2::after_stat(count),
                                         colour=factor(correct, levels=c("TRUE", "FALSE"))),
                   position = ggplot2::position_stack(vjust=0.5)) +
         ggplot2::xlab("Test type") +
         ggplot2::ylab("Count") +
         ggplot2::scale_x_discrete() +
-        ggplot2::scale_fill_manual(values =
-                                     ggsci::pal_jama("default")(4)[3:4], name=NULL,
-                                   labels=c("Correct", "Incorrect")) +
-        ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide=F) +
+        ggplot2::scale_fill_manual(values = pal[2:3], name = NULL, labels=c("Correct", "Incorrect")) +
+        ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide= "none") +
         ggplot2::scale_alpha_manual(values=0.85) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Test performance")
 
-      ret$plot_testperf <- plot_test
+      ret$plots$testperf <- plot_test
     }
-
   }
-
   return(ret)
-
 }

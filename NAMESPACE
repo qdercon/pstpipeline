@@ -2,5 +2,6 @@
 
 export(import_multiple)
 export(import_single)
+export(plot_factors)
 export(plot_single)
 importFrom(magrittr,"%>%")

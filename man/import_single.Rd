@@ -17,6 +17,9 @@ import_single(
   add_sex = FALSE,
   prolific_export = "data/prolific_export_complete.csv",
   plot = FALSE,
+  pal = NULL,
+  font = NULL,
+  font_size = 14,
   plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident",
     "engaged", "test_perf"),
   ...
@@ -48,6 +51,13 @@ in models (given very low numbers of non-binary individuals).}
 \item{prolific_export}{Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.}
 
 \item{plot}{Return plot(s) of training/test performance?}
+
+\item{pal}{Define a custom colour palette for the plots - need at least 4 values.}
+
+\item{font}{Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
+be run first.}
+
+\item{font_size}{Base plot font size passed to \code{ggplot2::theme_gray}.}
 
 \item{plot_type}{What plots should be outputted?}
 

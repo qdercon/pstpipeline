@@ -5,6 +5,10 @@
 #'
 #' @param subjID Prolific or other participant ID to select.
 #' @param parsed_multiple \code{pstpipeline::import_multiple()} output
+#' @param pal Define a custom colour palette for the plots - need at least 4 values.
+#' @param font Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
+#' be run first.
+#' @param font_size Base plot font size passed to \code{ggplot2::theme_gray}.
 #' @param plot_type Select plots as required.
 #'
 #' @return \code{list} of \code{ggplot} objects
@@ -13,10 +17,20 @@
 #' @export
 
 plot_single <-
-  function(subjID, parsed_multiple, plot_type=c("tr20", "tr60", "tr_all", "tr_questions",
-                                                "happy", "confident","engaged", "test_perf")) {
+  function(subjID, parsed_multiple, pal = NULL, font = NULL, font_size = 14,
+           plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy",
+                         "confident","engaged", "test_perf")) {
+
     if (is.null(parsed_multiple$individual_results)) {
       stop("Need individual results list for plotting - please re-run parse_multiple with indiv=T.")
+    }
+
+    if (plot & is.null(pal)) {
+      message("No colour palette selected (pal=NULL), reverting to defaults.")
+      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
+    } else if (plot & !is.null(pal) & length(pal) < 4) {
+      message("Need at least 4 colours, reverting to defaults.")
+      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
     }
 
     if (is.numeric(subjID)) id <- names(parsed_multiple$individual_results)[[subjID]]
@@ -27,6 +41,10 @@ plot_single <-
     test <- parsed_multiple$individual_results[[id]]$test
 
     ret <- list()
+
+    if (!is.null(font)) {
+      extrafont::loadfonts(device = "win", quiet = TRUE)
+    }
 
     if (any(plot_type=="tr20")) {
       plot20 <- training %>%
@@ -41,12 +59,15 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type", labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
-        ggplot2::theme(legend.position = c(0.9, 0.1)) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
+        ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("20-trial lagged cumulative probabilities of picking correct stimulus")
 
-      ret$plot_20 <- plot20
+      ret$training_lag_20 <- plot20
 
     }
 
@@ -63,12 +84,15 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type", labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
-        ggplot2::theme(legend.position = c(0.9, 0.1)) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
+        ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("60-trial lagged cumulative probabilities of picking correct stimulus")
 
-      ret$plot_60 <- plot60
+      ret$training_lag_60 <- plot60
 
     }
 
@@ -85,33 +109,27 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggsci::scale_color_jama(name = "Trial Type", labels = c("AB", "CD", "EF")) +
-        ggplot2::theme_grey(base_size = 14) +
-        ggplot2::theme(legend.position = c(0.9, 0.1)) +
+        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
+        ggplot2::theme(legend.position = c(0.9, 0.2)) +
         ggplot2::ggtitle("Overall cumulative probabilities of picking correct stimulus")
 
-      ret$plot_all <- plot_full
+      ret$training_all <- plot_full
 
     }
 
     if (any(plot_type=="tr_questions")) {
-
-      fatigue_questions <- training %>%
-        dplyr::select(subjID, trial_block, trial_no, fatigue_rt, fatigue_slider_start,
-                      fatigue_response) %>%
-        tidyr::drop_na()
-      training_questions <- training %>%
-        dplyr::select(subjID, trial_block, trial_no, question_type, question_slider_start,
-                      question_rt, question_response)
-
       plot_tr_q <- fatigue_questions %>%
         dplyr::rename(question_rt = fatigue_rt, question_slider_start = fatigue_slider_start,
                       question_response = fatigue_response) %>%
         dplyr::mutate(question_type="fatigue") %>%
         dplyr::bind_rows(training_questions) %>%
         ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                            color=factor(question_type,
-                                         levels=c("happy", "confident", "engaged", "fatigue")))) +
+                                     color = factor(question_type,
+                                                    levels=c("happy", "confident", "engaged", "fatigue")))) +
         ggplot2::geom_point(alpha=0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
@@ -122,19 +140,25 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Affect noun", labels = c("Happiness", "Confidence",
-                                                                 "Engagement", "Fatigue")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(
+          name = "Affect noun",
+          labels = c("Happiness", "Confidence", "Engagement", "Fatigue"),
+          values = pal
+        ) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective affect over training")
 
-      ret$plot_questions <- plot_tr_q
+      ret$affect_questions <- plot_tr_q
     }
 
     if (any(plot_type=="happy")) {
       plot_happy <- training %>%
         dplyr::filter(question_type=="happy") %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response, color=factor(correct,
-                                                                 levels = c("TRUE", "FALSE")))) +
+        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
+                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_point(alpha=0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
@@ -145,18 +169,21 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective happiness in rewarded and non-rewarded trials")
 
-      ret$plot_happy <- plot_happy
+      ret$happy <- plot_happy
     }
 
     if (any(plot_type=="engaged")) {
       plot_engaged <- training %>%
         dplyr::filter(question_type=="engaged") %>%
         ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                            color = factor(correct, levels=c("TRUE", "FALSE")))) +
+                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_point(alpha=0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
@@ -167,18 +194,21 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective engagement in rewarded and non-rewarded trials")
 
-      ret$plot_engaged <- plot_engaged
+      ret$engaged <- plot_engaged
     }
 
     if (any(plot_type=="confident")) {
       plot_conf <- training %>%
         dplyr::filter(question_type=="confident") %>%
         ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                            color=factor(correct, levels=c("TRUE", "FALSE")))) +
+                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_point(alpha=0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
@@ -189,32 +219,39 @@ plot_single <-
         ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
-        ggsci::scale_color_jama(name = "Rewarded?", labels = c("Yes", "No")) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Subjective confidence in rewarded and non-rewarded trials")
 
-      ret$plot_confident <- plot_conf
+      ret$confidence <- plot_conf
     }
 
     if (any(plot_type=="test_perf")) {
       plot_test <- test %>%
-        ggplot2::ggplot(ggplot2::aes(x=factor(test_type, levels=c("chooseA","avoidB", "novel", "training")),
-                            fill=factor(correct, levels=c("TRUE", "FALSE")))) +
+        ggplot2::ggplot(ggplot2::aes(x=factor(test_type,
+                                              levels=c("chooseA","avoidB", "novel", "training")),
+                   fill=factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_bar() +
-        ggplot2::geom_text(stat = "count", ggplot2::aes(label = after_stat(count),
-                                      colour=factor(correct, levels=c("TRUE", "FALSE"))),
+        ggplot2::geom_text(stat = "count", family = ifelse(!is.null(font), font, ""),
+                           ggplot2::aes(label = ggplot2::after_stat(count),
+                                        colour=factor(correct, levels=c("TRUE", "FALSE"))),
                   position = ggplot2::position_stack(vjust=0.5)) +
         ggplot2::xlab("Test type") +
         ggplot2::ylab("Count") +
         ggplot2::scale_x_discrete() +
-        ggplot2::scale_fill_manual(values=ggsci::pal_jama("default")(4)[3:4], name=NULL,
-                                   labels=c("Correct", "Incorrect")) +
-        ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide=F) +
+        ggplot2::scale_fill_manual(values = pal[2:3], name = NULL, labels=c("Correct", "Incorrect")) +
+        ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide= "none") +
         ggplot2::scale_alpha_manual(values=0.85) +
-        ggplot2::theme_grey(base_size = 14) +
+        ggplot2::theme_gray(
+          base_size = font_size,
+          base_family = ifelse(!is.null(font), font, "")
+        ) +
         ggplot2::ggtitle("Test performance")
 
-      ret$plot_testperf <- plot_test
+      ret$testperf <- plot_test
     }
 
   return(ret)

@@ -7,6 +7,9 @@
 plot_single(
   subjID,
   parsed_multiple,
+  pal = NULL,
+  font = NULL,
+  font_size = 14,
   plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident",
     "engaged", "test_perf")
 )
@@ -15,6 +18,13 @@ plot_single(
 \item{subjID}{Prolific or other participant ID to select.}
 
 \item{parsed_multiple}{\code{pstpipeline::import_multiple()} output}
+
+\item{pal}{Define a custom colour palette for the plots - need at least 4 values.}
+
+\item{font}{Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
+be run first.}
+
+\item{font_size}{Base plot font size passed to \code{ggplot2::theme_gray}.}
 
 \item{plot_type}{Select plots as required.}
 }
