@@ -1,7 +1,5 @@
----
-title: "Setup and data cleaning, plus transdiagnostic factor derivation"
-output: html_notebook
----
+## Setup and data cleaning, plus transdiagnostic factor derivation
+
 
 ### Setup
 
@@ -15,7 +13,6 @@ use_python("~/Research Work/October 2021/pstpipeline")
 ```
 
 **Import Python dependencies**
-
 ```{python}
 # make sure correct Python interpreter selected in project options
 import pandas as pd
@@ -24,6 +21,7 @@ import joblib, io
 import seaborn as sns
 import matplotlib.pyplot as plt
 from contextlib import redirect_stdout
+# %load_ext rpy2.ipython
 
 pal = ['#4f4f4f', '#B80044', '#0e79b2', '#861388', '#171a21', '#a5a5a5']
 light_pal =['#9e9e9e', '#e86d9a', '#64abd1']
@@ -33,7 +31,7 @@ out = io.StringIO()
 
 ### Import and clean raw data
 
-```{r results = 'hide'}
+```{r results='hide'}
 # single <- pstpipeline::import_single("data/example_res_single.txt", plot = TRUE, add_sex= TRUE)
 # multiple <- pstpipeline::import_multiple("data/example_res_multiple.txt", separate = FALSE, indiv = TRUE)
 # plot_id1 <- pstpipeline::plot_single(subjID = 1, multiple)
