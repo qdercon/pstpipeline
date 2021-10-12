@@ -1,6 +1,6 @@
 #' Plot raw experiment data (single result)
 #'
-#' \code{plot_single} plots a single participant's data from \code{pstpipeline::import_multiple()}
+#' \code{plot_import_single} plots a single participant's data from \code{pstpipeline::import_multiple()}
 #' output.
 #'
 #' @param subjID Prolific or other participant ID to select.
@@ -16,7 +16,7 @@
 #' @importFrom magrittr %>%
 #' @export
 
-plot_single <-
+plot_import_single <-
   function(subjID, parsed_multiple, pal = NULL, font = NULL, font_size = 14,
            plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy",
                          "confident","engaged", "test_perf")) {

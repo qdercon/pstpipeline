@@ -16,5 +16,6 @@ Imports:
     jsonlite,
     runner,
     magrittr,
-    cowplot
+    cowplot,
+    tibble
 RoxygenNote: 7.1.2

@@ -2,40 +2,50 @@
 % Please edit documentation in R/plot_factors.R
 \name{plot_factors}
 \alias{plot_factors}
-\title{Plot raw experiment data (single result)}
+\title{Various plots for factor prediction and derivation}
 \usage{
 plot_factors(
   df,
   plot_type,
-  colnames,
-  titles,
-  pal = NULL,
+  colnames = NA,
+  titles = NA,
+  r2 = NA,
+  qn = NA,
+  hyp_alph = 0.1,
   group = NULL,
-  font_size = 11,
-  font = NULL
+  pal = NULL,
+  font = "",
+  font_size = 11
 )
 }
 \arguments{
 \item{df}{Data frame with factor scores or questions to plot.}
 
-\item{plot_type}{Plot(s) to output: "factor_hist" (which can be grouped), .}
+\item{plot_type}{Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
+\code{predictive}, and \code{factor_htmp}.}
 
 \item{colnames}{Column names to get data from.}
 
-\item{titles}{Title(s) for the plot(s).}
+\item{titles}{Title(s) for the plot(s) or pretty names more generally.}
+
+\item{r2}{Array of \eqn{R^{2}}{R^2} values.}
+
+\item{qn}{Number of questions - used to find correct \eqn{R^{2}}{R^2} values.}
+
+\item{hyp_alph}{Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).}
+
+\item{group}{Grouping for each of the plots (relevant only for \code{plot_type = factor_hist}).}
 
 \item{pal}{Custom colour palette to use.}
 
-\item{group}{Grouping for each of the plots (if relevant).}
+\item{font}{Use a custom font for the plots?}
 
 \item{font_size}{Base plot font size.}
-
-\item{font}{Use a custom font for the plots?}
 }
 \value{
-\code{list} of \code{ggplot} objects
+A single or \code{list} of \code{ggplot} object(s).
 }
 \description{
-\code{plot_factors} plots various aspects of the transdiagnostic factor derivation, including
-histograms and heatmaps of the questions themselves.
+\code{plot_factors} plots various aspects of the transdiagnostic factor derivation,
+including histograms and heatmaps of the questions themselves.
 }
