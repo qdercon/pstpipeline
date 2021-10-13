@@ -29,7 +29,7 @@
 #' @export
 
 import_single <-
-  function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = TRUE, qstns_gillan = TRUE,
+  function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = FALSE, qstns_gillan = TRUE,
            prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,
            prolific_export = "data/prolific_export_complete.csv", plot = FALSE, pal = NULL, font = NULL,
            font_size = 14, plot_type = c("tr20", "tr60", "tr_all","tr_questions", "happy", "confident",
@@ -361,22 +361,47 @@ import_single <-
 
   ret$training <- training
 
-
   ## TEST BLOCK
+  chars <- unique(test_block$test_part)[!unique(test_block$test_part) %in% "question_test"]
+  make_type_dict <- function(test_types) {
+    vals <- list(1, 2, 3, 4, 5, 6)
+    names(vals) <- c("A", "C", "E", "F", "D", "B")
+    types <- list(1, 3, 5, 6, 4, 2)
+    names(types) <- seq(1,6)
+    type <- list()
+
+    for (t in seq_along(test_types)) {
+      test <- test_types[t]
+      type[[t]] <- paste0(types[[as.character(min(vals[[stringr::str_sub(test, 1, 1)]],
+                                                vals[[stringr::str_sub(test, 2, 2)]]))]],
+                          types[[as.character(max(vals[[stringr::str_sub(test, 1, 1)]],
+                                                  vals[[stringr::str_sub(test, 2, 2)]]))]])
+    }
+    names(type) <- test_types
+    return(type)
+  }
+  type_key <- make_type_dict(chars)
+  get_type_val <- function(test_part, key) {
+    return(key[[test_part]])
+  }
 
   test_trials <- test_block %>%
     dplyr::filter(!grepl("question", test_part)) %>%
     dplyr::mutate(test_type = ifelse(grepl("(AB|BA)|(CD|DC)|(EF|FE)", test_part), "training",
                                   ifelse(grepl("A", test_part), "chooseA",
                                      ifelse(grepl("B", test_part), "avoidB", "novel")))) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(type = as.numeric(get_type_val(test_part, type_key))) %>%
+    dplyr::mutate(choice = ifelse(!timeout, as.numeric(correct), NA)) %>%
     dplyr::group_by(test_type) %>%
     dplyr::mutate(test_trial_no_group = dplyr::row_number()) %>%
     dplyr::mutate(cum_prob = cumsum(correct)/test_trial_no_group) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse='')) %>%
-    dplyr::select(subjID, test_type, test_trial_no, test_trial_no_group, rt, glyph_seq, stimulus,
-                  test_part, key_press, correct_response, correct, timeout, cum_prob)
+    dplyr::select(subjID, type, choice, test_type, test_trial_no, test_trial_no_group, rt,
+                  glyph_seq, stimulus, test_part, key_press, correct_response, correct, timeout,
+                  cum_prob)
 
   test_questions <- test_block %>%
     dplyr::filter(test_part == "question_test") %>%
@@ -393,7 +418,8 @@ import_single <-
            question_response)
 
   test <- test_trials %>%
-    dplyr::left_join(test_questions, by=c("subjID", "test_trial_no"))
+    dplyr::left_join(test_questions, by=c("subjID", "test_trial_no")) %>%
+    dplyr::rename(trial_no = test_trial_no)
 
   ret$test <- test
 

@@ -20,7 +20,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
                             ret_incomplete = FALSE, ...) {
 
   l <- list(...)
-  if (is.null(l$hbayesDM)) l$hbayesDM <- TRUE
+  if (is.null(l$hbayesDM)) l$hbayesDM <- FALSE
   if (is.null(l$qstns_gillan)) l$qstns_gillan <- TRUE
   if (is.null(l$prolific)) l$prolific <- TRUE
   if (is.null(l$accuracy)) l$accuracy <- FALSE

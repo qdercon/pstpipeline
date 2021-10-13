@@ -1,3 +1,4 @@
+// Gain-loss Q-learning model for PST training data
 data {
   int<lower=1> N;             // Number of subjects
   int<lower=1> T;             // Maximum # of trials
@@ -61,7 +62,7 @@ model {
 
       // Luce choice rule
       delta = ev[option1[i, t]] - ev[option2[i, t]];
-      target += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
+      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
 
       pe = reward[i, t] - ev[co];
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];

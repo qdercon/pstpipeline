@@ -1,5 +1,4 @@
-// Gain-loss Q-learning model for PST test data
-
+// Gain-loss Q-learning model for PST test data (posterior predictive checks)
 data {
   int<lower=1> N;             // Number of subjects
   int<lower=1> T;             // Maximum # of trials
@@ -11,7 +10,7 @@ data {
   int<lower=-1,upper=6> option2[N, T];
   int<lower=-1,upper=1> choice[N, T];
   real reward[N, T];
-  
+
   int<lower=-1,upper=6> option1_t[N, T_t];
   int<lower=-1,upper=6> option2_t[N, T_t];
   int<lower=-1,upper=1> choice_t[N, T_t];
@@ -44,48 +43,6 @@ transformed parameters {
   beta      = Phi_approx(mu_pr[3] + sigma[3] * beta_pr) * 10;
 }
 
-model {
-  // Priors for group-level parameters
-  mu_pr ~ normal(0, 1);
-  sigma ~ normal(0, 0.2);
-
-  // Priors for subject-level parameters
-  alpha_pos_pr ~ normal(0, 1);
-  alpha_neg_pr ~ normal(0, 1);
-  beta_pr      ~ normal(0, 1);
-
-  for (i in 1:N) {
-    int co;         // Chosen option
-    real delta;     // Difference between two options
-    real delta_t;   // Difference between two options
-    real pe;        // Prediction error
-    real alpha;
-    vector[6] ev;   // Expected values
-
-    ev = initial_values;
-
-    // Acquisition Phase
-    for (t in 1:Tsubj[i]) {
-      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-      
-      // Luce choice rule
-      delta = ev[option1[i, t]] - ev[option2[i, t]];
-      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
-      
-      pe = reward[i, t] - ev[co];
-      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
-      ev[co] += alpha * pe;
-    }
-
-    // Test phase
-    for (u in 1:Tsubj_t[i]) {
-      // Softmax
-      delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
-      choice_t[i, u] ~ bernoulli_logit(beta[i] * delta_t);
-    }
-  }
-}
-
 generated quantities {
   // For group-level parameters
   real<lower=0,upper=1>  mu_alpha_pos;
@@ -94,13 +51,9 @@ generated quantities {
 
   // For log-likelihood calculation
   real log_lik[N];
-  
+
   // For posterior predictive check
   real y_pred[N, T_t];
-
-  mu_alpha_pos = Phi_approx(mu_pr[1]);
-  mu_alpha_neg = Phi_approx(mu_pr[2]);
-  mu_beta      = Phi_approx(mu_pr[3]) * 10;
 
   // Initialize all the variables to avoid NULL values
   for (i in 1:N) {
@@ -108,6 +61,10 @@ generated quantities {
       y_pred[i, t] = -1;
     }
   }
+
+  mu_alpha_pos = Phi_approx(mu_pr[1]);
+  mu_alpha_neg = Phi_approx(mu_pr[2]);
+  mu_beta      = Phi_approx(mu_pr[3]) * 10;
 
   {
     for (i in 1:N) {
@@ -124,16 +81,16 @@ generated quantities {
       // Acquisition Phase
       for (t in 1:Tsubj[i]) {
         co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-        
+
         // Luce choice rule
         delta = ev[option1[i, t]] - ev[option2[i, t]];
         log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
-        
+
         pe = reward[i, t] - ev[co];
         alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
         ev[co] += alpha * pe;
       }
-    
+
       // Test phase
       for (u in 1:Tsubj_t[i]) {
         delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];

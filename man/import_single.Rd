@@ -8,7 +8,7 @@ import_single(
   jatos_txt_file,
   accuracy = FALSE,
   task_excl = TRUE,
-  hbayesDM = TRUE,
+  hbayesDM = FALSE,
   qstns_gillan = TRUE,
   prolific = TRUE,
   combine = FALSE,

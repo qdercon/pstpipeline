@@ -3,7 +3,9 @@
 #' \code{plot_factors} plots various aspects of the transdiagnostic factor derivation,
 #' including histograms and heatmaps of the questions themselves.
 #'
-#' @param df Data frame with factor scores or questions to plot.
+#' @param df Data frame with factor scores or questions to plot. For \code{predictive} and
+#' \code{factor_htmp} plots, this should be a named list of \code{data.frames} (including "preds"
+#' & "scores" or "qns" & "coefs" respectively).
 #' @param plot_type Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
 #' \code{predictive}, and \code{factor_htmp}.
 #' @param colnames Column names to get data from.

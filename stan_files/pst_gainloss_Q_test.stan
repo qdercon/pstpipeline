@@ -1,5 +1,4 @@
 // Gain-loss Q-learning model for PST test data
-
 data {
   int<lower=1> N;             // Number of subjects
   int<lower=1> T;             // Maximum # of trials
@@ -11,7 +10,7 @@ data {
   int<lower=-1,upper=6> option2[N, T];
   int<lower=-1,upper=1> choice[N, T];
   real reward[N, T];
-  
+
   int<lower=-1,upper=6> option1_t[N, T_t];
   int<lower=-1,upper=6> option2_t[N, T_t];
   int<lower=-1,upper=1> choice_t[N, T_t];
@@ -56,8 +55,8 @@ model {
 
   for (i in 1:N) {
     int co;         // Chosen option
-    real delta;     // Difference between two options
-    real delta_t;   // Difference between two options
+    real delta;     // Difference between two options (training)
+    real delta_t;   // Difference between two options (test)
     real pe;        // Prediction error
     real alpha;
     vector[6] ev;   // Expected values
@@ -67,11 +66,11 @@ model {
     // Acquisition Phase
     for (t in 1:Tsubj[i]) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-      
+
       // Luce choice rule
       delta = ev[option1[i, t]] - ev[option2[i, t]];
       choice[i, t] ~ bernoulli_logit(beta[i] * delta);
-      
+
       pe = reward[i, t] - ev[co];
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
@@ -114,16 +113,16 @@ generated quantities {
       // Acquisition Phase
       for (t in 1:Tsubj[i]) {
         co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-        
+
         // Luce choice rule
         delta = ev[option1[i, t]] - ev[option2[i, t]];
         log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
-        
+
         pe = reward[i, t] - ev[co];
         alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
         ev[co] += alpha * pe;
       }
-    
+
       // Test phase
       for (u in 1:Tsubj_t[i]) {
         delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
