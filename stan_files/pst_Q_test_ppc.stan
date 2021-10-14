@@ -40,6 +40,45 @@ transformed parameters {
   beta  = Phi_approx(mu_pr[2] + sigma[2] * beta_pr) * 10;
 }
 
+model {
+  // Priors for group-level parameters
+  mu_pr ~ normal(0, 1);
+  sigma ~ normal(0, 0.2);
+
+  // Priors for subject-level parameters
+  alpha_pr ~ normal(0, 1);
+  beta_pr  ~ normal(0, 1);
+
+  for (i in 1:N) {
+    int co;         // Chosen option
+    real delta;     // Difference between two options (training)
+    real delta_t;   // Difference between two options (test)
+    real pe;        // Prediction error
+    vector[6] ev;   // Expected values
+
+    ev = initial_values;
+
+    // Acquisition Phase
+    for (t in 1:Tsubj[i]) {
+      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+
+      // Luce choice rule
+      delta = ev[option1[i, t]] - ev[option2[i, t]];
+      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
+
+      pe = reward[i, t] - ev[co];
+      ev[co] += alpha[i] * pe;
+    }
+
+    // Test phase
+    for (u in 1:Tsubj_t[i]) {
+      // Softmax
+      delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
+      choice_t[i, u] ~ bernoulli_logit(beta[i] * delta_t);
+    }
+  }
+}
+
 generated quantities {
   // For group-level parameters
   real<lower=0,upper=1>  mu_alpha;

@@ -3,9 +3,9 @@
 #' \code{fit_learning_model} uses a the package \code{cmdstanr}, which is a lightweight R
 #' to the shell interface of of Stan . Please note that while it checks if the C++ toolchain is
 #' correct, running this function will install cmdstan itself - this may be as simple as running
-#' \code{install_cmdstan(".../.cmdstanr/cmdstan-x.x.x")}, but may require some extra effort
-#' (e.g., pointing R to the install location via \code{cmdstanr::set_cmd_path()}). This vignette
-#' explains installation in more detail: \code{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}.
+#' \code{install_cmdstan()}, but may require some extra effort (e.g., pointing R to the install
+#' location via \code{cmdstanr::set_cmd_path()}). This vignette explains installation in more
+#' detail: \code{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}.
 #'
 #' \code{fit_learning_model} heavily leans on various helper functions from the \code{hBayesDM}
 #' package (https://ccs-lab.github.io/hBayesDM/), and is nowhere near as flexible; instead it is
@@ -126,13 +126,21 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
   cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  if (!test) {
+  if (!test & !ppc) {
     if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q.stan"))
     else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q.stan"))
     data_cmdstan <- pstpipeline::preprocess_func_train(raw_df, general_info)
-  } else if (test) {
+  } else if (test & !ppc) {
     if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_test.stan"))
     else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_test.stan"))
+    data_cmdstan <- pstpipeline::preprocess_func_test(raw_df_train, raw_df_test, general_info)
+  } else if (!test & ppc) {
+    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_ppc.stan"))
+    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_ppc.stan"))
+    data_cmdstan <- pstpipeline::preprocess_func_train(raw_df, general_info)
+  } else {
+    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_test_ppc.stan"))
+    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_test_ppc.stan"))
     data_cmdstan <- pstpipeline::preprocess_func_test(raw_df_train, raw_df_test, general_info)
   }
 

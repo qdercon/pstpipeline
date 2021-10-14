@@ -1,11 +1,13 @@
-#' Plot raw experiment data (single result)
+#' Plot raw experiment data
 #'
-#' \code{plot_import_single} plots a single participant's data from \code{pstpipeline::import_multiple()}
-#' output.
+#' \code{plot_import} plots a single participant's data from \code{pstpipeline::import_single()}, or
+#' a single participant (if \code{!is.null(id)}) or all participants' data from
+#' \code{pstpipeline::import_multiple()}.
 #'
-#' @param subjID Prolific or other participant ID to select.
-#' @param parsed_multiple \code{pstpipeline::import_multiple()} output
-#' @param pal Define a custom colour palette for the plots - need at least 4 values.
+#' @param parsed_df \code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.
+#' @param import_single Is the output from \code{pstpipeline::import_single()}?
+#' @param id Prolific or other participant ID to select if only a single partipant's data is desired.
+#' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
 #' @param font Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
 #' be run first.
 #' @param font_size Base plot font size passed to \code{ggplot2::theme_gray}.
@@ -16,29 +18,35 @@
 #' @importFrom magrittr %>%
 #' @export
 
-plot_import_single <-
-  function(subjID, parsed_multiple, pal = NULL, font = NULL, font_size = 14,
-           plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy",
-                         "confident","engaged", "test_perf")) {
+plot_import <-
+  function(parsed_df, import_single = FALSE, id = NULL, pal = NULL, font = "", font_size = 14,
+           plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident","engaged",
+                         "test_perf")) {
 
-    if (is.null(parsed_multiple$individual_results)) {
-      stop("Need individual results list for plotting - please re-run parse_multiple with indiv=T.")
-    }
-
-    if (plot & is.null(pal)) {
-      message("No colour palette selected (pal=NULL), reverting to defaults.")
-      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
-    } else if (plot & !is.null(pal) & length(pal) < 4) {
+    if (is.null(pal)) {
+      pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+    } else if (!is.null(pal) & length(pal) < 4) {
       message("Need at least 4 colours, reverting to defaults.")
-      pal <- c('#ffa630', '#42bfdd', '#ef3e36', '#745296','#f08080','#d17a22')
+      pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
 
-    if (is.numeric(subjID)) id <- names(parsed_multiple$individual_results)[[subjID]]
-    else id <- paste0("ID", as.character(subjID))
-    message(paste0("Plotting data for subject ", gsub("ID", "", id), "..."))
+    if (!import_single & !is.null(id)) {
+      if (is.null(parsed_df$individual_results)) {
+        stop(paste0("Need individual results list to plot a single participant's result - ",
+                    "please re-run parse_multiple with indiv = TRUE."))
+      }
 
-    training <- parsed_multiple$individual_results[[id]]$training
-    test <- parsed_multiple$individual_results[[id]]$test
+      if (is.numeric(subjID)) id <- names(parsed_df$individual_results)[[subjID]]
+      else id <- paste0("ID", as.character(subjID))
+      message(paste0("Plotting data for subject ", gsub("ID", "", id), "..."))
+
+      training <- parsed_df$individual_results[[id]]$training
+      test <- parsed_df$individual_results[[id]]$test
+    }
+    else {
+      training <- parsed_df$training
+      test <- parsed_df$test
+    }
 
     ret <- list()
 
@@ -60,11 +68,11 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
         ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
-        ggplot2::theme(legend.position = c(0.9, 0.2)) +
+        ggplot2::theme(legend.position = c(0.85, 0.2)) +
         ggplot2::ggtitle("20-trial lagged cumulative probabilities of picking correct stimulus")
 
       ret$training_lag_20 <- plot20
@@ -85,11 +93,11 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
         ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
-        ggplot2::theme(legend.position = c(0.9, 0.2)) +
+        ggplot2::theme(legend.position = c(0.85, 0.2)) +
         ggplot2::ggtitle("60-trial lagged cumulative probabilities of picking correct stimulus")
 
       ret$training_lag_60 <- plot60
@@ -110,11 +118,11 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
         ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
-        ggplot2::theme(legend.position = c(0.9, 0.2)) +
+        ggplot2::theme(legend.position = c(0.85, 0.2)) +
         ggplot2::ggtitle("Overall cumulative probabilities of picking correct stimulus")
 
       ret$training_all <- plot_full
@@ -122,14 +130,25 @@ plot_import_single <-
     }
 
     if (any(plot_type=="tr_questions")) {
-      plot_tr_q <- fatigue_questions %>%
+      fatigue_questions <- training %>%
+        dplyr::select(subjID, trial_block, trial_no, fatigue_rt, fatigue_slider_start,
+                      fatigue_response) %>%
         dplyr::rename(question_rt = fatigue_rt, question_slider_start = fatigue_slider_start,
-                      question_response = fatigue_response) %>%
+              question_response = fatigue_response) %>%
         dplyr::mutate(question_type="fatigue") %>%
+        tidyr::drop_na()
+
+      training_questions <- training %>%
+        dplyr::select(subjID, trial_block, trial_no, question_type, question_slider_start, question_rt,
+                  question_response)
+
+      plot_tr_q <- fatigue_questions %>%
         dplyr::bind_rows(training_questions) %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                                     color = factor(question_type,
-                                                    levels=c("happy", "confident", "engaged", "fatigue")))) +
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x=trial_no, y=question_response,
+            color = factor(question_type, levels=c("happy", "confident", "engaged", "fatigue")))
+          ) +
         ggplot2::geom_point(alpha=0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
@@ -145,9 +164,9 @@ plot_import_single <-
           labels = c("Happiness", "Confidence", "Engagement", "Fatigue"),
           values = pal
         ) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
         ggplot2::ggtitle("Subjective affect over training")
 
@@ -170,9 +189,9 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
         ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
         ggplot2::ggtitle("Subjective happiness in rewarded and non-rewarded trials")
 
@@ -195,9 +214,9 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
         ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
         ggplot2::ggtitle("Subjective engagement in rewarded and non-rewarded trials")
 
@@ -220,9 +239,9 @@ plot_import_single <-
         ggplot2::xlab("Trial index") +
         ggplot2::ylab("Rating (/100)") +
         ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
         ggplot2::ggtitle("Subjective confidence in rewarded and non-rewarded trials")
 
@@ -242,12 +261,12 @@ plot_import_single <-
         ggplot2::xlab("Test type") +
         ggplot2::ylab("Count") +
         ggplot2::scale_x_discrete() +
-        ggplot2::scale_fill_manual(values = pal[2:3], name = NULL, labels=c("Correct", "Incorrect")) +
+        ggplot2::scale_fill_manual(values = pal, name = NULL, labels=c("Correct", "Incorrect")) +
         ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide= "none") +
         ggplot2::scale_alpha_manual(values=0.85) +
-        ggplot2::theme_gray(
-          base_size = font_size,
-          base_family = ifelse(!is.null(font), font, "")
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         ) +
         ggplot2::ggtitle("Test performance")
 

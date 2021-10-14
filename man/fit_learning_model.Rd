@@ -68,9 +68,9 @@ details and defaults: \code{https://mc-stan.org/docs/2_28/cmdstan-guide/index.ht
 \code{fit_learning_model} uses a the package \code{cmdstanr}, which is a lightweight R
 to the shell interface of of Stan . Please note that while it checks if the C++ toolchain is
 correct, running this function will install cmdstan itself - this may be as simple as running
-\code{install_cmdstan(".../.cmdstanr/cmdstan-x.x.x")}, but may require some extra effort
-(e.g., pointing R to the install location via \code{cmdstanr::set_cmd_path()}). This vignette
-explains installation in more detail: \code{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}.
+\code{install_cmdstan()}, but may require some extra effort (e.g., pointing R to the install
+location via \code{cmdstanr::set_cmd_path()}). This vignette explains installation in more
+detail: \code{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}.
 }
 \details{
 \code{fit_learning_model} heavily leans on various helper functions from the \code{hBayesDM}
