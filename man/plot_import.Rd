@@ -5,31 +5,64 @@
 \title{Plot raw experiment data}
 \usage{
 plot_import(
-  parsed_df,
+  parsed_list,
   import_single = FALSE,
   id = NULL,
+  types = c("train", "test", "affect"),
+  plt.train = list(),
+  plt.test = c(),
+  plt.affect = list(),
+  grp_compare = NULL,
+  grp_names = list(),
+  recode_na = NULL,
+  aff_by_reward = FALSE,
+  legend_pos = "right",
   pal = NULL,
-  font = NULL,
-  font_size = 14,
-  plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident",
-    "engaged", "test_perf")
+  font = "",
+  font_size = 14
 )
 }
 \arguments{
-\item{parsed_df}{\code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.}
+\item{parsed_list}{\code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.}
 
 \item{import_single}{Is the output from \code{pstpipeline::import_single()}?}
 
-\item{id}{Prolific or other participant ID to select if only a single partipant's data is desired.}
+\item{id}{Prolific ID to select if only a single participant's data is desired from an
+\code{pstpipeline::import_multiple()} output. Will also accept a single numeric value i, i.e., to select
+the ith participant; may be useful to e.g., see a random participant's results.}
+
+\item{types}{Types of plot to output, choose from any (or all) of \code{train}, \code{test}, and
+\code{affect}.}
+
+\item{plt.train}{List of length 2, with the first element a single value or numeric vector of the number
+of trials to lag in the calculation of cumulative probabilities, and the second element a vector of training
+types to include (defaults to all three: "AB", "CD", and "EF").}
+
+\item{plt.test}{Character vector containing the individual or grouped types of test trial to plot.}
+
+\item{plt.affect}{List of length 2 indicating, (1) how many trials to lag (only a single value accepted), and
+(2) the nouns to plot (can be any of "happy", "confident", "engaged", or "fatigue").}
+
+\item{grp_compare}{Group to compare on which is found from the participant info. Note that if \code{parsed_list}
+is split into 2 (i.e., distanced and non-distanced), comparisons will be automatically made on this split.}
+
+\item{grp_names}{List of labels for plot keys for the different groups. An attempt will be made to label these
+automatically; it is recommended to first leave this list empty to make sure the correct labels are applied.}
+
+\item{recode_na}{Some grouping variables are \code{NA} in the participant information due to them being asked
+conditionally.  This option enables these to be recoded as appropriate (e.g., to 0 or \code{FALSE}).}
+
+\item{aff_by_reward}{Enables affect plots to be compared by whether or not the prior stimulus was rewarded or not.
+This will override grp_compare (but won't affect other types of plots).}
+
+\item{legend_pos}{Enables the legend positions to be set manually.}
 
 \item{pal}{Define a custom colour palette for the plots? Otherwise reverts to defaults.}
 
 \item{font}{Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
 be run first.}
 
-\item{font_size}{Base plot font size passed to \code{ggplot2::theme_gray}.}
-
-\item{plot_type}{Select plots as required.}
+\item{font_size}{Base plot font size.}
 }
 \value{
 \code{list} of \code{ggplot} objects

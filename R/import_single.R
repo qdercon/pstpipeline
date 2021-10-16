@@ -230,19 +230,14 @@ import_single <-
     dplyr::group_by(type) %>%
     dplyr::arrange(trial_no) %>%
     dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
-    dplyr::mutate(cum_prob_all =
-                    runner::runner(x=choice, f=
-                                     function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k=360)) %>%
-    dplyr::mutate(cum_prob_l20 =
-                    runner::runner(x=choice, f=
-                                     function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k=20)) %>%
-    dplyr::mutate(cum_prob_l60 =
-                    runner::runner(x=choice, f=
-                                     function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k=60)) %>%
+    dplyr::mutate(
+      cuml_accuracy_l20 =
+        runner::runner(x=choice, f=function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k=20)
+      ) %>%
     dplyr::ungroup() %>%
     dplyr::select(subjID, type, choice, reward, trial_block, trial_no, trial_no_group, glyph_seq,
                   stimulus, test_part, key_press, rt, correct_response, correct, timeout, points,
-                  cum_prob_all, cum_prob_l20, cum_prob_l60)
+                  cuml_accuracy_l20)
 
 
   # training questions
@@ -275,15 +270,15 @@ import_single <-
 
   final_block_AB <- training %>%
     dplyr::filter(trial_block==6 & trial_no_group==120 & type==12) %>%
-    dplyr::select(cum_prob_l20)
+    dplyr::select(cuml_accuracy_l20)
 
   final_block_CD <- training %>%
     dplyr::filter(trial_block==6 & trial_no_group==120 & type==34) %>%
-    dplyr::select(cum_prob_l20)
+    dplyr::select(cuml_accuracy_l20)
 
   final_block_EF <- training %>%
     dplyr::filter(trial_block==6 & trial_no_group==120 & type==56) %>%
-    dplyr::select(cum_prob_l20)
+    dplyr::select(cuml_accuracy_l20)
 
   final_block_AB = final_block_AB[[1]]
   final_block_CD = final_block_CD[[1]]
@@ -388,13 +383,13 @@ import_single <-
     dplyr::mutate(choice = ifelse(!timeout, as.numeric(correct), NA)) %>%
     dplyr::group_by(test_type) %>%
     dplyr::mutate(test_trial_no_group = dplyr::row_number()) %>%
-    dplyr::mutate(cum_prob = cumsum(correct)/test_trial_no_group) %>%
+    dplyr::mutate(cuml_accuracy_test = cumsum(correct)/test_trial_no_group) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse='')) %>%
     dplyr::select(subjID, type, choice, test_type, test_trial_no, test_trial_no_group, rt,
                   glyph_seq, stimulus, test_part, key_press, correct_response, correct, timeout,
-                  cum_prob)
+                  cuml_accuracy_test)
 
   test_questions <- test_block %>%
     dplyr::filter(test_part == "question_test") %>%

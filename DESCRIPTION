@@ -14,15 +14,16 @@ Imports:
     tidyr,
     stringr,
     ggplot2,
+    tibble,
     jsonlite,
     runner,
     magrittr,
     cowplot,
-    tibble,
     cmdstanr,
     data.table,
     rstanarm,
     loo,
-    posterior
+    posterior,
+    FSA
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2

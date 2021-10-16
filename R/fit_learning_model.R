@@ -1,11 +1,11 @@
 #' General function to run Bayesian models using cmdstanr
 #'
-#' \code{fit_learning_model} uses a the package \code{cmdstanr}, which is a lightweight R
-#' to the shell interface of of Stan . Please note that while it checks if the C++ toolchain is
-#' correct, running this function will install cmdstan itself - this may be as simple as running
-#' \code{install_cmdstan()}, but may require some extra effort (e.g., pointing R to the install
-#' location via \code{cmdstanr::set_cmd_path()}). This vignette explains installation in more
-#' detail: \code{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}.
+#' \code{fit_learning_model} uses the package \code{cmdstanr}, which is a lightweight R
+#' interface to CmdStan. Please note that while it checks if the C++ toolchain is correctly
+#' configured, running this function will not install CmdStan itself. This may be as simple as
+#' running \code{cmdstanr::install_cmdstan()}, but may require some extra effort (e.g., pointing
+#' R to the install location via \code{cmdstanr::set_cmd_path()}). This vignette explains
+#' installation in more detail: https://mc-stan.org/cmdstanr/articles/cmdstanr.html.
 #'
 #' \code{fit_learning_model} heavily leans on various helper functions from the \code{hBayesDM}
 #' package (https://ccs-lab.github.io/hBayesDM/), and is nowhere near as flexible; instead it is

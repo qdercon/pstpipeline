@@ -4,255 +4,391 @@
 #' a single participant (if \code{!is.null(id)}) or all participants' data from
 #' \code{pstpipeline::import_multiple()}.
 #'
-#' @param parsed_df \code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.
+#' @param parsed_list \code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.
 #' @param import_single Is the output from \code{pstpipeline::import_single()}?
-#' @param id Prolific or other participant ID to select if only a single partipant's data is desired.
+#' @param id Prolific ID to select if only a single participant's data is desired from an
+#' \code{pstpipeline::import_multiple()} output. Will also accept a single numeric value i, i.e., to select
+#' the ith participant; may be useful to e.g., see a random participant's results.
+#' @param types Types of plot to output, choose from any (or all) of \code{train}, \code{test}, and
+#' \code{affect}.
+#' @param plt.train List of length 2, with the first element a single value or numeric vector of the number
+#' of trials to lag in the calculation of cumulative probabilities, and the second element a vector of training
+#' types to include (defaults to all three: "AB", "CD", and "EF").
+#' @param plt.test Character vector containing the individual or grouped types of test trial to plot.
+#' @param plt.affect List of length 2 indicating, (1) how many trials to lag (only a single value accepted), and
+#' (2) the nouns to plot (can be any of "happy", "confident", "engaged", or "fatigue").
+#' @param grp_compare Group to compare on which is found from the participant info. Note that if \code{parsed_list}
+#' is split into 2 (i.e., distanced and non-distanced), comparisons will be automatically made on this split.
+#' @param grp_names List of labels for plot keys for the different groups. An attempt will be made to label these
+#' automatically; it is recommended to first leave this list empty to make sure the correct labels are applied.
+#' @param recode_na Some grouping variables are \code{NA} in the participant information due to them being asked
+#' conditionally.  This option enables these to be recoded as appropriate (e.g., to 0 or \code{FALSE}).
+#' @param aff_by_reward Enables affect plots to be compared by whether or not the prior stimulus was rewarded or not.
+#' This will override grp_compare (but won't affect other types of plots).
+#' @param legend_pos Enables the legend positions to be set manually.
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
 #' @param font Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
 #' be run first.
-#' @param font_size Base plot font size passed to \code{ggplot2::theme_gray}.
-#' @param plot_type Select plots as required.
+#' @param font_size Base plot font size.
 #'
-#' @return \code{list} of \code{ggplot} objects
+#' @return Either a single or named \code{list} of \code{ggplot} objects
 #'
 #' @importFrom magrittr %>%
+#' @importFrom rlang := !!
 #' @export
 
 plot_import <-
-  function(parsed_df, import_single = FALSE, id = NULL, pal = NULL, font = "", font_size = 14,
-           plot_type = c("tr20", "tr60", "tr_all", "tr_questions", "happy", "confident","engaged",
-                         "test_perf")) {
+  function(parsed_list, import_single = FALSE, id = NULL, types = c("train", "test", "affect"),
+           plt.train = list(), plt.test = c(), plt.affect = list(), grp_compare = NULL,
+           grp_names = list(), recode_na = NULL, aff_by_reward = FALSE, legend_pos = "right",
+           pal = NULL, font = "", font_size = 14) {
+
+    if (length(grp_compare) > 1) stop("Can only compare on one feature.")
+    if (length(grp_names) > 2) warning("Comparisons on features that are not binary are not recommended.")
 
     if (is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
-    } else if (!is.null(pal) & length(pal) < 4) {
-      message("Need at least 4 colours, reverting to defaults.")
+    }
+    else if (!is.null(pal) & length(pal) < 6) {
+      message("Need at least 6 colours, reverting to defaults.")
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
 
-    if (!import_single & !is.null(id)) {
-      if (is.null(parsed_df$individual_results)) {
-        stop(paste0("Need individual results list to plot a single participant's result - ",
-                    "please re-run parse_multiple with indiv = TRUE."))
+    if (import_single) {
+      training <- parsed_list$training
+      test <- parsed_list$test
+    }
+    else if (!import_single & !is.null(id)) {
+      if (!is.null(parsed_list$individual_results)) {
+        if (is.numeric(id)) id <- names(parsed_list$individual_results)[[id]]
+        else id <- paste0("ID", as.character(id))
+        training <- parsed_list$individual_results[[id]]$training
+        test <- parsed_list$individual_results[[id]]$test
+        import_single <- TRUE
+      } else {
+        if (is.numeric(id)) id <- unique(parsed_list$ppt_info$subjID)[[id]]
+        else id <- gsub("#", "", id)
+        training <- parsed_list$training %>%
+          dplyr::right_join(tibble::as_tibble(id), by = c("subjID" = "value"))
+        test <- parsed_list$test %>%
+          dplyr::right_join(tibble::as_tibble(id), by = c("subjID" = "value"))
+        import_single <- TRUE
       }
-
-      if (is.numeric(subjID)) id <- names(parsed_df$individual_results)[[subjID]]
-      else id <- paste0("ID", as.character(subjID))
-      message(paste0("Plotting data for subject ", gsub("ID", "", id), "..."))
-
-      training <- parsed_df$individual_results[[id]]$training
-      test <- parsed_df$individual_results[[id]]$test
     }
     else {
-      training <- parsed_df$training
-      test <- parsed_df$test
+      if (length(parsed_list) == 2 & is.null(grp_compare)) {
+        ids_vec <- parsed_list[[1]]$ppt_info %>%
+          dplyr::bind_rows(parsed_list[[2]]$ppt_info) %>%
+          dplyr::select(subjID, exclusion) %>%
+          dplyr::filter(exclusion == 0) %>%
+          dplyr::select(-exclusion)
+        training <- parsed_list[[1]]$training %>%
+            dplyr::mutate(group = names(parsed_list)[1]) %>%
+            dplyr::bind_rows(
+              dplyr::mutate(parsed_list[[2]]$training, group = names(parsed_list)[2])
+              ) %>%
+            dplyr::right_join(ids_vec, by = "subjID") %>%
+            dplyr::mutate(
+              group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
+            )
+        test <- parsed_list[[1]]$test %>%
+          dplyr::mutate(group = names(parsed_list)[1]) %>%
+          dplyr::bind_rows(
+            dplyr::mutate(parsed_list[[2]]$test, group = names(parsed_list)[2])
+            ) %>%
+          dplyr::right_join(ids_vec, by = "subjID") %>%
+          dplyr::mutate(
+            group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
+          )
+      }
+      else if (is.null(grp_compare)) {
+        ids_vec <- parsed_list$ppt_info %>%
+          dplyr::select(subjID, exclusion) %>%
+          dplyr::filter(exclusion == 0) %>%
+          dplyr::select(-exclusion)
+        training <- parsed_list$training %>%
+          dplyr::right_join(ids_vec, by = "subjID")
+        test <- parsed_list$test %>%
+          dplyr::right_join(ids_vec, by = "subjID")
+      }
+      else {
+        if (length(parsed_list) == 2) {
+          ids_vec <- parsed_list[[1]]$ppt_info %>%
+            dplyr::bind_rows(parsed_list[[2]]$ppt_info)
+        }
+        else {
+          ids_vec <- parsed_list$ppt_info
+        }
+        ids_vec <- ids_vec %>%
+          dplyr::select(subjID, exclusion, dplyr::any_of(grp_compare)) %>%
+          dplyr::filter(exclusion == 0) %>%
+          dplyr::select(-exclusion) %>%
+          dplyr::rename(group = 2) %>%
+          dplyr::mutate(
+            group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
+          )
+
+        if (length(parsed_list) == 2) {
+          training <- parsed_list[[1]]$training %>%
+            dplyr::bind_rows(parsed_list[[2]]$training) %>%
+            dplyr::right_join(ids_vec, by = "subjID")
+          test <- parsed_list[[1]]$test %>%
+            dplyr::bind_rows(parsed_list[[2]]$test) %>%
+            dplyr::right_join(ids_vec, by = "subjID")
+        } else {
+          training <- parsed_list$training %>%
+            dplyr::right_join(ids_vec, by = "subjID")
+          test <- parsed_list$test %>%
+            dplyr::right_join(ids_vec, by = "subjID")
+        }
+      }
     }
 
+    std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
     ret <- list()
 
     if (!is.null(font)) {
       extrafont::loadfonts(device = "win", quiet = TRUE)
     }
 
-    if (any(plot_type=="tr20")) {
-      plot20 <- training %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=cum_prob_l20, color=factor(type))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::theme(legend.position = c(0.85, 0.2)) +
-        ggplot2::ggtitle("20-trial lagged cumulative probabilities of picking correct stimulus")
+    pairs <- list("AB", "CD", "EF")
+    names(pairs) <- c("12", "34", "56")
 
-      ret$training_lag_20 <- plot20
-
+    if (!is.null(grp_compare) | length(parsed_list) == 2) {
+      if (length(grp_names) == 0) {
+        training <- training %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (", group, ")")) %>%
+          dplyr::ungroup()
+      }
+      else {
+        names(grp_names) <- as.character(unique(training$group))
+        training <- training %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (",
+                                      grp_names[[as.character(group)]], ")")) %>%
+          dplyr::mutate(group = grp_names[[as.character(group)]]) %>%
+          dplyr::ungroup()
+      }
+    }
+    else {
+      training <- training %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(type = pairs[[as.character(type)]]) %>%
+        dplyr::ungroup()
     }
 
-    if (any(plot_type=="tr60")) {
-      plot60 <- training %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=cum_prob_l60, color=factor(type))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::theme(legend.position = c(0.85, 0.2)) +
-        ggplot2::ggtitle("60-trial lagged cumulative probabilities of picking correct stimulus")
+    if (any(types == "train")) {
+      if (length(plt.train) > 0) {
+        ## figure out what settings are wanted
+        if (tryCatch(length(plt.train[[2]]), error = function(e) FALSE)) {
+          key <- list(12, 34, 56)
+          names(key) <- c("AB", "CD", "EF")
+          train_types <- tibble::as_tibble(plt.train[[2]]) %>%
+            dplyr::rename(type = value) %>%
+            dplyr::mutate(type = key[[type]])
+          training <- training %>%
+            inner_join(train_types, by = "type")
+        }
+        else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
+          trial_lags <- plt.train[[1]][is.numeric(plt.train[[1]])]
+          training <- training %>%
+            dplyr::select(-tidyr::contains("cum_prob")) %>%
+            tidyr::drop_na(choice) %>%
+            dplyr::arrange(trial_no) %>%
+            dplyr::group_by(subjID, type)
+          if (!is.null(grp_compare)) training <- training %>% dplyr::group_by(group, .add = TRUE)
+          training <- training %>%
+            dplyr::mutate(trial_no_group = dplyr::row_number())
+          for (lag in trial_lags) {
+            col_name <- rlang::sym(paste0("cuml_accuracy_l", lag))
+            training <- training %>%
+              dplyr::mutate(
+                !!col_name := runner::runner(
+                  x = choice, f = function(x) {sum(x, na.rm = T)/sum(!is.na(x))}, k = lag)
+                )
+          }
+          training <- training %>%
+            dplyr::ungroup()
+        }
+      }
+      if (!exists("trial_lags")) {
+        trial_lags <- 20
+      }
 
-      ret$training_lag_60 <- plot60
+      train_df <- training %>%
+        dplyr::select(subjID, trial_no_group, type, tidyr::contains("cuml_accuracy"),
+                      dplyr::any_of("group")) %>%
+        dplyr::group_by(trial_no_group, type)
 
-    }
+      cols <- names(train_df)[startsWith(names(train_df), "cuml_accuracy")]
+      tr_plts <- list()
+      for (l in seq_along(trial_lags)) {
+        n_lag <- trial_lags[l]
+        col <- rlang::sym(cols[l])
+        plt_name <- paste0("training_lag", n_lag)
 
-    if (any(plot_type=="tr_all")) {
-      plot_full <- training %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=cum_prob_all, color=factor(type))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
-        ggplot2::scale_color_manual(name = "Trial Type", labels = c("AB", "CD", "EF"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::theme(legend.position = c(0.85, 0.2)) +
-        ggplot2::ggtitle("Overall cumulative probabilities of picking correct stimulus")
+        tr_plot_df <- train_df %>%
+          dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = TRUE)) %>%
+          dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) %>%
+          dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) %>%
+          dplyr::ungroup() %>%
+          dplyr::distinct(
+            trial_no_group, type, cuml_acc_mean, cuml_acc_mean_sub_se, cuml_acc_mean_pl_se
+          )
 
-      ret$training_all <- plot_full
-
-    }
-
-    if (any(plot_type=="tr_questions")) {
-      fatigue_questions <- training %>%
-        dplyr::select(subjID, trial_block, trial_no, fatigue_rt, fatigue_slider_start,
-                      fatigue_response) %>%
-        dplyr::rename(question_rt = fatigue_rt, question_slider_start = fatigue_slider_start,
-              question_response = fatigue_response) %>%
-        dplyr::mutate(question_type="fatigue") %>%
-        tidyr::drop_na()
-
-      training_questions <- training %>%
-        dplyr::select(subjID, trial_block, trial_no, question_type, question_slider_start, question_rt,
-                  question_response)
-
-      plot_tr_q <- fatigue_questions %>%
-        dplyr::bind_rows(training_questions) %>%
-        ggplot2::ggplot(
-          ggplot2::aes(
-            x=trial_no, y=question_response,
-            color = factor(question_type, levels=c("happy", "confident", "engaged", "fatigue")))
+        plt_tr <- tr_plot_df %>%
+          ggplot2::ggplot(ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
+                                       colour = factor(type), fill = factor(type))) +
+          ggplot2::geom_point(alpha=0.65) +
+          ggplot2::geom_line() +
+          ggplot2::scale_x_continuous(breaks=seq(0,120,20)) +
+          ggplot2::geom_vline(xintercept=c(seq(n_lag, 120 - n_lag, n_lag)), linetype="dashed", alpha=0.5) +
+          ggplot2::xlab("Trial number") +
+          ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
+          ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
+          ggplot2::scale_fill_manual(name = "Trial Type", values = unlist(pal)) +
+          cowplot::theme_half_open(
+            font_size = font_size,
+            font_family = font
           ) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Rating (/100)") +
-        ggplot2::scale_color_manual(
-          name = "Affect noun",
-          labels = c("Happiness", "Confidence", "Engagement", "Fatigue"),
-          values = pal
-        ) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::ggtitle("Subjective affect over training")
+          ggplot2::theme(legend.position = legend_pos) +
+          ggplot2::ggtitle(paste0(n_lag, "-trial lagged cumulative probabilities of picking correct stimulus"))
 
-      ret$affect_questions <- plot_tr_q
+        if (!import_single) {
+          plt_tr <- plt_tr +
+            ggplot2::geom_ribbon(ggplot2::aes(
+              ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se), alpha = 0.2
+            )
+        }
+
+        tr_plts[[plt_name]] <- plt_tr
+
+      }
+      ret$training <- tr_plts
     }
 
-    if (any(plot_type=="happy")) {
-      plot_happy <- training %>%
-        dplyr::filter(question_type=="happy") %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Rating (/100)") +
-        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::ggtitle("Subjective happiness in rewarded and non-rewarded trials")
+    if (any(types == "affect")) {
+      if (tryCatch(length(plt.affect[[1]]), error = function(e) FALSE)) a_lag <- plt.affect[[1]]
+      else a_lag <- 1
+      if (tryCatch(length(plt.affect[[2]]), error = function(e) FALSE)) af_types <- plt.affect[[2]]
+      else af_types <- c("happy", "confident", "engaged", "fatigue")
 
-      ret$happy <- plot_happy
+      if (any(af_types == "fatigue")) {
+        fatigue_qs <- training %>%
+          dplyr::filter(!is.na(fatigue_response)) %>%
+          dplyr::mutate(across(.cols = c(2:3, 8:17), ~ replace(.x, values = NA))) %>%
+          dplyr::mutate(question_type = "fatigue") %>%
+          dplyr::mutate(question_slider_start = fatigue_slider_start) %>%
+          dplyr::mutate(question_response = fatigue_response)
+        training <- training %>%
+          dplyr::bind_rows(fatigue_qs)
+      }
+
+      affect_df <- training %>%
+        dplyr::select(subjID, type, choice, reward, trial_no, question_type, question_response,
+                      question_slider_start, dplyr::any_of("group")) %>%
+        dplyr::arrange(trial_no) %>%
+        dplyr::group_by(subjID, question_type) %>%
+        dplyr::mutate(
+          cum_resp_l =
+            runner::runner(
+              x = question_response, f = function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k = a_lag
+              )
+        ) %>%
+        dplyr::mutate(question_no_group = dplyr::row_number()) %>%
+        dplyr::group_by(question_no_group, question_type)
+
+      if (aff_by_reward) {
+        affect_df <- affect_df %>%
+          dplyr::mutate(group = ifelse(reward==1, "Rewarded", "Not rewarded")) %>%
+          dplyr::group_by(group, .add = TRUE)
+      } else if (!is.null(grp_compare) | length(parsed_list) == 2) {
+        affect_df <- affect_df %>%
+          dplyr::group_by(group, .add = TRUE)
+      } else {
+        affect_df <- affect_df %>%
+          dplyr::mutate(group = question_type)
+      }
+
+      af_plts <- list()
+
+      for (n in seq_along(af_types)) {
+        noun <- af_types[n]
+        df_to_plt <- affect_df %>%
+          dplyr::filter(question_type == noun) %>%
+          dplyr::mutate(question_type = group) %>%
+          dplyr::mutate(cum_resp_l_mean = mean(cum_resp_l, na.rm = TRUE)) %>%
+          dplyr::mutate(cum_resp_l_mean_sub_se = cum_resp_l_mean - std(cum_resp_l)) %>%
+          dplyr::mutate(cum_resp_l_mean_pl_se = cum_resp_l_mean + std(cum_resp_l)) %>%
+          dplyr::distinct(
+            question_type, question_no_group, cum_resp_l_mean, cum_resp_l_mean_sub_se,
+            cum_resp_l_mean_pl_se
+          )
+
+        af_names <- list("Happiness", "Confidence", "Engagement", "Post-block fatigue")
+        names(af_names) <- c("happy", "confident", "engaged", "fatigue")
+
+        if (length(unique(df_to_plt$question_type)) == 1) pal_af <- pal[n]
+        else pal_af <- pal
+
+        af_plt <- df_to_plt %>%
+          ggplot2::ggplot(
+            ggplot2::aes(
+              x = question_no_group, y = cum_resp_l_mean, color = factor(question_type),
+              fill = factor(question_type)
+              )
+            ) +
+          ggplot2::geom_point(alpha=0.65) +
+          ggplot2::geom_line()
+
+        if (noun == "fatigue") {
+          af_plt <- af_plt +
+            ggplot2::scale_x_continuous(breaks=seq(0,6,1)) +
+            ggplot2::geom_vline(xintercept=c(seq(1, 5, 1)), linetype="dashed", alpha=0.5) +
+            ggplot2::xlab("Block number")
+
+        } else {
+          af_plt <- af_plt +
+            ggplot2::scale_x_continuous(breaks=seq(0,120,20)) +
+            ggplot2::geom_vline(xintercept=c(seq(20, 100, 20)), linetype="dashed", alpha=0.5) +
+            ggplot2::xlab("Trial number")
+        }
+
+        af_plt <- af_plt +
+          ggplot2::ylab(paste0(af_names[[noun]], " rating /100")) +
+          ggplot2::scale_color_manual(name = NULL, values = pal_af) +
+          ggplot2::scale_fill_manual(name = NULL, values = unlist(pal_af)) +
+          cowplot::theme_half_open(
+            font_size = font_size,
+            font_family = font
+          ) +
+          ggplot2::theme(legend.position = legend_pos) +
+          ggplot2::ggtitle(af_names[[noun]])
+
+        if (length(unique(df_to_plt$question_type)) == 1) {
+          af_plt <- af_plt +
+            ggplot2::guides(colour = "none", fill = "none")
+        }
+
+        if (!import_single) {
+          af_plt <- af_plt +
+            ggplot2::geom_ribbon(ggplot2::aes(
+              ymin = cum_resp_l_mean_sub_se, ymax = cum_resp_l_mean_pl_se), alpha = 0.2
+            )
+        }
+
+        af_plts[[noun]] <- af_plt
+      }
+
+      ret$affect <- af_plts
     }
 
-    if (any(plot_type=="engaged")) {
-      plot_engaged <- training %>%
-        dplyr::filter(question_type=="engaged") %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Rating (/100)") +
-        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::ggtitle("Subjective engagement in rewarded and non-rewarded trials")
-
-      ret$engaged <- plot_engaged
-    }
-
-    if (any(plot_type=="confident")) {
-      plot_conf <- training %>%
-        dplyr::filter(question_type=="confident") %>%
-        ggplot2::ggplot(ggplot2::aes(x=trial_no, y=question_response,
-                                     color=factor(correct, levels=c("TRUE", "FALSE")))) +
-        ggplot2::geom_point(alpha=0.65) +
-        ggplot2::geom_line() +
-        ggplot2::geom_vline(xintercept=60, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=120, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=180, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=240, linetype="dashed", alpha=0.5) +
-        ggplot2::geom_vline(xintercept=300, linetype="dashed", alpha=0.5) +
-        ggplot2::scale_x_continuous(breaks=seq(0,360,30)) +
-        ggplot2::xlab("Trial index") +
-        ggplot2::ylab("Rating (/100)") +
-        ggplot2::scale_color_manual(name = "Rewarded?", labels = c("Yes", "No"), values = pal) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::ggtitle("Subjective confidence in rewarded and non-rewarded trials")
-
-      ret$confidence <- plot_conf
-    }
-
-    if (any(plot_type=="test_perf")) {
+    if (any(types=="test_perf_grouped")) {
       plot_test <- test %>%
-        ggplot2::ggplot(ggplot2::aes(x=factor(test_type,
-                                              levels=c("chooseA","avoidB", "novel", "training")),
-                   fill=factor(correct, levels=c("TRUE", "FALSE")))) +
+        ggplot2::ggplot(ggplot2::aes(
+          x=factor(test_type,levels=c("chooseA","avoidB", "novel", "training")),
+                   fill = factor(correct, levels=c("TRUE", "FALSE")))) +
         ggplot2::geom_bar() +
         ggplot2::geom_text(stat = "count", family = ifelse(!is.null(font), font, ""),
                            ggplot2::aes(label = ggplot2::after_stat(count),
@@ -261,7 +397,8 @@ plot_import <-
         ggplot2::xlab("Test type") +
         ggplot2::ylab("Count") +
         ggplot2::scale_x_discrete() +
-        ggplot2::scale_fill_manual(values = pal, name = NULL, labels=c("Correct", "Incorrect")) +
+        ggplot2::scale_fill_manual(values = pal, name = NULL,
+                                   labels=c("Correct", "Incorrect")) +
         ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide= "none") +
         ggplot2::scale_alpha_manual(values=0.85) +
         cowplot::theme_half_open(
@@ -273,5 +410,6 @@ plot_import <-
       ret$testperf <- plot_test
     }
 
+  if (length(ret) == 1 & length(ret[[1]]) == 1) ret <- ret[[1]][[1]]
   return(ret)
 }
