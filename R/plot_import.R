@@ -1,25 +1,27 @@
 #' Plot raw experiment data
 #'
 #' \code{plot_import} plots a single participant's data from \code{pstpipeline::import_single()}, or
-#' a single participant (if \code{!is.null(id)}) or all participants' data from
+#' a single participant (if \code{!is.null(id)}), or all participants' data from
 #' \code{pstpipeline::import_multiple()}.
 #'
 #' @param parsed_list \code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.
 #' @param import_single Is the output from \code{pstpipeline::import_single()}?
-#' @param id Prolific ID to select if only a single participant's data is desired from an
-#' \code{pstpipeline::import_multiple()} output. Will also accept a single numeric value i, i.e., to select
-#' the ith participant; may be useful to e.g., see a random participant's results.
+#' @param id subjID to select if only plots for a single participant are desired. Will also accept a single
+#' numeric value i, which will select the ith participant in the output.
 #' @param types Types of plot to output, choose from any (or all) of \code{train}, \code{test}, and
 #' \code{affect}.
-#' @param plt.train List of length 2, with the first element a single value or numeric vector of the number
+#' @param plt.train List of length <= 2, with the first element a single value or numeric vector of the number
 #' of trials to lag in the calculation of cumulative probabilities, and the second element a vector of training
-#' types to include (defaults to all three: "AB", "CD", and "EF").
-#' @param plt.test Character vector containing the individual or grouped types of test trial to plot.
-#' @param plt.affect List of length 2 indicating, (1) how many trials to lag (only a single value accepted), and
+#' types to include.
+#' @param plt.test List of length <= 2. The first element specifies the types of test pairs to plot; accepted
+#' inputs include "chooseA", "avoidB", "novel", "training", "all", and/or character vector(s) of specific pairs. The
+#' second input defines how these options are plotted - either "grouped" or "individual"; note "grouped" plots will
+#' not work for custom inputs or if "all" is selected as an option.
+#' @param plt.affect List of length <= 2 indicating (1) how many trials to lag (only a single value accepted), and
 #' (2) the nouns to plot (can be any of "happy", "confident", "engaged", or "fatigue").
 #' @param grp_compare Group to compare on which is found from the participant info. Note that if \code{parsed_list}
 #' is split into 2 (i.e., distanced and non-distanced), comparisons will be automatically made on this split.
-#' @param grp_names List of labels for plot keys for the different groups. An attempt will be made to label these
+#' @param grp_names Vector of labels for plot keys for the different groups. An attempt will be made to label these
 #' automatically; it is recommended to first leave this list empty to make sure the correct labels are applied.
 #' @param recode_na Some grouping variables are \code{NA} in the participant information due to them being asked
 #' conditionally.  This option enables these to be recoded as appropriate (e.g., to 0 or \code{FALSE}).
@@ -38,10 +40,21 @@
 #' @export
 
 plot_import <-
-  function(parsed_list, import_single = FALSE, id = NULL, types = c("train", "test", "affect"),
-           plt.train = list(), plt.test = c(), plt.affect = list(), grp_compare = NULL,
-           grp_names = list(), recode_na = NULL, aff_by_reward = FALSE, legend_pos = "right",
-           pal = NULL, font = "", font_size = 14) {
+  function(parsed_list,
+           import_single = FALSE,
+           id = NULL,
+           types = c("train", "test", "affect"),
+           plt.train = list(),
+           plt.test = list(),
+           plt.affect = list(),
+           grp_compare = NULL,
+           grp_names = c(),
+           recode_na = NULL,
+           aff_by_reward = FALSE,
+           legend_pos = "right",
+           pal = NULL,
+           font = "",
+           font_size = 14) {
 
     if (length(grp_compare) > 1) stop("Can only compare on one feature.")
     if (length(grp_names) > 2) warning("Comparisons on features that are not binary are not recommended.")
@@ -179,44 +192,44 @@ plot_import <-
     }
 
     if (any(types == "train")) {
-      if (length(plt.train) > 0) {
-        ## figure out what settings are wanted
-        if (tryCatch(length(plt.train[[2]]), error = function(e) FALSE)) {
-          key <- list(12, 34, 56)
-          names(key) <- c("AB", "CD", "EF")
+      if (tryCatch(length(plt.train[[2]]), error = function(e) FALSE)) {
           train_types <- tibble::as_tibble(plt.train[[2]]) %>%
-            dplyr::rename(type = value) %>%
-            dplyr::mutate(type = key[[type]])
-          training <- training %>%
-            inner_join(train_types, by = "type")
-        }
-        else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
+            dplyr::mutate(value = as.character(value))
+          train_df <- training %>%
+            dplyr::inner_join(train_types, by = c("type" = "value"))
+      }
+      else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
           trial_lags <- plt.train[[1]][is.numeric(plt.train[[1]])]
-          training <- training %>%
+          train_df <- training %>%
             dplyr::select(-tidyr::contains("cum_prob")) %>%
             tidyr::drop_na(choice) %>%
             dplyr::arrange(trial_no) %>%
             dplyr::group_by(subjID, type)
-          if (!is.null(grp_compare)) training <- training %>% dplyr::group_by(group, .add = TRUE)
-          training <- training %>%
+          if (!is.null(grp_compare) | length(parsed_list) == 2) {
+            train_df <- train_df %>%
+              dplyr::group_by(group, .add = TRUE)
+          }
+          train_df <- train_df %>%
             dplyr::mutate(trial_no_group = dplyr::row_number())
           for (lag in trial_lags) {
             col_name <- rlang::sym(paste0("cuml_accuracy_l", lag))
-            training <- training %>%
+            train_df <- train_df %>%
               dplyr::mutate(
                 !!col_name := runner::runner(
                   x = choice, f = function(x) {sum(x, na.rm = T)/sum(!is.na(x))}, k = lag)
                 )
           }
-          training <- training %>%
+          train_df <- train_df %>%
             dplyr::ungroup()
-        }
+      }
+      else {
+        train_df <- training
       }
       if (!exists("trial_lags")) {
         trial_lags <- 20
       }
 
-      train_df <- training %>%
+      train_df <- train_df %>%
         dplyr::select(subjID, trial_no_group, type, tidyr::contains("cuml_accuracy"),
                       dplyr::any_of("group")) %>%
         dplyr::group_by(trial_no_group, type)
@@ -384,30 +397,156 @@ plot_import <-
       ret$affect <- af_plts
     }
 
-    if (any(types=="test_perf_grouped")) {
-      plot_test <- test %>%
-        ggplot2::ggplot(ggplot2::aes(
-          x=factor(test_type,levels=c("chooseA","avoidB", "novel", "training")),
-                   fill = factor(correct, levels=c("TRUE", "FALSE")))) +
-        ggplot2::geom_bar() +
-        ggplot2::geom_text(stat = "count", family = ifelse(!is.null(font), font, ""),
-                           ggplot2::aes(label = ggplot2::after_stat(count),
-                                        colour=factor(correct, levels=c("TRUE", "FALSE"))),
-                  position = ggplot2::position_stack(vjust=0.5)) +
-        ggplot2::xlab("Test type") +
-        ggplot2::ylab("Count") +
-        ggplot2::scale_x_discrete() +
-        ggplot2::scale_fill_manual(values = pal, name = NULL,
-                                   labels=c("Correct", "Incorrect")) +
-        ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF"), guide= "none") +
-        ggplot2::scale_alpha_manual(values=0.85) +
-        cowplot::theme_half_open(
-          font_size = font_size,
-          font_family = font
-        ) +
-        ggplot2::ggtitle("Test performance")
+    if (any(types == "test")) {
 
-      ret$testperf <- plot_test
+      test_grps <- list(c("AB", "CD", "EF"), c("AC", "AD", "AE", "AF"), c("CB", "DB", "EB", "FB"),
+                        c("CE", "CF", "ED", "FD"))
+      names(test_grps) <- c("training", "chooseA", "avoidB", "novel")
+
+      all_pairs <- list("AB", "CD", "EF", "AC", "AD", "AE", "AF", "CB", "DB", "EB", "FB",
+                        "CE", "CF", "ED", "FD")
+      names(all_pairs) <- c("12", "34", "56", "13", "14", "15", "16", "32", "42", "52", "62",
+                            "35", "36", "54", "64")
+
+      if (tryCatch(length(plt.test[[2]]), error = function(e) FALSE)) tt_grp <- plt.test[[2]]
+      else tt_grp <- "grouped"
+      if (tryCatch(length(plt.test[[1]]), error = function(e) FALSE)) test_types_plt <- plt.test[[1]]
+      else test_types_plt <- c("chooseA", "avoidB", "novel", "training")
+
+      known_grps <- c("chooseA", "avoidB", "novel", "training")
+
+      if (tt_grp == "grouped" & (length(setdiff(test_types_plt, known_grps)) == 0)) {
+          test <- test %>%
+            dplyr::filter(test_type %in% test_types_plt) %>%
+            dplyr::mutate(test_type = factor(test_type, levels = test_types_plt)) %>%
+            dplyr::group_by(subjID, test_type)
+      }
+      else {
+        to_keep <- vector(mode = "character")
+        if (any(test_types_plt == "all")) {
+          to_keep <- unlist(all_pairs)
+        }
+        else {
+          known_types <- intersect(test_types_plt, known_grps)
+          for (t in known_types) {
+            to_keep <- c(to_keep, test_grps[[t]])
+          }
+          to_keep <- c(to_keep, setdiff(test_types_plt, known_grps))
+        }
+
+      test <- test %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(test_type = all_pairs[[as.character(type)]]) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(test_type %in% to_keep) %>%
+        dplyr::mutate(test_type = factor(test_type)) %>%
+        dplyr::group_by(subjID, test_type)
+      }
+
+      if (!is.null(grp_compare) | length(parsed_list) == 2) {
+        test <- test %>%
+          dplyr::group_by(group, .add = TRUE)
+      }
+
+      test_plot_df <- test %>%
+        dplyr::mutate(test_type_perf = sum(choice, na.rm = TRUE)/length(!is.na(choice))) %>%
+        dplyr::select(subjID, choice, test_type, test_type_perf, dplyr::any_of("group")) %>%
+        dplyr::ungroup(subjID)
+
+      if (import_single) {
+        plot_test <- test_plot_df %>%
+          dplyr::ungroup() %>%
+          dplyr::mutate(choice = ifelse(is.na(choice), 2, choice)) %>%
+          ggplot2::ggplot(ggplot2::aes(
+            x = test_type, fill = factor(choice, levels=c(1, 0, 2)))
+          ) +
+          ggplot2::geom_bar(alpha = 0.7) +
+          ggplot2::geom_text(
+            stat = "count", family = ifelse(!is.null(font), font, ""),
+            ggplot2::aes(
+              label = ggplot2::after_stat(count), colour=factor(choice, levels=c(1, 0, 2))
+            ),
+            position = ggplot2::position_stack(vjust=0.5)
+          ) +
+          ggplot2::xlab("Test type") +
+          ggplot2::ylab("Count") +
+          ggplot2::scale_fill_manual(values = pal, name = NULL, labels=c("Correct", "Incorrect", "Timed out")) +
+          ggplot2::scale_colour_manual(values=c("#000000", "#FFFFFF", "#FF0000"), guide= "none") +
+          cowplot::theme_half_open(
+            font_size = font_size,
+            font_family = font
+          ) +
+          ggplot2::ggtitle("Test performance")
+      }
+      else {
+        if (!is.null(grp_compare) | length(parsed_list) == 2) {
+          test_plot_df <- test_plot_df %>%
+            dplyr::distinct(subjID, test_type, test_type_perf, group)
+        }
+        else {
+          test_plot_df <- test_plot_df %>%
+            dplyr::distinct(subjID, test_type, test_type_perf)
+        }
+        test_plot_df <- test_plot_df %>%
+          dplyr::mutate(mean_prop_correct = mean(test_type_perf, na.rm = TRUE)) %>%
+          dplyr::mutate(mean_prop_correct_sub_se = mean_prop_correct - std(test_type_perf)) %>%
+          dplyr::mutate(mean_prop_correct_pl_se = mean_prop_correct + std(test_type_perf)) %>%
+          dplyr::ungroup() %>%
+          dplyr::select(-subjID) %>%
+          dplyr::distinct()
+
+        if (!is.null(grp_compare) | length(parsed_list) == 2) {
+          test_plot_df <- test_plot_df %>%
+            dplyr::mutate(colour_stim = factor(group))
+        }
+        else {
+          n_types <- length(unique(test_plot_df$test_type))
+          if (length(pal) < n_types) {
+            test_plot_df <- test_plot_df %>%
+              dplyr::rowwise() %>%
+              dplyr::mutate(colour_stim = substr(test_type, 1, 1)) %>%
+              dplyr::mutate(colour_stim = factor(colour_stim, levels = c("A", "C", "D", "E", "F"))) %>%
+              dplyr::ungroup()
+          } else {
+              test_plot_df <- test_plot_df %>%
+                dplyr::mutate(colour_stim = factor(test_type))
+          }
+        }
+
+        plot_test <- test_plot_df %>%
+          dplyr::distinct(test_type, colour_stim, .keep_all = T) %>%
+          ggplot2::ggplot(
+            ggplot2::aes(x = test_type, y = mean_prop_correct*100, fill = colour_stim)
+            ) +
+          ggplot2::geom_bar(stat="identity", alpha = 0.7, color="black", position = ggplot2::position_dodge()) +
+          ggplot2::geom_errorbar(
+            ggplot2::aes(
+              ymin = mean_prop_correct_sub_se*100, ymax = mean_prop_correct_pl_se*100),
+            width = .2, position = ggplot2::position_dodge(.9)
+          ) +
+          ggplot2::xlab("Test type") +
+          ggplot2::ylab("% correct (\u00B1 SE)") +
+          cowplot::theme_half_open(
+            font_size = font_size,
+            font_family = font
+          ) +
+          ggplot2::ggtitle("Test performance")
+
+        if (is.null(grp_compare) & length(parsed_list) != 2) {
+            plot_test <- plot_test +
+              ggplot2::scale_fill_manual(name = NULL, values = pal) +
+              ggplot2::guides(fill = "none")
+        } else if (length(grp_names) > 0) {
+          plot_test <- plot_test +
+            ggplot2::scale_fill_manual(name = NULL, values = pal, labels = grp_names)
+        } else {
+          plot_test <- plot_test +
+              ggplot2::scale_fill_manual(name = NULL, values = pal)
+        }
+
+      }
+
+      ret$test$test_perf <- plot_test
     }
 
   if (length(ret) == 1 & length(ret[[1]]) == 1) ret <- ret[[1]][[1]]

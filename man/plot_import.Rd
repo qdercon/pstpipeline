@@ -10,10 +10,10 @@ plot_import(
   id = NULL,
   types = c("train", "test", "affect"),
   plt.train = list(),
-  plt.test = c(),
+  plt.test = list(),
   plt.affect = list(),
   grp_compare = NULL,
-  grp_names = list(),
+  grp_names = c(),
   recode_na = NULL,
   aff_by_reward = FALSE,
   legend_pos = "right",
@@ -27,26 +27,28 @@ plot_import(
 
 \item{import_single}{Is the output from \code{pstpipeline::import_single()}?}
 
-\item{id}{Prolific ID to select if only a single participant's data is desired from an
-\code{pstpipeline::import_multiple()} output. Will also accept a single numeric value i, i.e., to select
-the ith participant; may be useful to e.g., see a random participant's results.}
+\item{id}{subjID to select if only plots for a single participant are desired. Will also accept a single
+numeric value i, which will select the ith participant in the output.}
 
 \item{types}{Types of plot to output, choose from any (or all) of \code{train}, \code{test}, and
 \code{affect}.}
 
-\item{plt.train}{List of length 2, with the first element a single value or numeric vector of the number
+\item{plt.train}{List of length <= 2, with the first element a single value or numeric vector of the number
 of trials to lag in the calculation of cumulative probabilities, and the second element a vector of training
-types to include (defaults to all three: "AB", "CD", and "EF").}
+types to include.}
 
-\item{plt.test}{Character vector containing the individual or grouped types of test trial to plot.}
+\item{plt.test}{List of length <= 2. The first element specifies the types of test pairs to plot; accepted
+inputs include "chooseA", "avoidB", "novel", "training", "all", and/or character vector(s) of specific pairs. The
+second input defines how these options are plotted - either "grouped" or "individual"; note "grouped" plots will
+not work for custom inputs or if "all" is selected as an option.}
 
-\item{plt.affect}{List of length 2 indicating, (1) how many trials to lag (only a single value accepted), and
+\item{plt.affect}{List of length <= 2 indicating (1) how many trials to lag (only a single value accepted), and
 (2) the nouns to plot (can be any of "happy", "confident", "engaged", or "fatigue").}
 
 \item{grp_compare}{Group to compare on which is found from the participant info. Note that if \code{parsed_list}
 is split into 2 (i.e., distanced and non-distanced), comparisons will be automatically made on this split.}
 
-\item{grp_names}{List of labels for plot keys for the different groups. An attempt will be made to label these
+\item{grp_names}{Vector of labels for plot keys for the different groups. An attempt will be made to label these
 automatically; it is recommended to first leave this list empty to make sure the correct labels are applied.}
 
 \item{recode_na}{Some grouping variables are \code{NA} in the participant information due to them being asked
@@ -65,10 +67,10 @@ be run first.}
 \item{font_size}{Base plot font size.}
 }
 \value{
-\code{list} of \code{ggplot} objects
+Either a single or named \code{list} of \code{ggplot} objects
 }
 \description{
 \code{plot_import} plots a single participant's data from \code{pstpipeline::import_single()}, or
-a single participant (if \code{!is.null(id)}) or all participants' data from
+a single participant (if \code{!is.null(id)}), or all participants' data from
 \code{pstpipeline::import_multiple()}.
 }
