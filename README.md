@@ -19,13 +19,14 @@ Key elements of the package:
 
 
 -   **analysis functions**:
-    - ```fit_learning_models``` automates using cmdstanr to run 1-alpha and 2-alpha Q-learning models [[1](#References)] in a hierarchical Bayesian manner, for both the training and test blocks.
+    - ```fit_learning_models``` automates using cmdstanr to run 1-alpha and 2-alpha Q-learning models [[1](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC.
     - ```generate_posterior_quantities``` enables posterior predictions and log-likelihoods for each MCMC sample to be generated in a separate session (as this is otherwise memory-intensive)
 
 
 -   **model checks**:
 
 -   **plotting functions**:
+    - ```plot_import``` is a flexible plotting function to present various aspects of the observed model-free data, including training data, test data, and affect data. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria). Can also be used to compare groups based on any binary covariate.
 
 Please note much of the R and Stan code relies heavily on (and in some cases was adapted directly from) other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[2](#References)]. This package is not meant to supercede or replace this work, nor will it be extensively updated to accomodate other workflows; its primary aim is make it easier for our specific analyses to be replicated by others.
 
