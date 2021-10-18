@@ -23,7 +23,6 @@ Imports:
     data.table,
     rstanarm,
     loo,
-    posterior,
-    FSA
+    posterior
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2

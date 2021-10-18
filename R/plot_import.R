@@ -266,7 +266,7 @@ plot_import <-
             font_family = font
           ) +
           ggplot2::theme(legend.position = legend_pos) +
-          ggplot2::ggtitle(paste0(n_lag, "-trial lagged cumulative probabilities of picking correct stimulus"))
+          ggplot2::ggtitle(paste0(n_lag, "-trial lagged"))
 
         if (!import_single) {
           plt_tr <- plt_tr +
@@ -550,5 +550,6 @@ plot_import <-
     }
 
   if (length(ret) == 1 & length(ret[[1]]) == 1) ret <- ret[[1]][[1]]
+  else if (length(ret) == 1) ret <- ret[[1]]
   return(ret)
 }
