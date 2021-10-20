@@ -13,10 +13,9 @@
 #' relevant output.
 #'
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
+#' @param exp_part Fit to \code{training} or \code{test}?
 #' @param vb Use variational inference to get the approximate posterior? Default is \code{TRUE}
 #' for computational efficiency.
-#' @param stan_dir Directory where the stan files are stored.
-#' @param test Fit the test data model?
 #' @param ppc Generate quantities including mean parameters, log likelihood, and posterior predictions?
 #' Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
 #' quantities function as this is far less memory intensive.
@@ -45,7 +44,7 @@
 #' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC] fit object, plus any other
 #' outputs passed to \code{outputs}.
 #'
-#' @import data.table
+#' @importFrom data.table as.data.table .N
 #' @importFrom magrittr %>%
 #' @export
 #'
@@ -53,17 +52,15 @@
 fit_learning_model <-
   function(df_all,
            model,
+           exp_part,
            vb = TRUE,
-           stan_dir = "stan_files/",
-           test = FALSE,
            ppc = vb,
-           diagnostics = !vb,
            task_excl = TRUE,
            accuracy_excl = FALSE,
            model_checks = TRUE,
            save_model_as = "",
-           out_dir = "cmdstan_output/",
-           outputs = c("raw_data", "summary", "draws_df"),
+           out_dir = "outputs/cmdstan/",
+           outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
            save_outputs = TRUE,
            cores = getOption("mc.cores", 4),
            ...) {
@@ -73,7 +70,7 @@ fit_learning_model <-
   if (ppc & !vb) {
     warning("Loading posterior predictions following MCMC is memory intensive, and may result in crashes")
   }
-  if (diagnostics & vb) warning("Diagnostics are for MCMC only.")
+  if (any(outputs == "diagnostics") & vb) warning("Diagnostics are for MCMC only.")
 
   l <- list(...)
   if (vb) {
@@ -95,7 +92,8 @@ fit_learning_model <-
     if (accuracy_excl) ids <- ids %>% dplyr::filter(final_block_AB >= 0.6)
     if (task_excl) ids <- ids %>% dplyr::filter(exclusion == 0)
     ids <- ids %>% dplyr::select(subjID)
-  } else {
+  }
+  else {
     ids <- unique(df_all[["training"]][["subjID"]])
   }
 
@@ -103,24 +101,22 @@ fit_learning_model <-
     dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
     tidyr::drop_na(choice)
 
-  if (test) {
+  if (exp_part == "test") {
     test_df <- df_all[["test"]] %>%
       dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
       tidyr::drop_na(choice)
 
-    raw_df_train <- data.table::as.data.table(training_df)
-    raw_df_test <- data.table::as.data.table(test_df)
-
-    rm(training_df, test_df)
+    raw_df <- list()
+    raw_df$train <- data.table::as.data.table(training_df)
+    raw_df$test <- data.table::as.data.table(test_df)
   }
   else {
     raw_df <- data.table::as.data.table(training_df)
-    rm(training_df)
   }
 
   ## get info
 
-  if (!test) {
+  if (exp_part == "training") {
     DT_trials <- raw_df[, .N, by = "subjID"]
     subjs     <- DT_trials$subjID
     n_subj    <- length(subjs)
@@ -131,8 +127,8 @@ fit_learning_model <-
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max")
   }
   else {
-    DT_train  <- raw_df_train[, .N, by = "subjID"]
-    DT_test   <- raw_df_test[, .N, by = "subjID"]
+    DT_train  <- raw_df$train[, .N, by = "subjID"]
+    DT_test   <- raw_df$test[, .N, by = "subjID"]
     subjs     <- DT_train$subjID
     n_subj    <- length(subjs)
     t_subjs   <- DT_train$N
@@ -144,26 +140,24 @@ fit_learning_model <-
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max", "t_subjs_t", "t_max_t")
   }
 
+  if (exp_part == "test") {
+    data_cmdstan <- preprocess_func_test(raw_df, general_info)
+  } else {
+    data_cmdstan <- preprocess_func_train(raw_df, general_info)
+  }
+
   cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  if (!test & !ppc) {
-    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q.stan"))
-    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q.stan"))
-    data_cmdstan <- pstpipeline::preprocess_func_train(raw_df, general_info)
-  } else if (test & !ppc) {
-    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_test.stan"))
-    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_test.stan"))
-    data_cmdstan <- pstpipeline::preprocess_func_test(raw_df_train, raw_df_test, general_info)
-  } else if (!test & ppc) {
-    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_ppc.stan"))
-    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_ppc.stan"))
-    data_cmdstan <- pstpipeline::preprocess_func_train(raw_df, general_info)
-  } else {
-    if (model == "1a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir,"pst_Q_test_ppc.stan"))
-    else if (model == "2a") stan_model <- cmdstanr::cmdstan_model(paste0(stan_dir, "pst_gainloss_Q_test_ppc.stan"))
-    data_cmdstan <- pstpipeline::preprocess_func_test(raw_df_train, raw_df_test, general_info)
-  }
+  stan_model <- cmdstanr::cmdstan_model(
+    system.file(
+      paste0(
+        paste("extdata/stan_files/pst", ifelse(model == "2a", "gainloss_Q", "Q"), exp_part, sep = "_"),
+        ifelse(ppc, "_ppc.stan", ".stan")
+      ),
+      package = "pstpipeline"
+    )
+  )
 
   ## fit variational model if relevant
   if (vb) {
@@ -171,6 +165,7 @@ fit_learning_model <-
       data = data_cmdstan,
       seed = l$seed,
       iter = l$iter,
+      refresh = l$refresh,
       output_samples = l$output_samples,
       output_dir = out_dir
     )
@@ -178,7 +173,10 @@ fit_learning_model <-
   else if (is.null(l$init)) {
     message("Getting initial values from variational inference...")
     gen_init_vb <- function(model, data_list, parameters) {
-      fit_vb <- model$variational(data = data_list)
+      fit_vb <- model$variational(
+        data = data_list,
+        refresh = l$refresh
+      )
       m_vb <- colMeans(posterior::as_draws_df(fit_vb$draws()))
 
       function() {
@@ -232,13 +230,27 @@ fit_learning_model <-
     )
   }
 
-  if (save_model_as == "") save_model_as <- fit$metadata()[["model_name"]]
+  if (save_model_as == "") {
+    save_model_as <- paste("pst", exp_part, model, sep = "_")
+  }
   fit$save_object(
     file = paste0(out_dir, save_model_as,
                   ifelse(vb, "_vb", paste0("_mcmc_", l$iter_sampling * l$chains)), ".RDS")
     )
 
   ret <- list()
+  if (model_checks) {
+    if (vb) {
+      ret$mu_par_dens <- pstpipeline::check_learning_models(
+        fit$draws(format = "list"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
+      )
+    } else {
+      ret$model_checks <- list()
+      ret$model_checks <- pstpipeline::check_learning_models(
+        fit$draws(format = "list"), pal = l$pal, font = l$font, font_size = l$font_size
+      )
+    }
+  }
   if (any(outputs == "model_env")) ret$fit <- fit
   if (any(outputs == "summary")) {
     ret$summary <- fit$summary()
@@ -246,16 +258,22 @@ fit_learning_model <-
       saveRDS(ret$summary, file = paste0(out_dir, save_model_as, "_summary", ".RDS"))
     }
   }
-  if (any(outputs == "draws_df")) {
-    ret$draws <- fit$draws(format = "df")
+  if (any(outputs == "draws_list")) {
+    ret$draws <- fit$draws(format = "list") # the least memory intensive format to load
     if (save_outputs) {
-      saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws", ".RDS"))
+      saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws_list", ".RDS"))
     }
   }
-  if (any(outputs == "raw_data")) {
-    ret$raw_data <- data_cmdstan
+  if (any(outputs == "stan_datalist")) {
+    ret$stan_datalist <- data_cmdstan
     if (save_outputs) {
-      saveRDS(ret$data, file = paste0(out_dir, save_model_as, "_raw_data", ".RDS"))
+      saveRDS(ret$stan_datalist, file = paste0(out_dir, save_model_as, "_stan_datalist", ".RDS"))
+    }
+  }
+  if (any(outputs == "raw_df")) {
+    ret$raw_df <- raw_df
+    if (save_outputs) {
+      saveRDS(ret$raw_df, file = paste0(out_dir, save_model_as, "_raw_df", ".RDS"))
     }
   }
   if (any(outputs == "loo_obj") & !vb) {
@@ -264,17 +282,10 @@ fit_learning_model <-
       saveRDS(ret$loo_obj, file = paste0(out_dir, save_model_as, "_loo_obj", ".RDS"))
     }
   }
-
-  if (model_checks) {
-    if (vb) {
-      ret$mu_par_dens <- pstpipeline::check_learning_models(
-        fit$draws(format = "df"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
-      )
-    } else {
-      ret$model_checks <- list()
-      ret$model_checks <- pstpipeline::check_learning_models(
-        fit$draws(format = "df"), pal = l$pal, font = l$font, font_size = l$font_size
-      )
+  if (any(outputs == "diagnostics") & !vb) {
+    ret$diagnostics <- fit$cmdstan_diagnose()
+    if (save_outputs) {
+      saveRDS(ret$diagnostics, file = paste0(out_dir, save_model_as, "_cmdstan_diagnostics", ".RDS"))
     }
   }
 
@@ -287,7 +298,7 @@ fit_learning_model <-
       from = output,
       to = paste0(out_dir, save_model_as,
                   ifelse(vb, paste0("_vb_", l$output_samples, ".csv"),
-                         paste0("_mcmc_", l$iter_sampling * l$chains, "chain_", chain_no, ".csv")
+                         paste0("_mcmc_", l$iter_sampling * l$chains, "_chain_", chain_no, ".csv")
                          )
                   )
       )

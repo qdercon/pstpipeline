@@ -201,7 +201,7 @@ plot_import <-
       else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
           trial_lags <- plt.train[[1]][is.numeric(plt.train[[1]])]
           train_df <- training %>%
-            dplyr::select(-tidyr::contains("cum_prob")) %>%
+            dplyr::select(-tidyselect::contains("cum_prob")) %>%
             tidyr::drop_na(choice) %>%
             dplyr::arrange(trial_no) %>%
             dplyr::group_by(subjID, type)
@@ -230,7 +230,7 @@ plot_import <-
       }
 
       train_df <- train_df %>%
-        dplyr::select(subjID, trial_no_group, type, tidyr::contains("cuml_accuracy"),
+        dplyr::select(subjID, trial_no_group, type, tidyselect::contains("cuml_accuracy"),
                       dplyr::any_of("group")) %>%
         dplyr::group_by(trial_no_group, type)
 

@@ -7,17 +7,15 @@
 fit_learning_model(
   df_all,
   model,
+  exp_part,
   vb = TRUE,
-  stan_dir = "stan_files/",
-  test = FALSE,
   ppc = vb,
-  diagnostics = !vb,
   task_excl = TRUE,
   accuracy_excl = FALSE,
   model_checks = TRUE,
   save_model_as = "",
-  out_dir = "cmdstan_output/",
-  outputs = c("raw_data", "summary", "draws_df"),
+  out_dir = "outputs/cmdstan/",
+  outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
   save_outputs = TRUE,
   cores = getOption("mc.cores", 4),
   ...
@@ -26,19 +24,14 @@ fit_learning_model(
 \arguments{
 \item{model}{Learning model to use, choose from \code{1a} or \code{2a}.}
 
+\item{exp_part}{Fit to \code{training} or \code{test}?}
+
 \item{vb}{Use variational inference to get the approximate posterior? Default is \code{TRUE}
 for computational efficiency.}
-
-\item{stan_dir}{Directory where the stan files are stored.}
-
-\item{test}{Fit the test data model?}
 
 \item{ppc}{Generate quantities including mean parameters, log likelihood, and posterior predictions?
 Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
 quantities function as this is far less memory intensive.}
-
-\item{diagnostics}{Outputs and saves diagnostics from \code{\link[cmdstanr:fit-method-cmdstan_summary]{cmdstanr::cmdstan_diagnose()}}. This will not work on
-saved model objects, nor will it work if \code{vb = TRUE}.}
 
 \item{task_excl}{Apply task-related exclusion criteria (catch questions, digit span = 0)?}
 
@@ -66,6 +59,9 @@ or 4 if this is not set (this option will then apply for the rest of the session
 
 \item{...}{Other arguments passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} and/or \link{check_learning_models}. See the
 \href{https://mc-stan.org/docs/2_28/cmdstan-guide/index.html}{CmdStan user guide} for full details and defaults.}
+
+\item{diagnostics}{Outputs and saves diagnostics from \code{\link[cmdstanr:fit-method-cmdstan_summary]{cmdstanr::cmdstan_diagnose()}}. This will not work on
+saved model objects, nor will it work if \code{vb = TRUE}.}
 }
 \value{
 List containing a \link[cmdstanr:CmdStanVB]{cmdstanr::CmdStanVB} or \link[cmdstanr:CmdStanMCMC]{cmdstanr::CmdStanMCMC} fit object, plus any other

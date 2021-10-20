@@ -7,10 +7,9 @@
 generate_posterior_quantities(
   fit_mcmc,
   data_list,
-  stan_dir = "stan_files/",
-  out_dir = "cmdstan_output/",
+  out_dir = "outputs/cmdstan/",
   save_model_as = "",
-  return = "",
+  return_type = "",
   par_chains = getOption("mc.cores", 4)
 )
 }
@@ -19,17 +18,15 @@ generate_posterior_quantities(
 
 \item{data_list}{Raw data that \code{fit} was fit to; either an R object or full path to an .RDS file.}
 
-\item{stan_dir}{Path to directory where Stan programmes are found.}
-
 \item{out_dir}{Path to output directory.}
 
 \item{save_model_as}{Name to give model; defaults to model name from the fit metadata.}
 
-\item{return}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
-"draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
-
 \item{par_chains}{Maximum number of chains to compute in parallel; defaults to \code{options(mc.cores)} if
 this has been set, or 4 if not.}
+
+\item{return}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
+"draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
 }
 \description{
 \code{generate_posterior_quantities} automates the CmdStanR \code{$generate_quantities} method,

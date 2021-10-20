@@ -15,7 +15,6 @@ import_single(
   issues = FALSE,
   incomplete = FALSE,
   add_sex = FALSE,
-  prolific_export = "data/prolific_export_complete.csv",
   ...
 )
 }
@@ -42,9 +41,9 @@ import_single(
 individuals from Prolific export - workaround to enable it to be more reasonably controlled for
 in models (given very low numbers of non-binary individuals).}
 
-\item{prolific_export}{Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.}
-
 \item{...}{Other arguments (used by \code{\link[=import_multiple]{import_multiple()}}).}
+
+\item{prolific_export}{Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.}
 }
 \value{
 \code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE

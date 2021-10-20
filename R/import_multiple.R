@@ -191,11 +191,11 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
                                function(i) questionnaire_totals_d[[i]] <- parsed_results_d[[i]]$questionnaires)
 
     ret$non_distanced$ppt_info <- dplyr::left_join(
-      tidyr::as_tibble(dplyr::bind_rows(demographics_nd)), dplyr::bind_rows(questionnaires_nd),
+      tibble::as_tibble(dplyr::bind_rows(demographics_nd)), dplyr::bind_rows(questionnaires_nd),
       by = c("subjID", "sessionID", "studyID")
     )
     ret$distanced$ppt_info <- dplyr::left_join(
-      tidyr::as_tibble(dplyr::bind_rows(demographics_d)), dplyr::bind_rows(questionnaires_d),
+      tibble::as_tibble(dplyr::bind_rows(demographics_d)), dplyr::bind_rows(questionnaires_d),
       by = c("subjID", "sessionID", "studyID")
     )
 
@@ -315,8 +315,8 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       issues_d <- lapply(seq_along(parsed_results_d),
                          function(i) issues_d[[i]] <- parsed_results_d[[i]]$issues_comments)
 
-      ret$non_distanced$issues_comments <- tidyr::as_tibble(dplyr::bind_rows(issues_nd))
-      ret$distanced$issues_comments <- tidyr::as_tibble(dplyr::bind_rows(issues_d))
+      ret$non_distanced$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues_nd))
+      ret$distanced$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues_d))
     }
 
     if (indiv) {
@@ -353,7 +353,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
     questionnaires <- lapply(seq_along(parsed_results),
                              function(i) questionnaire_totals[[i]] <- parsed_results[[i]]$questionnaires)
     ret$ppt_info <- dplyr::left_join(
-      tidyr::as_tibble(dplyr::bind_rows(demographics)),
+      tibble::as_tibble(dplyr::bind_rows(demographics)),
       dplyr::bind_rows(questionnaires),
       by = c("subjID", "sessionID", "studyID")
     )
@@ -417,7 +417,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       issues <- list()
       issues <- lapply(seq_along(parsed_results),
                        function(i) issues[[i]] <- parsed_results[[i]]$issues_comments)
-      ret$issues_comments <- tidyr::as_tibble(dplyr::bind_rows(issues))
+      ret$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues))
     }
 
     if (indiv) {

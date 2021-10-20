@@ -24,8 +24,7 @@
 
 import_single <-
   function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = FALSE, qstns_gillan = TRUE,
-           prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,
-           prolific_export = "data/prolific_export_complete.csv",...) {
+           prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,...) {
 
   l <- list(...)
   if (is.null(l$multiple)) l$multiple <- FALSE
@@ -327,8 +326,7 @@ import_single <-
   ppt_info$mean_rt = mean(training$rt, na.rm=T)
 
   if (add_sex & prolific) {
-    id_sex <- read.csv(prolific_export) %>%
-      dplyr::filter(participant_id == subjID) %>%
+    id_sex <- pstpipeline::exprtd_dmgrphcs %>%
       dplyr::select(participant_id, Sex) %>%
       dplyr::rename(subjID = participant_id, sex_prolific = Sex) %>%
       dplyr::right_join(id_gender, by = "subjID") %>%
@@ -360,10 +358,10 @@ import_single <-
 
     for (t in seq_along(test_types)) {
       test <- test_types[t]
-      type[[t]] <- paste0(types[[as.character(min(vals[[stringr::str_sub(test, 1, 1)]],
-                                                vals[[stringr::str_sub(test, 2, 2)]]))]],
-                          types[[as.character(max(vals[[stringr::str_sub(test, 1, 1)]],
-                                                  vals[[stringr::str_sub(test, 2, 2)]]))]])
+      type[[t]] <- paste0(types[[as.character(min(vals[[substr(test, 1, 1)]],
+                                                vals[[substr(test, 2, 2)]]))]],
+                          types[[as.character(max(vals[[substr(test, 1, 1)]],
+                                                  vals[[substr(test, 2, 2)]]))]])
     }
     names(type) <- test_types
     return(type)

@@ -64,7 +64,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
 
       hist_factors[[f]] <- hist_plot
     }
-    ret$hist_factors_all <- ggpubr::ggarrange(plotlist = hist_factors, nrow = 1)
+    ret$hist_factors_all <- cowplot::plot_grid(plotlist = hist_factors, nrow = 1)
   }
   if (any(plot_type == "r2_plot")) {
     df <- as.data.frame(df) %>%
@@ -116,7 +116,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
         ggplot2::ylab("Predicted score") +
         ggplot2::ggtitle(titles[f], subtitle = bquote(R^2~"="~.(r2_col[[f]])))
     }
-    ret$pred_plot <- ggpubr::ggarrange(plotlist = pred_plots, nrow = 1)
+    ret$pred_plot <- cowplot::plot_grid(plotlist = pred_plots, nrow = 1)
   }
   if (any(plot_type == "factor_htmp")) {
     if (!is.list(df)) stop("Need 'qns' and 'coefs' in a named list.")

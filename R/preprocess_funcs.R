@@ -41,6 +41,7 @@ preprocess_func_train <- function(raw_data, general_info) {
   # Returned data_list will directly be passed to Stan
   return(data_list)
 }
+
 preprocess_func_test <- function(raw_data_train, raw_data_test, general_info) {
   # Use general_info of raw_data
   subjs     <- general_info$subjs
