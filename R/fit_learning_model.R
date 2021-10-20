@@ -1,55 +1,78 @@
 #' General function to run Bayesian models using cmdstanr
 #'
-#' \code{fit_learning_model} uses the package \code{cmdstanr}, which is a lightweight R
+#' \code{fit_learning_model} uses the package \pkg{cmdstanr}, which is a lightweight R
 #' interface to CmdStan. Please note that while it checks if the C++ toolchain is correctly
 #' configured, running this function will not install CmdStan itself. This may be as simple as
-#' running \code{cmdstanr::install_cmdstan()}, but may require some extra effort (e.g., pointing
-#' R to the install location via \code{cmdstanr::set_cmd_path()}). This vignette explains
-#' installation in more detail: https://mc-stan.org/cmdstanr/articles/cmdstanr.html.
+#' running [cmdstanr::install_cmdstan()], but may require some extra effort (e.g., pointing
+#' R to the install location via [cmdstanr::set_cmdstan_path()]) - see
+#' [this vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for more detail.
 #'
-#' \code{fit_learning_model} heavily leans on various helper functions from the \code{hBayesDM}
-#' package (https://ccs-lab.github.io/hBayesDM/), and is nowhere near as flexible; instead it is
+#' \code{fit_learning_model} heavily leans on various helper functions from the
+#' [\pkg{hBayesDM}](https://ccs-lab.github.io/hBayesDM/) package, and is not as flexible; instead it is
 #' designed primarily to be less memory-intensive for our specific use-case and provide only
 #' relevant output.
 #'
-#' @param df List output from import_multiple.
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param vb Use variational inference to get the approximate posterior? Default is \code{TRUE}
 #' for computational efficiency.
 #' @param stan_dir Directory where the stan files are stored.
-#' @param test Fit the model to the test data?
+#' @param test Fit the test data model?
 #' @param ppc Generate quantities including mean parameters, log likelihood, and posterior predictions?
 #' Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
 #' quantities function as this is far less memory intensive.
-#' @param diagnostics Outputs and saves diagnostics from \code{$cmdstan_diagnose}. This will not work on
+#' @param diagnostics Outputs and saves diagnostics from [cmdstanr::cmdstan_diagnose()]. This will not work on
 #' saved model objects, nor will it work if \code{vb = TRUE}.
 #' @param task_excl Apply task-related exclusion criteria (catch questions, digit span = 0)?
 #' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB accuracy >= 0.6)?
+#' @param model_checks Runs [pstpipeline::check_learning_models()], returning plots of the group-level posterior
+#' densities for the free parameters, and some visual model checks (traceplots of the chains, and rank histograms).
+#' Note the visual checks will only be returned if \code{!vb}, as they are only relevant for MCMC fits, and require
+#' the \pkg{bayesplot} package.
 #' @param save_model_as Name to give to saved model and used to name the .csv files and outputs. Defaults
 #' to the Stan model name.
 #' @param out_dir Output directory for model fit environment, plus all specified \code{outputs} if
 #' \code{save_outputs = TRUE}.
-#' @param outputs Specific outputs to save separately (in addition to the model environment itself).
-#' @param seed Random seed to pass to CmdStan.
-#' @param cores Number of CPU cores to run in parallel (passed to \code{options(mc.cores = cores)}).
-#' @param ... Other arguments passed to \code{cmdstanr::model$sample}. See the CmdStan user guide for full
-#' details and defaults: \code{https://mc-stan.org/docs/2_28/cmdstan-guide/index.html}.
+#' @param outputs Specific outputs to return (and save, if \code{save_outputs}). In addition to the defaults,
+#' other options are "model_env" (note this is saved automatically, regardless of \code{save_outputs}),
+#' and "loo_obj". The latter includes the theoretical expected log-predictive density (ELPD) for a new dataset,
+#' plus the leave-one-out information criterion (LOOIC), a fully Bayesian metric for model comparison; this
+#' requires the \pkg{loo} package.
+#' @param cores Maximum number of chains to run in parallel. Defaults to \code{options(mc.cores = cores)}
+#' or 4 if this is not set (this option will then apply for the rest of the session).
+#' @param ... Other arguments passed to [cmdstanr::sample()] and/or [pstpipeline::check_learning_models]. See the
+#' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html) for full details and defaults.
 #'
-#' @return
+#' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC] fit object, plus any other
+#' outputs passed to \code{outputs}.
 #'
+#' @import data.table
 #' @importFrom magrittr %>%
 #' @export
 #'
 
-fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/", test = FALSE, ppc = vb,
-                               diagnostics = !vb, task_excl = TRUE, accuracy_excl = FALSE, save_model_as = "",
-                               out_dir = "cmdstan_output/", outputs = c("summary", "draws_df"), save_outputs = TRUE,
-                               seed = 123, cores = 4,...) {
+fit_learning_model <-
+  function(df_all,
+           model,
+           vb = TRUE,
+           stan_dir = "stan_files/",
+           test = FALSE,
+           ppc = vb,
+           diagnostics = !vb,
+           task_excl = TRUE,
+           accuracy_excl = FALSE,
+           model_checks = TRUE,
+           save_model_as = "",
+           out_dir = "cmdstan_output/",
+           outputs = c("raw_data", "summary", "draws_df"),
+           save_outputs = TRUE,
+           cores = getOption("mc.cores", 4),
+           ...) {
 
-  options(mc.cores = cores)
-  .datatable.aware = TRUE
+  if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
-  if (ppc & !vb) warning("Loading posterior predictions from MCMC is memory intensive, and may result in crashes.")
+  if (ppc & !vb) {
+    warning("Loading posterior predictions following MCMC is memory intensive, and may result in crashes")
+  }
   if (diagnostics & vb) warning("Diagnostics are for MCMC only.")
 
   l <- list(...)
@@ -57,15 +80,13 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
   }
-  else {
-    if (is.null(l$init)) l$init <- NULL
-    if (is.null(l$refresh)) l$refresh <- NULL # default = 100
+  else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4 # default (explicitly defined here for file naming)
-    if (is.null(l$iter_warmup)) l$iter_warmup <- NULL # default
     if (is.null(l$iter_sampling)) l$iter_sampling <- 1000 # default (explicitly defined here for file naming)
-    if (is.null(l$adapt_delta)) l$adapt_delta <- NULL # default = 0.8
-    if (is.null(l$step_size)) l$step_size <- NULL # default = 1
-    if (is.null(l$max_treedepth)) l$max_treedepth <- NULL # default = 10
+    if (model_checks) {
+      if (is.null(l$font)) l$font <- ""
+      if (is.null(l$font_size)) l$font_size <- 11
+    }
   }
 
   if (task_excl | accuracy_excl) {
@@ -148,7 +169,7 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
   if (vb) {
     fit <- stan_model$variational(
       data = data_cmdstan,
-      seed = seed,
+      seed = l$seed,
       iter = l$iter,
       output_samples = l$output_samples,
       output_dir = out_dir
@@ -158,7 +179,7 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
     message("Getting initial values from variational inference...")
     gen_init_vb <- function(model, data_list, parameters) {
       fit_vb <- model$variational(data = data_list)
-      m_vb <- colMeans(as_draws_df(fit_vb$draws()))
+      m_vb <- colMeans(posterior::as_draws_df(fit_vb$draws()))
 
       function() {
         ret <- list(
@@ -200,13 +221,13 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
       data = data_cmdstan,
       seed = l$seed,
       init = ifelse(is.null(l$init), inits, l$init),
-      refresh = l$refresh,
-      chains = l$chains,
-      iter_warmup = l$iter_warmup,
-      iter_sampling = l$iter_sampling,
-      adapt_delta = l$adapt_delta,
-      step_size = l$step_size,
-      max_treedepth = l$max_treedepth,
+      refresh = l$refresh, # default = 100
+      chains = l$chains, # default = 4
+      iter_warmup = l$iter_warmup, # default = 1000
+      iter_sampling = l$iter_sampling, # default = 1000
+      adapt_delta = l$adapt_delta, # default = 0.8
+      step_size = l$step_size, # default = 1
+      max_treedepth = l$max_treedepth, # default = 10
       output_dir = out_dir
     )
   }
@@ -226,15 +247,39 @@ fit_learning_model <- function(df_all, model, vb = TRUE, stan_dir = "stan_files/
     }
   }
   if (any(outputs == "draws_df")) {
-    ret$draws <- posterior::as_draws_df(fit$draws())
+    ret$draws <- fit$draws(format = "df")
     if (save_outputs) {
       saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws", ".RDS"))
+    }
+  }
+  if (any(outputs == "raw_data")) {
+    ret$raw_data <- data_cmdstan
+    if (save_outputs) {
+      saveRDS(ret$data, file = paste0(out_dir, save_model_as, "_raw_data", ".RDS"))
+    }
+  }
+  if (any(outputs == "loo_obj") & !vb) {
+    ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+    if (save_outputs) {
+      saveRDS(ret$loo_obj, file = paste0(out_dir, save_model_as, "_loo_obj", ".RDS"))
+    }
+  }
+
+  if (model_checks) {
+    if (vb) {
+      ret$mu_par_dens <- pstpipeline::check_learning_models(
+        fit$draws(format = "df"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
+      )
+    } else {
+      ret$model_checks <- list()
+      ret$model_checks <- pstpipeline::check_learning_models(
+        fit$draws(format = "df"), pal = l$pal, font = l$font, font_size = l$font_size
+      )
     }
   }
 
   ## rename csv output files for improved clarity
   outnames <- fit$output_files()
-  model <- ifelse(save_model_as != "", save_model_as)
 
   for (output in outnames) {
     chain_no <- strsplit(output, "-")[[1]][3]

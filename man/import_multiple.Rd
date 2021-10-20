@@ -14,7 +14,7 @@ import_multiple(
 )
 }
 \arguments{
-\item{jatos_txt_file}{JATOS .txt file path}
+\item{jatos_txt_file}{JATOS .txt file path.}
 
 \item{separate}{Returns separate lists for non-distanced and distanced groups?}
 
@@ -25,7 +25,7 @@ and plotted for one individual at a time.}
 
 \item{ret_incomplete}{Return incomplete datasets? They may require manual parsing.}
 
-\item{...}{Other arguments passed to \code{?pstpipeline::import_single}.}
+\item{...}{Other arguments passed to \code{\link[=import_single]{import_single()}}.}
 }
 \value{
 \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE

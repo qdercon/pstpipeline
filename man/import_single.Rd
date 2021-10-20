@@ -44,7 +44,7 @@ in models (given very low numbers of non-binary individuals).}
 
 \item{prolific_export}{Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.}
 
-\item{...}{Other arguments (used by \code{pstpipeline::import_multiple}).}
+\item{...}{Other arguments (used by \code{\link[=import_multiple]{import_multiple()}}).}
 }
 \value{
 \code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE

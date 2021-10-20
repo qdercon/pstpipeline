@@ -4,7 +4,7 @@
 #'
 #' @param jatos_txt_file JATOS text file path
 #' @param accuracy Include final block AB accuracy < 0.6 as part of exclusion criteria?
-#' @param task_excl Use digit span of 0 or > 95\% preference for one button as exclusion criteria?
+#' @param task_excl Use digit span of 0 or > 95% preference for one button as exclusion criteria?
 #' @param hbayesDM Return additional df with training data formatted for hBayesDM?
 #' @param qstns_gillan Return formatted subset of questionnaire questions?
 #' @param prolific Use prolific IDs as subjID?
@@ -15,7 +15,7 @@
 #' individuals from Prolific export - workaround to enable it to be more reasonably controlled for
 #' in models (given very low numbers of non-binary individuals).
 #' @param prolific_export Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.
-#' @param ... Other arguments (used by \code{pstpipeline::import_multiple}).
+#' @param ... Other arguments (used by [pstpipeline::import_multiple()]).
 #'
 #' @return \code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE
 #'

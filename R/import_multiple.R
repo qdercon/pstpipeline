@@ -3,13 +3,13 @@
 #' \code{import_multiple()} parses a JATOS .txt file containing multiple participant's results
 #' to a (list of) R object(s)
 #'
-#' @param jatos_txt_file JATOS .txt file path
+#' @param jatos_txt_file JATOS .txt file path.
 #' @param separate Returns separate lists for non-distanced and distanced groups?
 #' @param exclusion Exclude those meeting exclusion criteria from questionnaire / hBayesDM outputs?
 #' @param indiv Return individual-level data? This can then be passed to the plot_single function
 #' and plotted for one individual at a time.
 #' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
-#' @param ... Other arguments passed to \code{?pstpipeline::import_single}.
+#' @param ... Other arguments passed to [pstpipeline::import_single()].
 #'
 #' @return \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
 #'

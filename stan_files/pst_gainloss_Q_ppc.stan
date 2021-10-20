@@ -1,4 +1,4 @@
-// Gain-loss Q-learning model for PST training data (posterior predictive checks)
+// Gain-loss Q-learning model for PST training data (incl. posterior predictive checks)
 data {
   int<lower=1> N;             // Number of subjects
   int<lower=1> T;             // Maximum # of trials

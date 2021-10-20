@@ -78,3 +78,47 @@ model {
     }
   }
 }
+
+generated quantities {
+  // For group-level parameters
+  real<lower=0,upper=1>  mu_alpha;
+  real<lower=0,upper=10> mu_beta;
+
+  // For log-likelihood calculation
+  real log_lik[N];
+
+  mu_alpha = Phi_approx(mu_pr[1]);
+  mu_beta  = Phi_approx(mu_pr[2]) * 10;
+
+  {
+    for (i in 1:N) {
+      int co;         // Chosen option
+      real delta;     // Difference between two options
+      real delta_t;   // Difference between two options
+      real pe;        // Prediction error
+      vector[6] ev;   // Expected values
+
+      ev = initial_values;
+      log_lik[i] = 0;
+
+      // Acquisition Phase
+      for (t in 1:Tsubj[i]) {
+        co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+
+        // Luce choice rule
+        delta = ev[option1[i, t]] - ev[option2[i, t]];
+        log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
+
+        pe = reward[i, t] - ev[co];
+        ev[co] += alpha[i] * pe;
+      }
+
+      // Test phase
+      for (u in 1:Tsubj_t[i]) {
+        delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
+        // increment log-likelihood
+        log_lik[i] += bernoulli_logit_lpmf(choice_t[i, u] | beta[i] * delta_t);
+      }
+    }
+  }
+}

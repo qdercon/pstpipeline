@@ -22,7 +22,10 @@ Imports:
     cmdstanr,
     data.table,
     rstanarm,
-    loo,
     posterior
+Suggests:
+    bayesplot,
+    loo
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2
+Roxygen: list(markdown = TRUE) 
