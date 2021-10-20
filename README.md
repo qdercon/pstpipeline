@@ -1,6 +1,6 @@
 # pstpipeline
 
-**p**robabalistic **s**election **t**ask **pipeline**
+**p**robabilistic **s**election **t**ask **pipeline**
 
 #### an R package to clean, analyse, and present data from a large online learning study.
 
