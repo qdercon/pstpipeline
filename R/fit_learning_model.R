@@ -45,7 +45,7 @@
 #' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC] fit object, plus any other
 #' outputs passed to \code{outputs}.
 #'
-#' @import data.table
+#' @importFrom data.table as.data.table .N
 #' @importFrom magrittr %>%
 #' @export
 #'
@@ -63,7 +63,7 @@ fit_learning_model <-
            model_checks = TRUE,
            save_model_as = "",
            out_dir = "cmdstan_output/",
-           outputs = c("raw_data", "summary", "draws_df"),
+           outputs = c("raw_data", "summary", "draws_list"),
            save_outputs = TRUE,
            cores = getOption("mc.cores", 4),
            ...) {
@@ -171,6 +171,7 @@ fit_learning_model <-
       data = data_cmdstan,
       seed = l$seed,
       iter = l$iter,
+      refresh = l$refresh,
       output_samples = l$output_samples,
       output_dir = out_dir
     )
@@ -178,7 +179,10 @@ fit_learning_model <-
   else if (is.null(l$init)) {
     message("Getting initial values from variational inference...")
     gen_init_vb <- function(model, data_list, parameters) {
-      fit_vb <- model$variational(data = data_list)
+      fit_vb <- model$variational(
+        data = data_list,
+        refresh = l$refresh
+      )
       m_vb <- colMeans(posterior::as_draws_df(fit_vb$draws()))
 
       function() {
@@ -246,10 +250,10 @@ fit_learning_model <-
       saveRDS(ret$summary, file = paste0(out_dir, save_model_as, "_summary", ".RDS"))
     }
   }
-  if (any(outputs == "draws_df")) {
-    ret$draws <- fit$draws(format = "df")
+  if (any(outputs == "draws_list")) {
+    ret$draws <- fit$draws(format = "list") # the least memory intensive format to load
     if (save_outputs) {
-      saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws", ".RDS"))
+      saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws_list", ".RDS"))
     }
   }
   if (any(outputs == "raw_data")) {
@@ -268,12 +272,12 @@ fit_learning_model <-
   if (model_checks) {
     if (vb) {
       ret$mu_par_dens <- pstpipeline::check_learning_models(
-        fit$draws(format = "df"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
+        fit$draws(format = "list"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
       )
     } else {
       ret$model_checks <- list()
       ret$model_checks <- pstpipeline::check_learning_models(
-        fit$draws(format = "df"), pal = l$pal, font = l$font, font_size = l$font_size
+        fit$draws(format = "list"), pal = l$pal, font = l$font, font_size = l$font_size
       )
     }
   }
@@ -287,7 +291,7 @@ fit_learning_model <-
       from = output,
       to = paste0(out_dir, save_model_as,
                   ifelse(vb, paste0("_vb_", l$output_samples, ".csv"),
-                         paste0("_mcmc_", l$iter_sampling * l$chains, "chain_", chain_no, ".csv")
+                         paste0("_mcmc_", l$iter_sampling * l$chains, "_chain_", chain_no, ".csv")
                          )
                   )
       )

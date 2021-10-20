@@ -5,7 +5,7 @@
 \title{Diagnostic plots and fit metrics for training and test data models}
 \usage{
 check_learning_models(
-  gq,
+  draws,
   mean_pars = TRUE,
   diagnostic_plots = TRUE,
   pal = NULL,
@@ -14,13 +14,15 @@ check_learning_models(
 )
 }
 \arguments{
-\item{gq}{Generated quantities - either a \code{\link[posterior:draws_df]{posterior::draws_df()}} (variational fits) or a vector of
-paths to .csv files (either variational or MCMC fits).}
+\item{draws}{Post-warmup draws - either a \code{\link[posterior:draws_array]{posterior::draws_array()}}, a \code{\link[posterior:draws_list]{posterior::draws_list()}}, or a vector
+of file paths to the .csv output files. May also be a \code{\link[posterior:draws_df]{posterior::draws_df()}} but chain-by-chain diagnostics
+will not be possible.}
 
 \item{mean_pars}{Output a plot of the mean parameters?}
 
 \item{diagnostic_plots}{Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.}
 }
 \description{
-Diagnostic plots and fit metrics for training and test data models
+This function is called automatically by \code{\link[=fit_learning_models]{fit_learning_models()}} when \code{model_checks = TRUE},
+but can also be run separately if desired.
 }

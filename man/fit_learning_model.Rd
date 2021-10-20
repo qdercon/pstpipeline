@@ -17,7 +17,7 @@ fit_learning_model(
   model_checks = TRUE,
   save_model_as = "",
   out_dir = "cmdstan_output/",
-  outputs = c("raw_data", "summary", "draws_df"),
+  outputs = c("raw_data", "summary", "draws_list"),
   save_outputs = TRUE,
   cores = getOption("mc.cores", 4),
   ...
