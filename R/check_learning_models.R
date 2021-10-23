@@ -26,7 +26,7 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
         mu_pars <- draws %>%
           dplyr::select(tidyselect::starts_with("mu_")) %>%
           dplyr::select(-tidyselect::contains("pr"))
-      )
+        )
       mu_pars_df <- mu_pars
       draws_df <- TRUE
       warning("Data given as 'draws_df', so chain-by-chain diagnostics will not be possible.")
@@ -56,8 +56,13 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
     if (!draws_df) {
       mu_pars_df <- suppressWarnings(
         posterior::as_draws_df(mu_pars) %>%
+<<<<<<< HEAD
         dplyr::select(tidyselect::starts_with("mu_")) %>%
         dplyr::select(-tidyselect::contains("pr"))
+=======
+        dplyr::select(tidyr::starts_with("mu_")) %>%
+        dplyr::select(-tidyr::contains("pr"))
+>>>>>>> 2ca5bb66f452dc90e65a4f3bf8cfffe5a9f9da53
       )
     }
     pars <- names(mu_pars_df)
