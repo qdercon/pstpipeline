@@ -10,10 +10,7 @@ export(plot_import)
 export(take_subsample)
 importFrom(data.table,.N)
 importFrom(data.table,as.data.table)
-<<<<<<< HEAD
 importFrom(data.table,rbindlist)
-=======
->>>>>>> 2ca5bb66f452dc90e65a4f3bf8cfffe5a9f9da53
 importFrom(magrittr,"%>%")
 importFrom(rlang,"!!")
 importFrom(rlang,":=")
