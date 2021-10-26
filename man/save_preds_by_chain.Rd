@@ -27,7 +27,7 @@ as it ensures individuals are matched with the correct predictions.)}
 \item{n_draws_chain}{Number of MCMC sampling iterations per chain.}
 
 \item{save_outputs}{Save lists of posterior predictions (per chain) and the updated training data
-\code{tibble}?}
+\code{tibble} to the disk?}
 
 \item{save_dir}{Directory to save items to, will be created if it does not exist. Defaults to the
 directory of the output files.}
@@ -35,12 +35,10 @@ directory of the output files.}
 \item{prefix}{Optional prefix to add to the saved objects.}
 
 \item{...}{Other arguments which are unlikely to be necessary to change: \code{n_trials} (default = 360);
-\code{vars} (default = "y_pred"), and
-\code{pred_types} (default = \code{c("AB", "CD", "EF")}).}
+\code{vars} (default = "y_pred"), and \code{pred_types} (default = \code{c("AB", "CD", "EF")}).}
 }
 \value{
-An updated \code{tibble} with summed choices per chain and their overall proportion. This is also
-saved to disk, plus a named list of posterior predictions for each individual (separately saved by chain).
+An updated \code{tibble} with summed choices per chain and their overall proportion.
 }
 \description{
 \code{save_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions

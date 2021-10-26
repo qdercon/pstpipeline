@@ -11,16 +11,14 @@
 #' as it ensures individuals are matched with the correct predictions.)
 #' @param n_draws_chain Number of MCMC sampling iterations per chain.
 #' @param save_outputs Save lists of posterior predictions (per chain) and the updated training data
-#' \code{tibble}?
+#' \code{tibble} to the disk?
 #' @param save_dir Directory to save items to, will be created if it does not exist. Defaults to the
 #' directory of the output files.
 #' @param prefix Optional prefix to add to the saved objects.
 #' @param ... Other arguments which are unlikely to be necessary to change: \code{n_trials} (default = 360);
-#' \code{vars} (default = "y_pred"), and
-#' \code{pred_types} (default = \code{c("AB", "CD", "EF")}).
+#' \code{vars} (default = "y_pred"), and \code{pred_types} (default = \code{c("AB", "CD", "EF")}).
 #'
-#' @return An updated \code{tibble} with summed choices per chain and their overall proportion. This is also
-#' saved to disk, plus a named list of posterior predictions for each individual (separately saved by chain).
+#' @return An updated \code{tibble} with summed choices per chain and their overall proportion.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang := !!
@@ -43,12 +41,11 @@ save_preds_by_chain <-
   if (!dir.exists(save_dir)) dir.create(save_dir)
 
   n_indiv <- length(unique(obs_df$subjID))
-  if (is.null())
 
   l <- list(...)
-  if (is.null(l$n_trials)) n_trials <- 360
-  if (is.null(l$vars)) vars <- "y_pred"
-  if (is.null(l$pred_types)) pred_types <-  pred_types = c("AB", "CD", "EF")
+  if (is.null(l$n_trials)) l$n_trials <- 360
+  if (is.null(l$vars)) l$vars <- "y_pred"
+  if (is.null(l$pred_types)) l$pred_types <- c("AB", "CD", "EF")
 
   paths <- out_files
   if (out_dir != "") {
@@ -59,7 +56,7 @@ save_preds_by_chain <-
 
   var_order <- as.vector(
     sapply(1:n_indiv, function(i)
-    sapply(1:n_trials, function(j) paste0("y_pred[", i, ",", j, "]"))
+    sapply(1:l$n_trials, function(j) paste0("y_pred[", i, ",", j, "]"))
     )
   )
 
@@ -68,27 +65,26 @@ save_preds_by_chain <-
 
   for (o in seq_along(paths)) {
     indiv_obs <- list()
-
-    indiv_draws <- cmdstanr::read_cmdstan_csv(paths[o], variables = vars, format = "draws_list")[[2]][[1]] %>%
+    indiv_draws <- cmdstanr::read_cmdstan_csv(paths[o], variables = l$vars, format = "draws_list")[[2]][[1]] %>%
       dplyr::select(tidyselect::all_of(var_order)) %>%
-      split.default(rep(1:n_indiv, each = n_trials))
+      split.default(rep(1:n_indiv, each = l$n_trials))
     indiv_draws <- lapply(names(indiv_draws), FUN = function(d) indiv_draws[[d]][, colSums(indiv_draws[[d]]) >= 0])
       # as columns missing PPCs are set to -1
 
     for (i in seq_along(indiv_draws)) {
       pred_indiv <- indiv_draws[[i]]
-      missing <- which(!seq(1:n_trials) %in% obs_df[obs_df$subjID == indiv[i],]$trial_no)
+      missing <- which(!seq(1:l$n_trials) %in% obs_df[obs_df$subjID == indiv[i],]$trial_no)
       for (m in missing) {
         pred_indiv <- pred_indiv %>%
-          tibble::add_column(NA, .after = m-1)
+          tibble::add_column(NA, .after = m-1) # adds columns of NAs in the correct place where a trial was missed
       }
-      colnames(pred_indiv) <- sapply(1:n_trials, function(n) paste0("y_pred_", n))
+      colnames(pred_indiv) <- sapply(1:l$n_trials, function(n) paste0("y_pred_", n))
 
       indiv_obs_types <- list()
 
       nwnme = rlang::sym(paste0("choice_pred_sum_ch_", o))
 
-      if (any(pred_types == "AB")) {
+      if (any(l$pred_types == "AB")) {
         ## add observed/predicted choices at correct indexes
         ab_pred_nms <- paste0("y_pred_", obs_df[obs_df$subjID == indiv[i] & obs_df$type == 12,]$trial_no)
         ab_preds <- pred_indiv %>%
@@ -107,7 +103,7 @@ save_preds_by_chain <-
         indiv_obs_types$ab <- ab_obs
       }
 
-      if (any(pred_types == "CD")) {
+      if (any(l$pred_types == "CD")) {
         ## add observed/predicted choices at correct indexes
         cd_pred_nms <- paste0("y_pred_", obs_df[obs_df$subjID == indiv[i] & obs_df$type == 34,]$trial_no)
         cd_preds <- pred_indiv %>%
@@ -125,7 +121,7 @@ save_preds_by_chain <-
 
         indiv_obs_types$cd <- cd_obs
       }
-      if (any(pred_types == "EF")) {
+      if (any(l$pred_types == "EF")) {
         ef_pred_nms <- paste0("y_pred_", obs_df[obs_df$subjID == indiv[i] & obs_df$type == 56,]$trial_no)
         ef_preds <- pred_indiv %>%
           dplyr::select(tidyselect::all_of(ef_pred_nms))

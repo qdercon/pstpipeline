@@ -16,10 +16,9 @@ Imports:
     data.table,
     runner,
     cowplot,
-    cmdstanr,
-    posterior,
-    abind
+    posterior
 Suggests:
+    cmdstanr,
     jsonlite,
     bayesplot,
     loo
