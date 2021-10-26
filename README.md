@@ -4,7 +4,7 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
-The idea of this package is not realistically to add anything new - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, much of the R and Stan code relies heavily on (and in some cases was adapted directly from) other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)]. This package is not meant to supercede or replace this work, nor will it be extensively updated to accomodate other workflows;
+The idea of this package is not to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, much of the R and Stan code relies heavily on (and in some cases was adapted directly from) other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)]. This package is not meant to supercede or replace this work, nor will it be extensively updated to accomodate other workflows.
 
 The aims of the package (and its associated interactive code) are two-fold:
 
