@@ -8,7 +8,7 @@ The idea of this package is not to be a brand new toolkit - better, more flexibl
 
 The aims of the package (and its associated interactive code) are two-fold:
 
-1.  To make it easier for our specific analyses to be replicated by others;
+1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are both not overwhelmingly difficult to adopt, and can elicit valuable mechanistic insights.
 
 #### 1. quickstart
