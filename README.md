@@ -7,9 +7,9 @@
 
 #### quickstart
 
-the easiest way to interactively play around with the dataset and replicate the results is to open the Jupyter notebooks in Google Colabatory (by clicking on the below link). Many of the package dependencies (R and Python) are in Google Colab already; additional package requirements can be installed manually. I would recommend sticking to variational inference if you are interested in running model fitting, for speed - it will elicit very similar results.
-
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
+
+the easiest way to interactively play around with the dataset and replicate the results is to open the Jupyter notebooks in Google Colabatory (by clicking on the button above). Many of the package dependencies (R and Python) are in Google Colab already; additional package requirements can be installed manually. I would recommend sticking to variational inference if you are interested in running model fitting, for speed - it will elicit very similar results.
 
 #### running locally
 
