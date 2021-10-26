@@ -40,7 +40,7 @@ Key elements of the package:
 
 - **analysis functions**:
     - ```fit_learning_models``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC
-    - ```generate_posterior_quantities``` enables posterior predictions and log-likelihoods for each MCMC sample to be generated in a separate session (as this is otherwise memory-intensive)
+    - ```generate_posterior_quantities``` enables posterior predictions and log-likelihoods for each MCMC sample to be generated in a separate session using a previously fitted model (as this is otherwise memory-intensive)
 
 
 - **model checks**:
@@ -48,13 +48,13 @@ Key elements of the package:
 
 
 - **plotting functions**:
-    - ```plot_factors``` is produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from questionnaire questions
-    - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria). Can also be used to compare groups based on any binary covariate    
+    - ```plot_factors``` is produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from a subset of questionnaire questions
+    - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria), and can also be used to compare groups based on any binary covariate    
     - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants - can be plotted at an individual or group level
 
 
 - **other helper functions**
-    - ```get_subsample``` function to obtain a smaller subsample of individuals
+    - ```get_subsample``` is a function to obtain a smaller subsample of individuals
     - ```save_preds_by_chain``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, for plotting, by importing and summing the binary choice predictions chain-by-chain
 
 
