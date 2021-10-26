@@ -58,7 +58,7 @@ Key elements of the package:
     - ```load_PPCs``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, by calculating means and SEs chain-by-chain. This is useful as, depending on how many MCMC samples selected, loading all predictions for all individuals at once can cause crashes
 
 
-#### 4. references
+#### References
 
 1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
