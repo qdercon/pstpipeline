@@ -1,6 +1,6 @@
 # pstpipeline
 
-**p**robabilistic **s**election **t**ask **pipeline**
+## **p**robabilistic **s**election **t**ask **pipeline**
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
@@ -9,7 +9,7 @@ The idea of this package is not to be a brand new toolkit - better, more flexibl
 The aims of the package (and the interactive notebooks) are two-fold:
 
 1.  To make it easier for our specific analyses to be replicated by others.
-2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are both not overwhelmingly difficult to adopt, and can elicit valuable mechanistic insights.
+2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 
 #### 1. quickstart
 
@@ -50,7 +50,7 @@ Key elements of the package:
 - **plotting functions**:
     - ```plot_factors``` is produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from questionnaire questions
     - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria). Can also be used to compare groups based on any binary covariate    
-    - ```plot_PPCs``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants - can be plotted at an individual or group level
+    - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants - can be plotted at an individual or group level
 
 
 - **other helper functions**
@@ -59,7 +59,7 @@ Key elements of the package:
 
 
 
-#### References
+### References
 
 1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
