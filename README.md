@@ -16,7 +16,7 @@ The aims of the package (and its associated interactive code) are two-fold:
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
 
 The easiest way to interactively play around with the dataset and replicate the results is to open the Jupyter notebooks in Google Colabatory (i.e., click the button above). The majority of the code can be run completely on the cloud with no downloads necessary. 
-Many of the package dependencies (R and Python) are in Google Colab already; additional package requirements can be installed manually as explained in the notebooks. For speed, I would recommend sticking to variational inference if you are interested in (re)fitting models - it will elicit very similar results to MCMC and is orders of magnitude quicker. It also requires fewer R packages to be installed.
+The ```pstpipeline``` package and dependencies not already in Google Colab (most are) can be installed manually as explained in the notebooks. For speed, I would recommend sticking to variational inference if you are interested in (re)fitting models - it will elicit very similar results to MCMC and is orders of magnitude quicker. It also requires fewer R packages to be installed.
 
 #### 2. running locally
 
