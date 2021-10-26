@@ -55,7 +55,8 @@ Key elements of the package:
 
 - **other helper functions**
     - ```get_subsample``` function to obtain a smaller subsample of individuals
-    - ```load_PPCs``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, by calculating means and SEs chain-by-chain. This is useful as, depending on how many MCMC samples selected, loading all predictions for all individuals at once can cause crashes
+    - ```save_preds_by_chain``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, for plotting, by importing and summing the binary choice predictions chain-by-chain
+
 
 
 #### References
