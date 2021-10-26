@@ -4,6 +4,12 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
+The idea of this package is not realistically to add anything new - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, much of the R and Stan code relies heavily on (and in some cases was adapted directly from) other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)]. This package is not meant to supercede or replace this work, nor will it be extensively updated to accomodate other workflows;
+
+The aims of the package (and its associated interactive code) are two-fold:
+
+1.  To make it easier for our specific analyses to be replicated by others
+2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are both not overwhelmingly difficult to adopt, and can elicit valuable mechanistic insights.
 
 #### 1. quickstart
 
@@ -33,7 +39,7 @@ Key elements of the package:
 
 
 - **analysis functions**:
-    - ```fit_learning_models``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[1](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC
+    - ```fit_learning_models``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC
     - ```generate_posterior_quantities``` enables posterior predictions and log-likelihoods for each MCMC sample to be generated in a separate session (as this is otherwise memory-intensive)
 
 
@@ -52,11 +58,8 @@ Key elements of the package:
     - ```load_PPCs``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, by calculating means and SEs chain-by-chain. This is useful as, depending on how many MCMC samples selected, loading all predictions for all individuals at once can cause crashes
 
 
-Please note much of the R and Stan code relies heavily on (and in some cases was adapted directly from) other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[2](#References)]. This package is not meant to supercede or replace this work, nor will it be extensively updated to accomodate other workflows; its primary aim is make it easier for our specific analyses to be replicated by others.
-
-
 #### 4. references
 
-1.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
+1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
-2.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
+2.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
