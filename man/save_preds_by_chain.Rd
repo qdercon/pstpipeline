@@ -43,6 +43,7 @@ An updated \code{tibble} with summed choices per chain and their overall proport
 saved to disk, plus a named list of posterior predictions for each individual (separately saved by chain).
 }
 \description{
-\code{save_preds_by_chain} is a helper function which aims to automate the loading of
-posterior predictions without crashing R due to memory overload.
+\code{save_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions
+without crashing R due to memory overload. This is done simply by importing chain-by-chain predictions, and
+summing over all chains/draws the predicted binary choices for each individual and trial.
 }

@@ -1,7 +1,8 @@
 #' Get and save posterior predictions for training data
 #'
-#' \code{save_preds_by_chain} is a helper function which aims to automate the loading of
-#' posterior predictions without crashing R due to memory overload.
+#' \code{save_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions
+#' without crashing R due to memory overload. This is done simply by importing chain-by-chain predictions, and
+#' summing over all chains/draws the predicted binary choices for each individual and trial.
 #'
 #' @param out_files Vector of .csv file names which contain posterior predictions (e.g., outputted from
 #' [pstpipeline::generate_posterior_quantities()]).
@@ -45,9 +46,9 @@ save_preds_by_chain <-
   if (is.null())
 
   l <- list(...)
-  if (is.null(n_trials)) n_trials <- 360
-  if (is.null(vars)) vars <- "y_pred"
-  if (is.null(pred_types)) pred_types <-  pred_types = c("AB", "CD", "EF")
+  if (is.null(l$n_trials)) n_trials <- 360
+  if (is.null(l$vars)) vars <- "y_pred"
+  if (is.null(l$pred_types)) pred_types <-  pred_types = c("AB", "CD", "EF")
 
   paths <- out_files
   if (out_dir != "") {
