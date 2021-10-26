@@ -2,18 +2,26 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
+#### an R package to clean, analyse, and present data from a large online learning study.
+
+
 #### quickstart
+
+the easiest way to interactively play around with the dataset and replicate the results is to open the Jupyter notebooks in Google Colabatory (by clicking on the below link). Many of the package dependencies (R and Python) are in Google Colab already; additional package requirements can be installed manually. I would recommend sticking to variational inference if you are interested in running model fitting, for speed - it will elicit very similar results.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
 
-#### an R package to clean, analyse, and present data from a large online learning study.
+#### running locally
 
 To install the R package and all dependencies:
 
 ```R
 if (!require(remotes)) install.packages("remotes")
-remotes::install_github("qdercon/pstpipeline")
-```
+remotes::install_github("qdercon/pstpipeline")```
+
+To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the ryp2 library, and so it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
+
+#### package components and use-cases
 
 Key elements of the package:
 
