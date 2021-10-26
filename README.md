@@ -2,6 +2,10 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
+#### quickstart
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/]
+
 #### an R package to clean, analyse, and present data from a large online learning study.
 
 To install the R package and all dependencies:
