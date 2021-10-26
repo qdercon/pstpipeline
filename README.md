@@ -17,7 +17,8 @@ To install the R package and all dependencies:
 
 ```R
 if (!require(remotes)) install.packages("remotes")
-remotes::install_github("qdercon/pstpipeline")```
+remotes::install_github("qdercon/pstpipeline")
+```
 
 To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the ryp2 library, and so it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
 
