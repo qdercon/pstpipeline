@@ -18,7 +18,7 @@ generate_posterior_quantities(
 
 \item{data_list}{Raw data that \code{fit} was fit to; either an R object or full path to an .RDS file.}
 
-\item{out_dir}{Path to output directory.}
+\item{out_dir}{Path to output directory (relative to working directory).}
 
 \item{save_model_as}{Name to give model; defaults to model name from the fit metadata.}
 
@@ -27,6 +27,9 @@ this has been set, or 4 if not.}
 
 \item{return}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
 "draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
+}
+\value{
+Either file paths or a \link[posterior:draws_list]{posterior::draws_list}.
 }
 \description{
 \code{generate_posterior_quantities} automates the CmdStanR \code{$generate_quantities} method,

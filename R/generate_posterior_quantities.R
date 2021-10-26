@@ -6,12 +6,16 @@
 #'
 #' @param fit_mcmc CmdStanR model environment or a full path to a saved CmdStanR fit (as an .RDS file).
 #' @param data_list Raw data that \code{fit} was fit to; either an R object or full path to an .RDS file.
-#' @param out_dir Path to output directory.
+#' @param out_dir Path to output directory (relative to working directory).
 #' @param save_model_as Name to give model; defaults to model name from the fit metadata.
 #' @param return Return something other than the fit environment? Options are "paths" (for .csv file paths), or
 #' "draws_list" which returns only the posterior predictions as a [posterior::draws_list].
 #' @param par_chains Maximum number of chains to compute in parallel; defaults to \code{options(mc.cores)} if
 #' this has been set, or 4 if not.
+#'
+#' @returns Either file paths or a [posterior::draws_list].
+#'
+#' @export
 
 generate_posterior_quantities <-
   function(fit_mcmc, data_list, out_dir = "outputs/cmdstan/", save_model_as = "",

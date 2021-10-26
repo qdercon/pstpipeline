@@ -2,11 +2,12 @@
 
 export(check_learning_models)
 export(fit_learning_model)
+export(generate_posterior_quantities)
 export(import_multiple)
 export(import_single)
-export(load_posterior_quantities)
 export(plot_factors)
 export(plot_import)
+export(save_preds_by_chain)
 export(take_subsample)
 importFrom(data.table,.N)
 importFrom(data.table,as.data.table)
