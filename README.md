@@ -4,7 +4,7 @@
 
 #### quickstart
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/]
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
 
 #### an R package to clean, analyse, and present data from a large online learning study.
 
