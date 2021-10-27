@@ -9,9 +9,9 @@ save_preds_by_chain(
   out_dir = "",
   obs_df,
   n_draws_chain,
-  save_outputs = TRUE,
   save_dir = out_dir,
   prefix = "",
+  splits = list(blocks = 1:6, sum_blks = list(c(1, 3), c(4, 6))),
   ...
 )
 }
@@ -25,9 +25,6 @@ save_preds_by_chain(
 as it ensures individuals are matched with the correct predictions.)}
 
 \item{n_draws_chain}{Number of MCMC sampling iterations per chain.}
-
-\item{save_outputs}{Save lists of posterior predictions (per chain) and the updated training data
-\code{tibble} to the disk?}
 
 \item{save_dir}{Directory to save items to, will be created if it does not exist. Defaults to the
 directory of the output files.}

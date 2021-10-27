@@ -7,7 +7,7 @@
 generate_posterior_quantities(
   fit_mcmc,
   data_list,
-  out_dir = "outputs/cmdstan/",
+  out_dir = "outputs/cmdstan",
   save_model_as = "",
   return_type = "",
   par_chains = getOption("mc.cores", 4)

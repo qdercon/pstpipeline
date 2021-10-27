@@ -10,8 +10,6 @@
 #' @param obs_df Raw training data, e.g., outputted from [pstpipeline::fit_learning_model()] (this is best
 #' as it ensures individuals are matched with the correct predictions.)
 #' @param n_draws_chain Number of MCMC sampling iterations per chain.
-#' @param save_outputs Save lists of posterior predictions (per chain) and the updated training data
-#' \code{tibble} to the disk?
 #' @param save_dir Directory to save items to, will be created if it does not exist. Defaults to the
 #' directory of the output files.
 #' @param prefix Optional prefix to add to the saved objects.
@@ -30,9 +28,9 @@ save_preds_by_chain <-
            out_dir = "",
            obs_df,
            n_draws_chain,
-           save_outputs = TRUE,
            save_dir = out_dir,
            prefix = "",
+           splits = list(blocks = 1:6, sum_blks = list(c(1,3), c(4,6))),
            ...) {
 
   start <- Sys.time()
@@ -63,6 +61,8 @@ save_preds_by_chain <-
   indiv <- unique(obs_df$subjID)
   indiv_obs_df <- data.table::data.table()
 
+  # first get the trial-wise summed predictions, by individual (i.e., the proportion of choices for trial 1, 2, etc...)
+  # taking care to line up predictions correctly - these will then be aggregated across individuals
   for (o in seq_along(paths)) {
     indiv_obs <- list()
     indiv_draws <- cmdstanr::read_cmdstan_csv(paths[o], variables = l$vars, format = "draws_list")[[2]][[1]] %>%
@@ -81,6 +81,7 @@ save_preds_by_chain <-
       colnames(pred_indiv) <- sapply(1:l$n_trials, function(n) paste0("y_pred_", n))
 
       indiv_obs_types <- list()
+      indiv_preds_types <- list()
 
       nwnme = rlang::sym(paste0("choice_pred_sum_ch_", o))
 
@@ -101,6 +102,7 @@ save_preds_by_chain <-
           dplyr::left_join(ab_pred_sums, by = "trial_no")
 
         indiv_obs_types$ab <- ab_obs
+        indiv_preds_types$ab <- ab_preds
       }
 
       if (any(l$pred_types == "CD")) {
@@ -120,6 +122,7 @@ save_preds_by_chain <-
           dplyr::left_join(cd_pred_sums, by = "trial_no")
 
         indiv_obs_types$cd <- cd_obs
+        indiv_preds_types$cd <- cd_preds
       }
       if (any(l$pred_types == "EF")) {
         ef_pred_nms <- paste0("y_pred_", obs_df[obs_df$subjID == indiv[i] & obs_df$type == 56,]$trial_no)
@@ -137,13 +140,14 @@ save_preds_by_chain <-
           dplyr::left_join(ef_pred_sums, by = "trial_no")
 
         indiv_obs_types$ef <- ef_obs
+        indiv_preds_types$ef <- ef_preds
       }
-      indiv_draws[[i]] <- pred_indiv
+      indiv_draws[[i]] <- indiv_preds_types
       indiv_obs[[i]] <- data.table::rbindlist(indiv_obs_types)
     }
 
-    names(indiv_draws) <- indiv
-    if (save_outputs) saveRDS(indiv_draws, paste0(save_dir, "/", prefix, "chain_", o, "_ppc_list.RDS"))
+    names(indiv_draws) <- paste0("id_", indiv)
+    saveRDS(indiv_draws, paste0(save_dir, "/", prefix, "chain_", o, "_ppc_list.RDS"))
     rm(indiv_draws)
 
     if (length(indiv_obs_df) == 0) {
@@ -167,8 +171,37 @@ save_preds_by_chain <-
     rm(indiv_obs)
   }
 
-  if (save_outputs) saveRDS(indiv_obs_df, file = paste0(save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS"))
+  saveRDS(indiv_obs_df, file = paste0(save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS"))
+  ids <- indiv_obs_df %>% dplyr::distinct(subjID, id_no)
+
+  # second we wish to get the predictions across various trials, by posterior draw, to get subject-level % correct
+  for (ppt_no in seq_along(ids$id_no)) {
+    ## load each chain we saved earlier, and get values for a single individual
+    id <- paste0("id_", ids[ids$id_no == ppt_no,]$subjID)
+    indiv_preds_all <- list()
+    for (ch in seq_along(paths)) {
+      indiv_preds_all[[ch]] <- readRDS(paste0(save_dir, "/", prefix, "chain_", ch, "_ppc_list.RDS"))[[id]]
+    }
+    type_names <- names(indiv_preds_all[[1]])
+    preds_by_type <- list()
+    for (typ in seq_along(type_names)) {
+      type_df <- eval(parse(text = paste0("indiv_preds_all[[", typ, "]][[\'", type_names[typ], "\']]")))
+      for (p in 2:length(paths)) {
+        type_df <- type_df %>%
+          dplyr::bind_rows(eval(parse(text = paste0("indiv_preds_all[[", p, "]][[\'", type_names[typ], "\']]"))))
+      }
+      preds_by_type[[type_names[typ]]] <- type_df
+      rm(type_df)
+    }
+
+
+
+  }
+
+
   message(paste0("Finished in ", round(difftime(Sys.time(), start, unit = "secs")[[1]], digits = 1), " seconds."))
 
   return(indiv_obs_df)
 }
+
+

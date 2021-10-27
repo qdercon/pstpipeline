@@ -18,7 +18,7 @@
 #' @export
 
 generate_posterior_quantities <-
-  function(fit_mcmc, data_list, out_dir = "outputs/cmdstan/", save_model_as = "",
+  function(fit_mcmc, data_list, out_dir = "outputs/cmdstan", save_model_as = "",
            return_type = "", par_chains = getOption("mc.cores", 4)) {
 
   if (grepl("_ppc", fit_mcmc$metadata()$model_name)) {
@@ -30,6 +30,9 @@ generate_posterior_quantities <-
 
   if (grepl("gainloss", fit_mcmc$metadata()$model_name)) alphas <- "2a"
   else alphas <- "1a"
+
+  out_dir <- file.path(getwd(), out_dir)
+  if (!dir.exists(out_dir)) dir.create(out_dir)
 
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
@@ -59,7 +62,7 @@ generate_posterior_quantities <-
   for (o in seq_along(outnames)) {
     chain_no <- strsplit(outnames[o], "-")[[1]][3]
     csv_files[o] <-
-      paste0(out_dir, save_model_as,
+      paste0(out_dir, "/", save_model_as,
              paste0("_gq_", fit_gq$metadata()$iter_sampling * fit_gq$metadata()$chains,
                     "chain_", chain_no, ".csv"))
     file.rename(from = outnames[o], to = csv_files[o])

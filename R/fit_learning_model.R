@@ -59,7 +59,7 @@ fit_learning_model <-
            accuracy_excl = FALSE,
            model_checks = TRUE,
            save_model_as = "",
-           out_dir = "outputs/cmdstan/",
+           out_dir = "outputs/cmdstan",
            outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
            save_outputs = TRUE,
            cores = getOption("mc.cores", 4),
@@ -71,6 +71,9 @@ fit_learning_model <-
     warning("Loading posterior predictions following MCMC is memory intensive, and may result in crashes")
   }
   if (any(outputs == "diagnostics") & vb) warning("Diagnostics are for MCMC only.")
+
+  out_dir <- file.path(getwd(), out_dir)
+  if (!dir.exists(out_dir)) dir.create(out_dir)
 
   l <- list(...)
   if (vb) {
@@ -234,7 +237,7 @@ fit_learning_model <-
     save_model_as <- paste("pst", exp_part, model, sep = "_")
   }
   fit$save_object(
-    file = paste0(out_dir, save_model_as,
+    file = paste0(out_dir, "/", save_model_as,
                   ifelse(vb, "_vb", paste0("_mcmc_", l$iter_sampling * l$chains)), ".RDS")
     )
 
@@ -255,37 +258,37 @@ fit_learning_model <-
   if (any(outputs == "summary")) {
     ret$summary <- fit$summary()
     if (save_outputs) {
-      saveRDS(ret$summary, file = paste0(out_dir, save_model_as, "_summary", ".RDS"))
+      saveRDS(ret$summary, file = paste0(out_dir, "/", save_model_as, "_summary", ".RDS"))
     }
   }
   if (any(outputs == "draws_list")) {
     ret$draws <- fit$draws(format = "list") # the least memory intensive format to load
     if (save_outputs) {
-      saveRDS(ret$draws, file = paste0(out_dir, save_model_as, "_draws_list", ".RDS"))
+      saveRDS(ret$draws, file = paste0(out_dir, "/", save_model_as, "_draws_list", ".RDS"))
     }
   }
   if (any(outputs == "stan_datalist")) {
     ret$stan_datalist <- data_cmdstan
     if (save_outputs) {
-      saveRDS(ret$stan_datalist, file = paste0(out_dir, save_model_as, "_stan_datalist", ".RDS"))
+      saveRDS(ret$stan_datalist, file = paste0(out_dir, "/", save_model_as, "_stan_datalist", ".RDS"))
     }
   }
   if (any(outputs == "raw_df")) {
     ret$raw_df <- raw_df
     if (save_outputs) {
-      saveRDS(ret$raw_df, file = paste0(out_dir, save_model_as, "_raw_df", ".RDS"))
+      saveRDS(ret$raw_df, file = paste0(out_dir, "/", save_model_as, "_raw_df", ".RDS"))
     }
   }
   if (any(outputs == "loo_obj") & !vb) {
     ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
     if (save_outputs) {
-      saveRDS(ret$loo_obj, file = paste0(out_dir, save_model_as, "_loo_obj", ".RDS"))
+      saveRDS(ret$loo_obj, file = paste0(out_dir, "/", save_model_as, "_loo_obj", ".RDS"))
     }
   }
   if (any(outputs == "diagnostics") & !vb) {
     ret$diagnostics <- fit$cmdstan_diagnose()
     if (save_outputs) {
-      saveRDS(ret$diagnostics, file = paste0(out_dir, save_model_as, "_cmdstan_diagnostics", ".RDS"))
+      saveRDS(ret$diagnostics, file = paste0(out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS"))
     }
   }
 
@@ -296,7 +299,7 @@ fit_learning_model <-
     chain_no <- strsplit(output, "-")[[1]][3]
     file.rename(
       from = output,
-      to = paste0(out_dir, save_model_as,
+      to = paste0(out_dir, "/", save_model_as,
                   ifelse(vb, paste0("_vb_", l$output_samples, ".csv"),
                          paste0("_mcmc_", l$iter_sampling * l$chains, "_chain_", chain_no, ".csv")
                          )
