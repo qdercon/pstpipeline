@@ -29,9 +29,9 @@
 #' This will override grp_compare (but won't affect other types of plots).
 #' @param legend_pos Enables the legend positions to be set manually.
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
-#' @param font Use a custom font for the plots? Will likely require \code{extrafont::font_import()} to
-#' be run first.
+#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.
 #' @param font_size Base plot font size.
+#' @param ... Other arguments, used internally by other functions calling this one.
 #'
 #' @return Either a single or named \code{list} of \code{ggplot} objects
 #'
@@ -54,7 +54,8 @@ plot_import <-
            legend_pos = "right",
            pal = NULL,
            font = "",
-           font_size = 14) {
+           font_size = 14,
+           ...) {
 
     if (length(grp_compare) > 1) stop("Can only compare on one feature.")
     if (length(grp_names) > 2) warning("Comparisons on features that are not binary are not recommended.")
@@ -88,7 +89,7 @@ plot_import <-
         import_single <- TRUE
       }
     }
-    else {
+    else if (!is.null(parsed_list)) {
       if (length(parsed_list) == 2 & is.null(grp_compare)) {
         ids_vec <- parsed_list[[1]]$ppt_info %>%
           dplyr::bind_rows(parsed_list[[2]]$ppt_info) %>%
@@ -157,6 +158,8 @@ plot_import <-
       }
     }
 
+    l <- list(...)
+
     std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
     ret <- list()
 
@@ -164,34 +167,33 @@ plot_import <-
       extrafont::loadfonts(device = "win", quiet = TRUE)
     }
 
-    pairs <- list("AB", "CD", "EF")
-    names(pairs) <- c("12", "34", "56")
-
-    if (!is.null(grp_compare) | length(parsed_list) == 2) {
-      if (length(grp_names) == 0) {
-        training <- training %>%
-          dplyr::rowwise() %>%
-          dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (", group, ")")) %>%
-          dplyr::ungroup()
+    if (any(types == "train")) {
+      pairs <- list("AB", "CD", "EF")
+      names(pairs) <- c("12", "34", "56")
+      if (!is.null(grp_compare) | length(parsed_list) == 2) {
+        if (length(grp_names) == 0) {
+          training <- training %>%
+            dplyr::rowwise() %>%
+            dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (", group, ")")) %>%
+            dplyr::ungroup()
+        }
+        else {
+          names(grp_names) <- as.character(unique(training$group))
+          training <- training %>%
+            dplyr::rowwise() %>%
+            dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (",
+                                        grp_names[[as.character(group)]], ")")) %>%
+            dplyr::mutate(group = grp_names[[as.character(group)]]) %>%
+            dplyr::ungroup()
+        }
       }
       else {
-        names(grp_names) <- as.character(unique(training$group))
         training <- training %>%
           dplyr::rowwise() %>%
-          dplyr::mutate(type = paste0(pairs[[as.character(type)]], " (",
-                                      grp_names[[as.character(group)]], ")")) %>%
-          dplyr::mutate(group = grp_names[[as.character(group)]]) %>%
+          dplyr::mutate(type = pairs[[as.character(type)]]) %>%
           dplyr::ungroup()
       }
-    }
-    else {
-      training <- training %>%
-        dplyr::rowwise() %>%
-        dplyr::mutate(type = pairs[[as.character(type)]]) %>%
-        dplyr::ungroup()
-    }
 
-    if (any(types == "train")) {
       if (tryCatch(length(plt.train[[2]]), error = function(e) FALSE)) {
           train_types <- tibble::as_tibble(plt.train[[2]]) %>%
             dplyr::mutate(value = as.character(value))
@@ -255,10 +257,13 @@ plot_import <-
                                        colour = factor(type), fill = factor(type))) +
           ggplot2::geom_point(alpha=0.65) +
           ggplot2::geom_line() +
-          ggplot2::scale_x_continuous(breaks=seq(0,120,20)) +
-          ggplot2::geom_vline(xintercept=c(seq(n_lag, 120 - n_lag, n_lag)), linetype="dashed", alpha=0.5) +
+          ggplot2::scale_x_continuous(breaks = seq(0, 120, 20)) +
+          ggplot2::geom_vline(
+            xintercept = tryCatch(c(seq(n_lag, 120 - n_lag, n_lag)), error = function(e) NULL),
+            linetype = "dashed", alpha = 0.5
+          ) +
           ggplot2::xlab("Trial number") +
-          ggplot2::ylab("Cumulative probability of picking stimulus A/C/E") +
+          ggplot2::ylab("Cumulative A/C/E choice probability (± SE)") +
           ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
           ggplot2::scale_fill_manual(name = "Trial Type", values = unlist(pal)) +
           cowplot::theme_half_open(
@@ -415,11 +420,15 @@ plot_import <-
 
       known_grps <- c("chooseA", "avoidB", "novel", "training")
 
+      if (is.null(parsed_list)) {
+        test <- l$test_df
+      }
+
       if (tt_grp == "grouped" & (length(setdiff(test_types_plt, known_grps)) == 0)) {
-          test <- test %>%
-            dplyr::filter(test_type %in% test_types_plt) %>%
-            dplyr::mutate(test_type = factor(test_type, levels = test_types_plt)) %>%
-            dplyr::group_by(subjID, test_type)
+        test <- test %>%
+          dplyr::filter(test_type %in% test_types_plt) %>%
+          dplyr::mutate(test_type = factor(test_type, levels = test_types_plt)) %>%
+          dplyr::group_by(subjID, test_type)
       }
       else {
         to_keep <- vector(mode = "character")

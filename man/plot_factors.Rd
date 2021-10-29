@@ -40,7 +40,8 @@ plot_factors(
 
 \item{pal}{Custom colour palette to use.}
 
-\item{font}{Use a custom font for the plots?}
+\item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
+be run.}
 
 \item{font_size}{Base plot font size.}
 }

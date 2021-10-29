@@ -15,7 +15,8 @@
 #' @param hyp_alph Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).
 #' @param group Grouping for each of the plots (relevant only for \code{plot_type = factor_hist}).
 #' @param pal Custom colour palette to use.
-#' @param font Use a custom font for the plots?
+#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
+#' be run.
 #' @param font_size Base plot font size.
 #'
 #' @return A single or \code{list} of \code{ggplot} object(s).
