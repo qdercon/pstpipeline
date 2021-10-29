@@ -38,7 +38,7 @@ get_preds_by_chain <-
   start <- Sys.time()
 
   save_dir <- file.path(getwd(), save_dir)
-  if (!dir.exists(save_dir)) dir.create(save_dir)
+  if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
 
   n_indiv <- length(unique(obs_df$subjID))
 

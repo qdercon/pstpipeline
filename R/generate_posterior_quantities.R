@@ -32,7 +32,7 @@ generate_posterior_quantities <-
   else alphas <- "1a"
 
   out_dir <- file.path(getwd(), out_dir)
-  if (!dir.exists(out_dir)) dir.create(out_dir)
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   stan_model <- cmdstanr::cmdstan_model(
     system.file(

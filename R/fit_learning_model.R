@@ -73,7 +73,7 @@ fit_learning_model <-
   if (any(outputs == "diagnostics") & vb) warning("Diagnostics are for MCMC only.")
 
   out_dir <- file.path(getwd(), out_dir)
-  if (!dir.exists(out_dir)) dir.create(out_dir)
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   l <- list(...)
   if (vb) {
