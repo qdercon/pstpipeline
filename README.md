@@ -16,7 +16,7 @@ The aims of the package (and the interactive notebooks) are two-fold:
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
 
 The easiest way to interactively play around with the dataset and replicate the results is to open the Jupyter notebooks in Google Colabatory (i.e., click the button above). The majority of the code can be run completely on the cloud with no downloads necessary. 
-The ```pstpipeline``` package and dependencies not already in Google Colab (most are) can be installed manually as explained in the notebooks. For speed, I would recommend sticking to variational inference if you are interested in (re)fitting models - it will elicit very similar results to MCMC and is orders of magnitude quicker. It also requires fewer R packages to be installed.
+The ```pstpipeline``` package and dependencies not already in Google Colab (most are) can be installed manually as explained in the notebooks. For speed, I would recommend sticking to variational inference if you are interested in (re)fitting models - it will elicit very similar results to MCMC and is orders of magnitude quicker. It also has fewer R package dependencies.
 
 #### 2. running locally
 
@@ -27,7 +27,7 @@ if (!require(remotes)) install.packages("remotes")
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the ryp2 library, and so it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
+To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the ryp2 package; as such, it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
 
 #### 3. package components and use-cases
 
@@ -44,7 +44,7 @@ Key elements of the package:
 
 
 - **model checks**:
-    - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains (traces, rank histograms)
+    - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains (traces and rank histograms for each of the chains)
 
 
 - **plotting functions**:
@@ -55,7 +55,7 @@ Key elements of the package:
 
 - **other helper functions**
     - ```get_subsample``` is a function to obtain a smaller subsample of individuals
-    - ```save_preds_by_chain``` automates the memory-efficient loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, for plotting, by importing and summing the binary choice predictions chain-by-chain
+    - ```get_preds_by_chain``` automates the loading of posterior predictions, likely obtained from running ```generate_posterior_quantities```, for plotting, by importing and summing the binary choice predictions chain-by-chain, and collating them into far smaller summaries; it also includes an optional method which can help prevent memory overload when loading large numbers of predictions
 
 
 
