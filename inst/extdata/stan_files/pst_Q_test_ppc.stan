@@ -92,7 +92,7 @@ generated quantities {
 
  // Initialize all the variables to avoid NULL values
   for (i in 1:N) {
-    for (t in 1:T) {
+    for (t in 1:T_t) {
       y_pred[i, t]    = -1;
     }
   }

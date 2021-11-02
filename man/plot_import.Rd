@@ -19,7 +19,8 @@ plot_import(
   legend_pos = "right",
   pal = NULL,
   font = "",
-  font_size = 14
+  font_size = 14,
+  ...
 )
 }
 \arguments{
@@ -64,6 +65,8 @@ This will override grp_compare (but won't affect other types of plots).}
 \item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.}
 
 \item{font_size}{Base plot font size.}
+
+\item{...}{Other arguments, used internally by other functions calling this one.}
 }
 \value{
 Either a single or named \code{list} of \code{ggplot} objects

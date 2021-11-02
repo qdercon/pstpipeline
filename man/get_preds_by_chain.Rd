@@ -10,8 +10,11 @@ get_preds_by_chain(
   obs_df,
   n_draws_chain,
   save_dir = out_dir,
+  test = FALSE,
   prefix = "",
   splits = list(blocks = 1:6, sum_blks = list(c(1, 3), c(4, 6))),
+  exclude = NULL,
+  memory_save = TRUE,
   ...
 )
 }
@@ -30,6 +33,10 @@ as it ensures individuals are matched with the correct predictions.)}
 directory of the output files.}
 
 \item{prefix}{Optional prefix to add to the saved objects.}
+
+\item{memory_save}{An alternative method to obtain predictions, which loads the predictions for each
+individual (across all chains) one-by-one, as opposed to importing all the draws for all individuals.
+This will be significantly slower but enables the function to run with very limited RAM.}
 
 \item{...}{Other arguments which are unlikely to be necessary to change: \code{n_trials} (default = 360);
 \code{vars} (default = "y_pred"), and \code{pred_types} (default = \code{c("AB", "CD", "EF")}).}

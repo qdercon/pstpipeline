@@ -7,7 +7,7 @@
 plot_ppc(
   train_indiv = list(),
   train_trials = list(),
-  test = list(),
+  test_phase = list(),
   id = NULL,
   legend_pos = "right",
   pal = NULL,

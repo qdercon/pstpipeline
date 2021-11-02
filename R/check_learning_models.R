@@ -116,7 +116,7 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
     ret$diagnostics$rank_hist <- bayesplot::mcmc_rank_hist(mu_pars)
   }
 
-  if (length(ret) == 1 & length(ret[[1]]) == 1) return(ret[[1]])
+  if (length(ret) == 1 & length(ret[[1]]) == 1) return(ret[[1]][[1]])
   else return(ret)
 
 }

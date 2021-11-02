@@ -144,8 +144,9 @@ fit_learning_model <-
   }
 
   if (exp_part == "test") {
-    data_cmdstan <- preprocess_func_test(raw_df, general_info)
-  } else {
+    data_cmdstan <- preprocess_func_test(raw_df$train, raw_df$test, general_info)
+  }
+  else {
     data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
@@ -234,13 +235,11 @@ fit_learning_model <-
   }
 
   if (save_model_as == "") {
-    save_model_as <- paste("pst", exp_part, model, sep = "_")
+    save_model_as <- paste("fit_pst", exp_part, model,
+                           ifelse(vb, "vb", paste0("mcmc_", l$iter_sampling * l$chains)),
+                           sep = "_")
   }
-  fit$save_object(
-    file = paste0(out_dir, "/", save_model_as,
-                  ifelse(vb, "_vb", paste0("_mcmc_", l$iter_sampling * l$chains)), ".RDS")
-    )
-
+  fit$save_object(file = paste0(out_dir, "/", save_model_as, ".RDS"))
   ret <- list()
   if (model_checks) {
     if (vb) {
@@ -300,10 +299,8 @@ fit_learning_model <-
     file.rename(
       from = output,
       to = paste0(out_dir, "/", save_model_as,
-                  ifelse(vb, paste0("_vb_", l$output_samples, ".csv"),
-                         paste0("_mcmc_", l$iter_sampling * l$chains, "_chain_", chain_no, ".csv")
-                         )
-                  )
+                  ifelse(vb, paste0("_", l$output_samples), paste0("_chain_", chain_no)),
+                  ".csv")
       )
   }
 

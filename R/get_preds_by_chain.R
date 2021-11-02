@@ -13,6 +13,9 @@
 #' @param save_dir Directory to save items to, will be created if it does not exist. Defaults to the
 #' directory of the output files.
 #' @param prefix Optional prefix to add to the saved objects.
+#' @param memory_save An alternative method to obtain predictions, which loads the predictions for each
+#' individual (across all chains) one-by-one, as opposed to importing all the draws for all individuals.
+#' This will be significantly slower but enables the function to run with very limited RAM.
 #' @param ... Other arguments which are unlikely to be necessary to change: \code{n_trials} (default = 360);
 #' \code{vars} (default = "y_pred"), and \code{pred_types} (default = \code{c("AB", "CD", "EF")}).
 #'
@@ -33,6 +36,7 @@ get_preds_by_chain <-
            prefix = "",
            splits = list(blocks = 1:6, sum_blks = list(c(1,3), c(4,6))),
            exclude = NULL,
+           memory_save = TRUE,
            ...) {
 
   start <- Sys.time()
@@ -40,14 +44,13 @@ get_preds_by_chain <-
   save_dir <- file.path(getwd(), save_dir)
   if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
 
-  n_indiv <- length(unique(obs_df$subjID))
-
   l <- list(...)
   if (!test) {
     if (is.null(l$n_trials)) l$n_trials <- 360
     if (is.null(l$n_blocks)) l$n_blocks <- 6
     if (is.null(l$pred_var)) l$pred_var <- "y_pred"
     if (is.null(l$pred_types)) l$pred_types <- c("AB", "CD", "EF")
+    n_indiv <- length(unique(obs_df$subjID))
   }
   else {
     all_pairs <- list("12", "34", "56", "13", "14", "15", "16", "32", "42",
@@ -59,7 +62,9 @@ get_preds_by_chain <-
     if (is.null(l$n_blocks)) l$n_blocks <- 1
     if (is.null(l$pred_var)) l$pred_var <- "y_pred"
     if (is.null(l$pred_types)) l$pred_types <- names(all_pairs)
-    splits <- list()
+    splits <- list(list(), list())
+    obs_df <- obs_df$test
+    n_indiv <- length(unique(obs_df$subjID))
   }
 
   trials_per_block <- l$n_trials/l$n_blocks
@@ -79,7 +84,7 @@ get_preds_by_chain <-
   indiv_vars <- split(pred_var_names, ceiling(seq_along(pred_var_names)/l$n_trials))
 
   indiv <- unique(obs_df$subjID)
-  ids <- sapply(1:20, function(i) list(i))
+  ids <- sapply(1:n_indiv, function(i) list(i))
   names(ids) <- indiv
 
   indiv_obs_list <- obs_df %>%
@@ -102,18 +107,40 @@ get_preds_by_chain <-
     dplyr::mutate(dplyr::across(2:7, as.numeric))
   trial_avg_list <- rep(list(trial_avg_df), n_indiv)
 
+  if (!memory_save) {
+    all_draws <- list()
+    for (o in seq_along(paths)) {
+      all_draws[[o]] <-
+        cmdstanr::read_cmdstan_csv(paths[o], variables = l$pred_var, format = "draws_list")[[2]][[1]]
+      if (is.list(all_draws[[o]])) all_draws[[o]] <- data.table::as.data.table(all_draws[[o]])
+    }
+    all_draws_df <- data.table::rbindlist(all_draws)
+    rm(all_draws)
+  }
+
+  pb = txtProgressBar(min = 0, max = n_indiv, initial = 0, style = 3)
+
   # first get the trial-wise summed predictions, by individual (i.e., the proportion of choices for trial 1, 2, etc...)
   # taking care to line up predictions correctly - these will then be aggregated across individuals
 
   for (id in seq_along(indiv)) {
-    all_indiv_draws <- list()
-    for (o in seq_along(paths)) {
-      all_indiv_draws[[o]] <-
-        cmdstanr::read_cmdstan_csv(paths[o], variables = l$pred_var, format = "draws_list")[[2]][[1]] %>%
-        dplyr::select(tidyselect::all_of(indiv_vars[[id]])) %>%
+    setTxtProgressBar(pb, id)
+    if (memory_save) {
+      all_indiv_draws <- list()
+      for (o in seq_along(paths)) {
+        all_indiv_draws[[o]] <-
+          cmdstanr::read_cmdstan_csv(paths[o], variables = indiv_vars[[id]], format = "draws_list")[[2]][[1]]
+        if (is.list(all_indiv_draws[[o]])) all_indiv_draws[[o]] <- data.table::as.data.table(all_indiv_draws[[o]])
+        all_indiv_draws[[o]] <- all_indiv_draws[[o]] %>% dplyr::select(-where(~ any(. == -1)))
+      }
+      all_indiv_draws <- data.table::rbindlist(all_indiv_draws)
+    }
+    else {
+      all_indiv_draws <- all_draws_df %>%
+        dplyr::select(indiv_vars[[id]]) %>%
         dplyr::select(-where(~ any(. == -1)))
     }
-    all_indiv_draws <- data.table::rbindlist(all_indiv_draws)
+
     indiv_obs_list_id <- indiv_obs_list[[id]]
 
     missing <- which(!seq(1:l$n_trials) %in% indiv_obs_list_id$trial_no)
@@ -170,7 +197,7 @@ get_preds_by_chain <-
           )
         )
 
-      if (length(splits) > 0) {
+      if (length(splits[[1]]) > 0 | length(splits[[2]]) > 0) {
         max_trial <- seq(0, l$n_trials, trials_per_block)
         trial_nums <- sapply(strsplit(names(preds), "_"), function(g) return(as.integer(g[3])))
         pred_names <- lapply(
@@ -276,8 +303,8 @@ get_preds_by_chain <-
   trial_obs_df <- data.table::rbindlist(trial_avg_list)
 
   if (!is.null(exclude)) {
-    indiv_obs_df <- indiv_obs_df %>% filter(!id_no %in% exclude)
-    trial_obs_df <- trial_obs_df %>% filter(!id_no %in% exclude)
+    indiv_obs_df <- indiv_obs_df %>% dplyr::filter(!id_no %in% exclude)
+    trial_obs_df <- trial_obs_df %>% dplyr::filter(!id_no %in% exclude)
   }
 
   saveRDS(indiv_obs_df, file = paste0(save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS"))
