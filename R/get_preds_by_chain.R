@@ -1,8 +1,7 @@
 #' Get and store posterior predictions for training data
 #'
-#' \code{get_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions
-#' without crashing R due to memory overload. This is done simply by importing chain-by-chain predictions, and
-#' summing over all chains/draws the predicted binary choices for each individual and trial.
+#' \code{get_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions,
+#' with an optional method to help avoid memory overload (and crashes).
 #'
 #' @param out_files Vector of .csv file names which contain posterior predictions (e.g., outputted from
 #' [pstpipeline::generate_posterior_quantities()]).

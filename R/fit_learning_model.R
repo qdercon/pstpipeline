@@ -89,32 +89,46 @@ fit_learning_model <-
     }
   }
 
-  if (task_excl | accuracy_excl) {
-    ids <- df_all[["ppt_info"]] %>%
-      dplyr::select(subjID, exclusion, final_block_AB)
-    if (accuracy_excl) ids <- ids %>% dplyr::filter(final_block_AB >= 0.6)
-    if (task_excl) ids <- ids %>% dplyr::filter(exclusion == 0)
-    ids <- ids %>% dplyr::select(subjID)
-  }
-  else {
-    ids <- unique(df_all[["training"]][["subjID"]])
-  }
+  if (is.null(l$par_recovery)) {
+    if (task_excl | accuracy_excl) {
+      ids <- df_all[["ppt_info"]] %>%
+        dplyr::select(subjID, exclusion, final_block_AB)
+      if (accuracy_excl) ids <- ids %>% dplyr::filter(final_block_AB >= 0.6)
+      if (task_excl) ids <- ids %>% dplyr::filter(exclusion == 0)
+      ids <- ids %>% dplyr::select(subjID)
+    }
+    else {
+      ids <- unique(df_all[["training"]][["subjID"]])
+    }
 
-  training_df <- df_all[["training"]] %>%
-    dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
-    tidyr::drop_na(choice)
-
-  if (exp_part == "test") {
-    test_df <- df_all[["test"]] %>%
+    training_df <- df_all[["training"]] %>%
       dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
       tidyr::drop_na(choice)
 
-    raw_df <- list()
-    raw_df$train <- data.table::as.data.table(training_df)
-    raw_df$test <- data.table::as.data.table(test_df)
+    if (exp_part == "test") {
+      test_df <- df_all[["test"]] %>%
+        dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
+        tidyr::drop_na(choice)
+
+      raw_df <- list()
+      raw_df$train <- data.table::as.data.table(training_df)
+      raw_df$test <- data.table::as.data.table(test_df)
+    }
+    else {
+      raw_df <- data.table::as.data.table(training_df)
+    }
   }
   else {
-    raw_df <- data.table::as.data.table(training_df)
+    if (exp_part == "training") raw_df <- df_all
+    else {
+      raw_df <- list()
+      raw_df$train <- df_all %>%
+        dplyr::filter(exp_part == "training") %>%
+        dplyr::select(-exp_part)
+      raw_df$test <- df_all %>%
+        dplyr::filter(exp_part == "test") %>%
+        dplyr::select(-exp_part)
+    }
   }
 
   ## get info
