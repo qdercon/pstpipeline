@@ -11,6 +11,7 @@
 #' from [pstpipeline::get_preds_by_chain]).
 #' @param id subjID to select if only plots for a single participant are desired. Will also accept a single
 #' numeric value i, which will select the ith participant in the output.
+#' @param group_title Sets consistent titles for all plots.
 #' @param legend_pos Enables the legend positions to be set manually.
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
 #' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.
@@ -27,6 +28,7 @@ plot_ppc <- function(
   train_trials = list(),
   test_phase = list(),
   id = NULL,
+  group_title = "",
   legend_pos = "right",
   pal = NULL,
   font = "",
@@ -40,7 +42,7 @@ plot_ppc <- function(
     message("Need at least 6 colours, reverting to defaults.")
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
   }
-  if (!is.null(font)) {
+  if (font != "") {
     extrafont::loadfonts(device = "win", quiet = TRUE)
   }
 
@@ -118,8 +120,16 @@ plot_ppc <- function(
           font_size = font_size,
           font_family = font
         ) +
-        ggplot2::theme(legend.position = legend_pos) +
-        ggplot2::ggtitle(paste0(n_lag, "-trial lagged"))
+        ggplot2::theme(legend.position = legend_pos)
+
+      if (n_lag == l$max_trials_grp) {
+        plt_tr <- plt_tr +
+          ggplot2::ggtitle(group_title, subtitle = "All trials")
+      }
+      else {
+        plt_tr <- plt_tr +
+          ggplot2::ggtitle(group_title, subtitle = paste0(n_lag, "-trial lagged"))
+      }
 
       if (is.null(id)) {
         plt_tr <- plt_tr +
@@ -152,7 +162,7 @@ plot_ppc <- function(
           dplyr::distinct(type, diff)
 
         avg_nm <- paste("last", avg_diff, "trials", sep = "_")
-        avg_plts[[avg_nm]] <- avg_overall_df %>%
+        avg_plt <- avg_overall_df %>%
           ggplot2::ggplot(ggplot2::aes(x = diff, fill = type, colour = type)) +
           ggplot2::geom_density(ggplot2::aes(y = ..count..), alpha = 0.4) +
           ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
@@ -164,11 +174,23 @@ plot_ppc <- function(
             font_size = font_size,
             font_family = font
           ) +
-          ggplot2::theme(legend.position = legend_pos) +
-          ggplot2::ggtitle(
-            paste0("Last ", avg_diff, " trials (observed minus predicted)")
-            )
+          ggplot2::theme(legend.position = legend_pos)
 
+        if (avg_diff == l$max_trials_grp) {
+          avg_plts[[avg_nm]] <- avg_plt +
+            ggplot2::ggtitle(group_title,
+                             subtitle = "All trials (observed minus predicted)")
+        }
+        else if (avg_diff == l$block_size) {
+          avg_plts[[avg_nm]] <- avg_plt +
+            ggplot2::ggtitle(group_title,
+                             subtitle = "Final block (observed minus predicted)")
+        }
+        else {
+          avg_plts[[avg_nm]] <- avg_plt +
+            ggplot2::ggtitle(group_title,
+                             subtitle =  paste0("Last ", avg_diff, " trials (observed minus predicted)"))
+        }
       }
       plt_list$diffs_obs_pred <- avg_plts
     }
@@ -193,11 +215,11 @@ plot_ppc <- function(
         trial_plt_list[[trgrp]] <- plot_trials_df %>%
           ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = pred_post_mean,
                                        colour = type)) +
-          ggplot2::geom_point(size = 2, alpha = 0.75) +
+          ggplot2::geom_point(size = 2, alpha = 0.25) +
           ggplot2::geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
           ggplot2::geom_errorbar(
             ggplot2::aes(x = obs_mean, ymin = pred_post_lower_95_hdi, ymax = pred_post_upper_95_hdi),
-            width = 0.01, alpha = 0.5
+            width = 0.01, alpha = 0.1
           ) +
           ggplot2::xlab("Observed mean A/C/E choice probability") +
           ggplot2::ylab("Predicted mean A/C/E choice probability (± 95% HDI)") +
@@ -209,12 +231,12 @@ plot_ppc <- function(
           ) +
           ggplot2::theme(legend.position = legend_pos) +
           ggplot2::ggtitle(
-            paste0(toupper(substr(trgrp, 1, 1)), gsub("_", " ", substr(trgrp, 2, nchar(trgrp)))),
+            group_title,
             subtitle = bquote(R^2~"="~.(
               round(cor(plot_trials_df$obs_mean, plot_trials_df$pred_post_mean)^2, 2)
-              )
-            )
+            )~"("*.(substr(trgrp, 1, 1))*.(gsub("_", " ", substr(trgrp, 2, nchar(trgrp))))*")"
           )
+        )
       }
     }
 

@@ -66,7 +66,6 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
       rnge <- range(df[par])
       bin_wdth <- diff(rnge) / nbins
       alpha <- grepl("alpha", par)
-      xlims <-
 
       plt <- df %>%
         dplyr::select(all_of(par)) %>%

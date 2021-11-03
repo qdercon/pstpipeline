@@ -9,6 +9,7 @@ plot_ppc(
   train_trials = list(),
   test_phase = list(),
   id = NULL,
+  group_title = "",
   legend_pos = "right",
   pal = NULL,
   font = "",
@@ -28,6 +29,8 @@ from \link{get_preds_by_chain}).}
 
 \item{id}{subjID to select if only plots for a single participant are desired. Will also accept a single
 numeric value i, which will select the ith participant in the output.}
+
+\item{group_title}{Sets consistent titles for all plots.}
 
 \item{legend_pos}{Enables the legend positions to be set manually.}
 

@@ -163,7 +163,7 @@ plot_import <-
     std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
     ret <- list()
 
-    if (!is.null(font)) {
+    if (font != "") {
       extrafont::loadfonts(device = "win", quiet = TRUE)
     }
 

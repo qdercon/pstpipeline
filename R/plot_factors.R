@@ -26,10 +26,12 @@
 
 plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn = NA, hyp_alph = 0.1,
                          group = NULL, pal = NULL, font = "", font_size = 11) {
-  if (!is.null(font)) {
+  if (font != "") {
     extrafont::loadfonts(device = "win", quiet = TRUE)
   }
-
+  if (is.null(pal)) {
+    pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+  }
   ret <- list()
 
   if (any(plot_type == "factor_hist")) {
