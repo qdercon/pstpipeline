@@ -9,6 +9,11 @@
 #' @param train_trials List, maximum length 3. The first element should be a trial-level \code{tibble} containing
 #' summed posterior draws and their HDIs, both overall and for each block and block group of interest (outputted
 #' from [pstpipeline::get_preds_by_chain]).
+#' @param test_perf List, maximum length 3. The first element should be a individual-level \code{tibble} containing
+#' summed predictions for each trial and individual (outputted from [pstpipeline::get_preds_by_chain]). The second
+#' and third lists are optional, and are passed to the \code{plt.test} argumment of [pstpipeline::plot_import] to
+#' plot observed grouped and individual pair accuracy respectively against their posterior predictions (a grouped
+#' plot including all pairs is plotted by default).
 #' @param id subjID to select if only plots for a single participant are desired. Will also accept a single
 #' numeric value i, which will select the ith participant in the output.
 #' @param group_title Sets consistent titles for all plots.
@@ -26,7 +31,7 @@
 plot_ppc <- function(
   train_indiv = list(),
   train_trials = list(),
-  test_phase = list(),
+  test_perf = list(),
   id = NULL,
   group_title = "",
   legend_pos = "right",
@@ -36,11 +41,11 @@ plot_ppc <- function(
   ...) {
 
   if (is.null(pal)) {
-    pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+    pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80", "#94FBAB", "#B1740F")
   }
-  else if (!is.null(pal) & length(pal) < 6) {
-    message("Need at least 6 colours, reverting to defaults.")
-    pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+  else if (!is.null(pal) & length(pal) < 8) {
+    message("Need at least 8 colours, reverting to defaults.")
+    pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80", "#94FBAB", "#B1740F")
   }
   if (font != "") {
     extrafont::loadfonts(device = "win", quiet = TRUE)
@@ -51,6 +56,7 @@ plot_ppc <- function(
   if (is.null(l$block_size)) l$block_size <- 20
   if (is.null(l$out_dir)) l$out_dir <- ""
   if (is.null(l$pred_var)) l$pred_var <- "y_pred"
+  if (is.null(l$n_test_trials)) l$n_test_trials <- 60
 
   pairs <- list("AB", "CD", "EF")
   names(pairs) <- c("12", "34", "56")
@@ -239,12 +245,54 @@ plot_ppc <- function(
         )
       }
     }
-
     plt_list$indiv_posteriors <- trial_plt_list
-
   }
-  if (length(test_phase) > 0) {message("to add..")}
+  if (length(test_perf) > 0) {
 
+    pair_groups <- tryCatch(test_perf[[2]], error = function(e) return(list()))
+    indiv_pairs <- tryCatch(test_perf[[3]], error = function(e) return(list()))
+
+    test_perf_df <- test_perf[[1]] %>%
+      dplyr::select(-contains("cuml_accuracy")) %>%
+      dplyr::rename(choice_obs = choice) %>%
+      tidyr::pivot_longer(contains("choice"), names_to = "choice_type", values_to = "choice",
+                          names_prefix = "choice_") %>%
+      dplyr::arrange(trial_no) %>%
+      dplyr::mutate(group = ifelse(grepl("obs", choice_type), "Observed", "Predicted"))
+
+    if (!is.null(id)) {
+      test_perf_df <- test_perf_df %>% dplyr::filter(subjID == id)
+      import_single <- TRUE
+    }
+    else {
+      import_single <- FALSE
+    }
+
+    grouped_bar_ppc <- pstpipeline::plot_import(
+        parsed_list = NULL, types = "test", plt.test = pair_groups, grp_compare = "group",
+        test_df = test_perf_df, import_single = import_single, legend_pos = legend_pos,
+        pal = pal, font = font, font_size = font_size
+      ) +
+      ggplot2::ggtitle(group_title, subtitle = "Test performance (grouped)")
+
+    if (length(indiv_pairs) > 0) {
+      indiv_bar_ppc <- pstpipeline::plot_import(
+        parsed_list = NULL, types = "test", plt.test = indiv_pairs, grp_compare = "group",
+        test_df = test_perf_df, import_single = import_single, legend_pos = legend_pos,
+        pal = pal, font = font, font_size = font_size
+      ) +
+      ggplot2::ggtitle(group_title, subtitle = "Test performance (individual pairs)")
+
+      plt_list$test_perf <-
+        cowplot::plot_grid(
+          grouped_bar_ppc + ggplot2::theme(legend.position = "none"),
+          indiv_bar_ppc, nrow = 1, rel_widths = c(1,1.4)
+        )
+    }
+    else {
+      plt_list$test_perf <- grouped_bar_ppc
+    }
+  }
   return(plt_list)
 }
 

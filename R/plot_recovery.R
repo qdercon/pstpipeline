@@ -16,7 +16,7 @@
 #' @importFrom rlang !!
 #' @export
 
-plot_recovery <- function(raw_pars, sim_pars, pal = NULL, font = "", font_size = 11) {
+plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "", font_size = 11) {
 
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -57,10 +57,12 @@ plot_recovery <- function(raw_pars, sim_pars, pal = NULL, font = "", font_size =
       ggplot2::guides(colour = "none", fill = "none") +
       ggplot2::ggtitle(
         bquote(
-          .(rlang::parse_expr(paste0(strsplit(par, "_")[[1]][1],
-                              ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]"))
-                              )
-                       )
+          .(rlang::parse_expr(
+              paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
+                     ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]")
+                            )
+                     )
+              )
             )
         ),
         subtitle = bquote(
@@ -84,10 +86,12 @@ plot_recovery <- function(raw_pars, sim_pars, pal = NULL, font = "", font_size =
   n_pars <- dim(cor_mat)[1]/2
   if (n_pars == 3) {
     order <- c("alpha_pos", "alpha_neg", "beta")
-    labs <- c("alpha[pos]", "alpha[neg]", "beta")
+    if (test) labs <- c("alpha*minute[pos]", "alpha*minute[neg]", "beta*minute")
+    else labs <- c("alpha[pos]", "alpha[neg]", "beta")
   }
   else {
     order <- labs <- c("alpha", "beta")
+    if (test) labs <- c("alpha*minute", "beta*minute")
   }
 
   corr_htmp <- tibble::as_tibble(

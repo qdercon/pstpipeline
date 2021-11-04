@@ -252,7 +252,7 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
 
       test_results <- test_results %>%
         dplyr::group_by(type) %>%
-        dplyr::mutate(trial_no_group = row_number()) %>%
+        dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
         dplyr::ungroup()
       all_res <- dplyr::bind_rows(all_res, test_results)
     }

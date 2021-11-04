@@ -68,7 +68,9 @@ plot_import <-
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
 
-    if (import_single) {
+    l <- list(...)
+
+    if (import_single & is.null(l$test_df)) {
       training <- parsed_list$training
       test <- parsed_list$test
     }
@@ -157,8 +159,6 @@ plot_import <-
         }
       }
     }
-
-    l <- list(...)
 
     std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
     ret <- list()
@@ -539,6 +539,7 @@ plot_import <-
             font_size = font_size,
             font_family = font
           ) +
+          ggplot2::theme(legend.position = legend_pos) +
           ggplot2::ggtitle("Test performance")
 
         if (is.null(grp_compare) & length(parsed_list) != 2) {

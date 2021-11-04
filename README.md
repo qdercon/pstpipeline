@@ -27,7 +27,7 @@ if (!require(remotes)) install.packages("remotes")
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the ryp2 package; as such, it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
+To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is in R, so while these notebooks can easily be run locally using Jupyter Lab, this will additionally require a Python environment and the [ryp2 package](https://github.com/rpy2); as such, it's probably easier to copy paste the relevant cells and run it in RStudio instead. Jupyter notebooks are included in the repo due to their ability to be opened in Google Colabatory, and because RMarkdown notebooks don't display nicely on GitHub.
 
 #### 3. package components and use-cases
 
@@ -40,7 +40,7 @@ Key elements of the package:
 
 - **analysis functions**:
     - ```fit_learning_models``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC
-    - ```generate_posterior_quantities``` enables posterior predictions and log-likelihoods for each MCMC sample to be generated in a separate session using a previously fitted model (as this is otherwise memory-intensive)
+    - ```generate_posterior_quantities``` enables posterior predictions for each MCMC sample to be generated in a separate session using a previously fitted model (as this can be memory-intensive otherwise)
 
 
 - **model checks**:
