@@ -99,7 +99,7 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
     }
 
     for (p in seq_along(pars)) {
-      dens_plts[[p]] <- dens_plot(mu_pars_df, nbins = 30, pars[p], col = pal[p], font = font,
+      dens_plts[[p]] <- dens_plot(mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
                                   font_size = font_size)
     }
 
