@@ -4,4 +4,4 @@
 .Ruserdata
 .ipynb_checkpoints
 outputs
-data-raw
+data-raw/*.txt

@@ -112,7 +112,7 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
     if (length(pal) != 6) pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     bayesplot::bayesplot_theme_set(
       cowplot::theme_half_open(
-        font = font, font_size = font_size
+        font_family = font, font_size = font_size
         )
       )
     bayesplot::color_scheme_set(pal)
