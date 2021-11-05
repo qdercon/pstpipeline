@@ -384,9 +384,9 @@ cmdstan_glm.fit <-
       "extdata/stan_files/include/csr_matrix_times_vector2.hpp", package = "pstpipeline"
     )
     stan_model <- cmdstanr::cmdstan_model(
-      system.file("extdata/stan_files/continuous_rstanarm.stan", package = "pstpipeline"),
+      system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
       include_paths = shortPathName(system.file(
-        "extdata/stan_files/", package = "pstpipeline")
+        "extdata/stan_files/from_rstanarm", package = "pstpipeline") ## this will fail if path has spaces!
       )
     )
   }
