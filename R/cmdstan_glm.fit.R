@@ -35,6 +35,7 @@ cmdstan_glm.fit <-
            prior_smooth = exponential(autoscale = FALSE),
            group = list(),
            prior_PD = FALSE,
+           mean_PPD = !prior_PD,
            sparse = FALSE) {
 
   algorithm <- match.arg(algorithm)
@@ -235,7 +236,7 @@ cmdstan_glm.fit <-
     has_offset = length(offset) > 0,
     has_intercept,
     prior_PD,
-    compute_mean_PPD = FALSE,
+    compute_mean_PPD = mean_PPD,
     prior_dist,
     prior_mean,
     prior_scale,
@@ -412,7 +413,8 @@ cmdstan_glm.fit <-
             if (length(group)) "b",
             if (is_continuous) "aux",
             if (ncol(S)) "smooth_sd",
-            if (standata$len_theta_L) "theta_L")
+            if (standata$len_theta_L) "theta_L",
+            if (mean_PPD) "mean_PPD")
 
   l <- list(...)
   if (algorithm != "sampling") {

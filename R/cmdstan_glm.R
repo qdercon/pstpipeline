@@ -120,7 +120,18 @@
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to draw from the prior predictive distribution instead of
 #'   conditioning on the outcome.
-#' @param adapt_delta Target average proposal acceptance probability; defaults to 0.95.
+#' @param mean_PPD A logical value indicating whether the sample mean of the
+#'   posterior predictive distribution of the outcome should be calculated in
+#'   the \code{generated quantities} block. If \code{TRUE} then \code{mean_PPD}
+#'   is computed and displayed as a diagnostic in the
+#'   \link[=print.stanreg]{printed output}. The default is \code{TRUE} except if
+#'   \code{algorithm=="optimizing"}. A useful heuristic is to check if
+#'   \code{mean_PPD} is plausible when compared to \code{mean(y)}. If it is
+#'   plausible then this does \emph{not} mean that the model is good in general
+#'   (only that it can reproduce the sample mean), but if \code{mean_PPD} is
+#'   implausible then there may be something wrong, e.g., severe model
+#'   misspecification, problems with the data and/or priors, computational
+#'   issues, etc.
 #' @param sparse A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to use a sparse representation of the design (X) matrix.
 #'   If \code{TRUE}, the the design matrix is not centered (since that would
@@ -156,6 +167,7 @@ cmdstan_glm <-
            prior_intercept = default_prior_intercept(family),
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
+           mean_PPD = !prior_PD,
            sparse = FALSE) {
 
   family <- validate_family(family)
@@ -180,6 +192,10 @@ cmdstan_glm <-
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
 
+  if (prior_PD) {
+    # can result in errors if draws from prior are weird
+    mean_PPD <- FALSE
+  }
 
   stanfit <- pstpipeline::cmdstan_glm.fit(
     x = X,
@@ -193,6 +209,7 @@ cmdstan_glm <-
     prior_intercept = prior_intercept,
     prior_aux = prior_aux,
     prior_PD = prior_PD,
+    mean_PPD = mean_PPD,
     sparse = sparse,
     ...
   )
