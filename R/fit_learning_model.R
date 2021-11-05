@@ -164,7 +164,7 @@ fit_learning_model <-
     data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
-  cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+  cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
   stan_model <- cmdstanr::cmdstan_model(

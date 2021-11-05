@@ -50,3 +50,7 @@ quantile_hdi <- function(var, quantile, transform = FALSE) {
 
   return(ret)
 }
+family_ch <- function(param) {
+  if (grepl("alpha", param)) return(Gamma(link = "log"))
+  else return(gaussian())
+}

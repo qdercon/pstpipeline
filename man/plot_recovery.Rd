@@ -4,7 +4,14 @@
 \alias{plot_recovery}
 \title{Plots to check parameter recovery}
 \usage{
-plot_recovery(raw_pars, sim_pars, pal = NULL, font = "", font_size = 11)
+plot_recovery(
+  raw_pars,
+  sim_pars,
+  test = FALSE,
+  pal = NULL,
+  font = "",
+  font_size = 11
+)
 }
 \arguments{
 \item{raw_pars}{Data frame with factor scores or questions to plot.}
