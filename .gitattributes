@@ -1,2 +1,2 @@
 *.ipynb linguist-documentation
-*.stan linguist-language=Stan
+inst/extdata/stan_files/* linguist-detectable
