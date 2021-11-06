@@ -1,2 +1,2 @@
 *.ipynb linguist-documentation
-inst/extdata/stan_files/*.stan linguist-vendored=true
+/inst/extdata/stan_files/* linguist-detectable
