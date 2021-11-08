@@ -1,7 +1,8 @@
 #' @noRd
 #' @keywords internal
 
-# THIS FUNCTION IS MODIFIED BUT IS BROADLY IDENTICAL TO rstanarm::stan_glm.fit
+# This function is a slightly modified version of rstanarm::stan_glm.fit
+# All credit to https://github.com/stan-dev/stan
 #
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
@@ -27,7 +28,7 @@ cmdstan_glm.fit <-
            offset = rep(0, NROW(y)),
            family = gaussian(),
            algorithm = c("sampling", "meanfield", "fullrank"),
-           out_dir = "",
+           out_dir = NULL,
            ...,
            prior = default_prior_coef(family),
            prior_intercept = default_prior_intercept(family),
@@ -428,8 +429,10 @@ cmdstan_glm.fit <-
   }
 
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
-  out_dir <- file.path(getwd(), out_dir)
-  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+  if (!is.null(out_dir)) {
+    out_dir <- file.path(getwd(), out_dir)
+    if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+  }
 
   if (algorithm != "sampling") {
     fit <- stan_model$variational(

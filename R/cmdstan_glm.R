@@ -17,18 +17,18 @@
 
 #' Bayesian generalized linear models via CmdStan
 #'
-#' Generalized linear modeling for Gaussian and gamma responses, with optional prior distributions for the
-#' coefficients, intercept, and auxiliary parameters. Essentially identical to [rstanarm::stan_glm],
-#' except that it does not require RStan and other associated dependencies.
-#'
-#' @export
+#' Generalized linear modeling for Gaussian and gamma responses, with optional prior
+#' distributions for the coefficients, intercept, and auxiliary parameters. Essentially
+#' identical to [rstanarm::stan_glm], except that it does not require \code{RStan} and
+#' other associated dependencies.
 #'
 #' @param formula,data,subset Same as \code{\link[stats]{glm}},
 #' but \emph{we strongly advise against omitting the \code{data}
 #' argument}.
-#' @param family Same as \code{\link[stats]{glm}}.
+#' @param family Same as \code{\link[stats]{glm}}. Accepted families for this function
+#' are \code{gaussian()} or \code{Gamma()}, and any link function.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but
-#'   rarely specified.
+#' rarely specified.
 #' @param y Logical scalar indicating whether to return the response vector.
 #' @param x Logical scalar indicating whether to return the design matrix.
 #' @param algorithm Argument "sampling" is for MCMC (default), while "meanfield"
@@ -147,6 +147,7 @@
 #'   model adds priors (independent by default) on the coefficients of the GLM.
 #'
 #' @return A \code{cmdstanr::CmdStanMCMC()} object.
+#' @export
 
 cmdstan_glm <-
   function(formula,
@@ -161,7 +162,7 @@ cmdstan_glm <-
            x = FALSE,
            y = TRUE,
            contrasts = NULL,
-           out_dir = "",
+           out_dir = NULL,
            ...,
            prior = default_prior_coef(family),
            prior_intercept = default_prior_intercept(family),

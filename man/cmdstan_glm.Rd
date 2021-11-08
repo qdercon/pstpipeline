@@ -17,7 +17,7 @@ cmdstan_glm(
   x = FALSE,
   y = TRUE,
   contrasts = NULL,
-  out_dir = "",
+  out_dir = NULL,
   ...,
   prior = default_prior_coef(family),
   prior_intercept = default_prior_intercept(family),
@@ -32,7 +32,8 @@ cmdstan_glm(
 but \emph{we strongly advise against omitting the \code{data}
 argument}.}
 
-\item{family}{Same as \code{\link[stats]{glm}}.}
+\item{family}{Same as \code{\link[stats]{glm}}. Accepted families for this function
+are \code{gaussian()} or \code{Gamma()}, and any link function.}
 
 \item{na.action, contrasts}{Same as \code{\link[stats]{glm}}, but
 rarely specified.}
@@ -160,9 +161,10 @@ the code run faster and can consume much less RAM.}
 A \code{cmdstanr::CmdStanMCMC()} object.
 }
 \description{
-Generalized linear modeling for Gaussian and gamma responses, with optional prior distributions for the
-coefficients, intercept, and auxiliary parameters. Essentially identical to \link[rstanarm:stan_glm]{rstanarm::stan_glm},
-except that it does not require RStan and other associated dependencies.
+Generalized linear modeling for Gaussian and gamma responses, with optional prior
+distributions for the coefficients, intercept, and auxiliary parameters. Essentially
+identical to \link[rstanarm:stan_glm]{rstanarm::stan_glm}, except that it does not require \code{RStan} and
+other associated dependencies.
 }
 \details{
 The \code{stan_glm} function is similar in syntax to
