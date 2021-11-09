@@ -1,6 +1,6 @@
 #' Diagnostic plots and fit metrics for training and test data models
 #'
-#' This function is called automatically by [pstpipeline::fit_learning_models()] when \code{model_checks = TRUE},
+#' This function is called automatically by [fit_learning_model()] when \code{model_checks = TRUE},
 #' but can also be run separately if desired.
 #'
 #' @param draws Post-warmup draws - either a [posterior::draws_array()], a [posterior::draws_list()], or a vector
@@ -8,6 +8,7 @@
 #' will not be possible.
 #' @param mean_pars Output a plot of the mean parameters?
 #' @param diagnostic_plots Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.
+#' @param pal,font,font_size Same as [plot_import].
 #'
 #' @importFrom magrittr %>%
 #' @export
@@ -71,7 +72,7 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
       alpha <- grepl("alpha", par)
 
       plt <- df %>%
-        dplyr::select(all_of(par)) %>%
+        dplyr::select(tidyselect::all_of(par)) %>%
         dplyr::rename(value = 1) %>%
         ggplot2::ggplot(ggplot2::aes(x = value)) +
         ggplot2::geom_histogram(

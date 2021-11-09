@@ -24,9 +24,9 @@ plot_import(
 )
 }
 \arguments{
-\item{parsed_list}{\code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.}
+\item{parsed_list}{\code{\link[=import_single]{import_single()}} or \code{\link[=import_multiple]{import_multiple()}} output.}
 
-\item{import_single}{Is the output from \code{pstpipeline::import_single()}?}
+\item{import_single}{Is the output from \code{\link[=import_single]{import_single()}}?}
 
 \item{id}{subjID to select if only plots for a single participant are desired. Will also accept a single
 numeric value i, which will select the ith participant in the output.}
@@ -62,7 +62,7 @@ This will override grp_compare (but won't affect other types of plots).}
 
 \item{pal}{Define a custom colour palette for the plots? Otherwise reverts to defaults.}
 
-\item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.}
+\item{font}{Use a custom font for the plots? Warnings suggest \code{\link[extrafont:font_import]{extrafont::font_import()}} should be run.}
 
 \item{font_size}{Base plot font size.}
 
@@ -72,7 +72,7 @@ This will override grp_compare (but won't affect other types of plots).}
 Either a single or named \code{list} of \code{ggplot} objects
 }
 \description{
-\code{plot_import} plots a single participant's data from \code{pstpipeline::import_single()}, or
+\code{plot_import} plots a single participant's data from \code{\link[=import_single]{import_single()}}, or
 a single participant (if \code{!is.null(id)}), or all participants' data from
-\code{pstpipeline::import_multiple()}.
+\code{\link[=import_multiple]{import_multiple()}}.
 }

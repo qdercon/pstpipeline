@@ -1,8 +1,8 @@
 #' Helper function to take a subsample of our parsed list (for demonstration purposes)
 #'
-#' \code{take_subsample} takes a \code{pstpipeline::import_multiple()} output, and takes a sample of size n.
+#' \code{take_subsample} takes a sample of size n to enable model fitting on a smaller sample.
 #'
-#' @param parsed_list An \code{pstpipeline::import_multiple()} output.
+#' @param parsed_list A list outputted from [import_multiple()].
 #' @param n_ppts Sample size to take.
 #'
 #' @return A named \code{list}.

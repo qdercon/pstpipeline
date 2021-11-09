@@ -22,11 +22,11 @@ generate_posterior_quantities(
 
 \item{save_model_as}{Name to give model; defaults to model name from the fit metadata.}
 
+\item{return_type}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
+"draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
+
 \item{par_chains}{Maximum number of chains to compute in parallel; defaults to \code{options(mc.cores)} if
 this has been set, or 4 if not.}
-
-\item{return}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
-"draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
 }
 \value{
 Either file paths or a \link[posterior:draws_list]{posterior::draws_list}.

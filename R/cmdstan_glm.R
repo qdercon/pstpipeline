@@ -27,6 +27,7 @@
 #' argument}.
 #' @param family Same as \code{\link[stats]{glm}}. Accepted families for this function
 #' are \code{gaussian()} or \code{Gamma()}, and any link function.
+#' @param model,offset,weights Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but
 #' rarely specified.
 #' @param y Logical scalar indicating whether to return the response vector.
@@ -114,7 +115,7 @@
 #'   If not using the default, \code{prior_aux} can be a call to
 #'   \code{exponential} to use an exponential distribution, or \code{normal},
 #'   \code{student_t} or \code{cauchy}, which results in a half-normal, half-t,
-#'   or half-Cauchy prior. See \code{\link{priors}} for details on these
+#'   or half-Cauchy prior. See [rstanarm::priors()] for details on these
 #'   functions. To omit a prior ---i.e., to use a flat (improper) uniform
 #'   prior--- set \code{prior_aux} to \code{NULL}.
 #' @param prior_PD A logical scalar (defaulting to \code{FALSE}) indicating
@@ -123,15 +124,13 @@
 #' @param mean_PPD A logical value indicating whether the sample mean of the
 #'   posterior predictive distribution of the outcome should be calculated in
 #'   the \code{generated quantities} block. If \code{TRUE} then \code{mean_PPD}
-#'   is computed and displayed as a diagnostic in the
-#'   \link[=print.stanreg]{printed output}. The default is \code{TRUE} except if
-#'   \code{algorithm=="optimizing"}. A useful heuristic is to check if
-#'   \code{mean_PPD} is plausible when compared to \code{mean(y)}. If it is
-#'   plausible then this does \emph{not} mean that the model is good in general
-#'   (only that it can reproduce the sample mean), but if \code{mean_PPD} is
-#'   implausible then there may be something wrong, e.g., severe model
-#'   misspecification, problems with the data and/or priors, computational
-#'   issues, etc.
+#'   is computed and displayed as a diagnostic in the printed output. A useful
+#'   heuristic is to check if \code{mean_PPD} is plausible when compared to
+#'   \code{mean(y)}. If it is plausible then this does \emph{not} mean that the
+#'   model is good in general (only that it can reproduce the sample mean), but
+#'   if \code{mean_PPD} is implausible then there may be something wrong, e.g.,
+#'   severe model misspecification, problems with the data and/or priors,
+#'   computational issues, etc.
 #' @param sparse A logical scalar (defaulting to \code{FALSE}) indicating
 #'   whether to use a sparse representation of the design (X) matrix.
 #'   If \code{TRUE}, the the design matrix is not centered (since that would
@@ -198,7 +197,7 @@ cmdstan_glm <-
     mean_PPD <- FALSE
   }
 
-  stanfit <- pstpipeline::cmdstan_glm.fit(
+  stanfit <- cmdstan_glm.fit(
     x = X,
     y = Y,
     weights = weights,

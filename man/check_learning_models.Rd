@@ -21,8 +21,10 @@ will not be possible.}
 \item{mean_pars}{Output a plot of the mean parameters?}
 
 \item{diagnostic_plots}{Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.}
+
+\item{pal, font, font_size}{Same as \link{plot_import}.}
 }
 \description{
-This function is called automatically by \code{\link[=fit_learning_models]{fit_learning_models()}} when \code{model_checks = TRUE},
+This function is called automatically by \code{\link[=fit_learning_model]{fit_learning_model()}} when \code{model_checks = TRUE},
 but can also be run separately if desired.
 }

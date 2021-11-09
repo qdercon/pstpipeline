@@ -5,10 +5,8 @@
 #'
 #' @param raw_pars Data frame with factor scores or questions to plot.
 #' @param sim_pars [cmdstanr::summary()] containing the fitted parameter values for the relevant model.
-#' @param pal Custom colour palette to use.
-#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
-#' be run.
-#' @param font_size Base plot font size.
+#' @param test Boolean indicating whether recovered parameters are from the test phase.
+#' @param pal,font,font_size Same as [plot_import()].
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
 #'

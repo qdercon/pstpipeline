@@ -14,12 +14,12 @@
 #' @param add_sex Add sex to participant info? Imputes (assumed) birth-assigned sex for non-binary
 #' individuals from Prolific export - workaround to enable it to be more reasonably controlled for
 #' in models (given very low numbers of non-binary individuals).
-#' @param prolific_export Path of prolific export file - only required if \code{add_sex} = \code{TRUE}.
-#' @param ... Other arguments (used by [pstpipeline::import_multiple()]).
+#' @param ... Other arguments (used by [import_multiple()]).
 #'
 #' @return \code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE
 #'
 #' @importFrom magrittr %>%
+
 #' @export
 
 import_single <-
@@ -94,7 +94,7 @@ import_single <-
   demographics <- all_comp[[1]] %>%
     dplyr::select(age:length(all_comp[[1]]), -question,
                   -tidyselect::contains("_id", ignore.case = F)) %>%
-    dplyr::summarise(across(.fns=~max(.x, na.rm=T)))
+    dplyr::summarise(dplyr::across(.fns=~max(.x, na.rm=T)))
 
   if (!is.null(demographics$neurological_disorder)) {
     if (demographics$neurological_disorder=="None") {
@@ -150,7 +150,7 @@ import_single <-
   questionnaires_tr <- questionnaires %>%
     dplyr::select(
       ZDS_total, OCIR_total, LSAS_fear_total, LSAS_avoidance_total, EAT_total,
-      BIS_total, STAI_total, AES_total, any_of("AUDIT_score"), DARS_hobbies,
+      BIS_total, STAI_total, AES_total, tidyselect::any_of("AUDIT_score"), DARS_hobbies,
       DARS_food_drink, DARS_social, DARS_sensory, DARS_total, MFIS_physical,
       MFIS_cognitive, MFIS_psychosocial, MFIS_total, BPQ_total, SPQ_cognitive_perceptual,
       SPQ_interpersonal, SPQ_disorganised, SPQ_total) %>%
@@ -326,7 +326,7 @@ import_single <-
   ppt_info$mean_rt = mean(training$rt, na.rm=T)
 
   if (add_sex & prolific) {
-    id_sex <- pstpipeline::exprtd_dmgrphcs %>%
+    id_sex <- exprtd_dmgrphcs %>%
       dplyr::select(participant_id, Sex) %>%
       dplyr::rename(subjID = participant_id, sex_prolific = Sex) %>%
       dplyr::right_join(id_gender, by = "subjID") %>%
@@ -337,12 +337,12 @@ import_single <-
 
 
   if (l$multiple) {
-    ret$ppt_info <- tidyr::as_tibble(cbind(ppt_info, digit_span, catch_questions, demographics))
-    ret$questionnaires <- tidyr::as_tibble(questionnaires_tr)
+    ret$ppt_info <- tibble::as_tibble(cbind(ppt_info, digit_span, catch_questions, demographics))
+    ret$questionnaires <- tibble::as_tibble(questionnaires_tr)
   } else {
     ppt_info <- cbind(ppt_info, digit_span, catch_questions, demographics)
-    ret$ppt_info <- tidyr::as_tibble(dplyr::left_join(ppt_info, questionnaires_tr,
-                                                      by=c("subjID", "sessionID", "studyID")))
+    ret$ppt_info <- tibble::as_tibble(dplyr::left_join(ppt_info, questionnaires_tr,
+                                                       by=c("subjID", "sessionID", "studyID")))
   }
 
   ret$training <- training
@@ -456,7 +456,7 @@ import_single <-
                     tidyselect::contains("technical"), tidyselect::contains("layout"),
                     tidyselect::contains("other")) %>%
       tidyr::drop_na()
-    ret$issues_comments <- as_tibble(issues_comments)
+    ret$issues_comments <- tibble::as_tibble(issues_comments)
   }
   return(ret)
 }

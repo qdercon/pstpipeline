@@ -3,15 +3,15 @@
 #' \code{plot_ppc} plots
 #'
 #' @param train_indiv List, maximum length 3. The first element should be an individual-level \code{tibble}
-#' containing summed predictions for each trial and individual (outputted from [pstpipeline::get_preds_by_chain]).
+#' containing summed predictions for each trial and individual (outputted from [get_preds_by_chain]).
 #' The second and third elements should be integers or numeric vectors containing the number of trials to lag for
 #' the training plots; and the last n trials to calculate differences in mean observed/predicted densities for.
 #' @param train_trials List, maximum length 3. The first element should be a trial-level \code{tibble} containing
 #' summed posterior draws and their HDIs, both overall and for each block and block group of interest (outputted
-#' from [pstpipeline::get_preds_by_chain]).
+#' from [get_preds_by_chain]).
 #' @param test_perf List, maximum length 3. The first element should be a individual-level \code{tibble} containing
-#' summed predictions for each trial and individual (outputted from [pstpipeline::get_preds_by_chain]). The second
-#' and third lists are optional, and are passed to the \code{plt.test} argumment of [pstpipeline::plot_import] to
+#' summed predictions for each trial and individual (outputted from [get_preds_by_chain]). The second
+#' and third lists are optional, and are passed to the \code{plt.test} argumment of [plot_import] to
 #' plot observed grouped and individual pair accuracy respectively against their posterior predictions (a grouped
 #' plot including all pairs is plotted by default).
 #' @param id subjID to select if only plots for a single participant are desired. Will also accept a single
@@ -21,6 +21,7 @@
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
 #' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.
 #' @param font_size Base plot font size.
+#' @param ... Other rarely used arguments which set the number of trials/blocks or the name of the predicted variable.
 #'
 #' @return Either a single or named \code{list} of \code{ggplot} objects
 #'
@@ -119,7 +120,7 @@ plot_ppc <- function(
           linetype = "dashed", alpha = 0.5
         ) +
         ggplot2::xlab("Trial number") +
-        ggplot2::ylab("Cumulative A/C/E choice probability (± SE)") +
+        ggplot2::ylab("Cumulative A/C/E choice probability (\u00B1 SE)") +
         ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
         ggplot2::scale_fill_manual(name = "Trial Type", values = unlist(pal)) +
         cowplot::theme_half_open(
@@ -228,7 +229,7 @@ plot_ppc <- function(
             width = 0.01, alpha = 0.1
           ) +
           ggplot2::xlab("Observed mean A/C/E choice probability") +
-          ggplot2::ylab("Predicted mean A/C/E choice probability (± 95% HDI)") +
+          ggplot2::ylab("Predicted mean A/C/E choice probability (\u00B1 95% HDI)") +
           ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
           ggplot2::scale_fill_manual(name = "Trial Type", values = unlist(pal)) +
           cowplot::theme_half_open(
@@ -268,7 +269,7 @@ plot_ppc <- function(
       import_single <- FALSE
     }
 
-    grouped_bar_ppc <- pstpipeline::plot_import(
+    grouped_bar_ppc <- plot_import(
         parsed_list = NULL, types = "test", plt.test = pair_groups, grp_compare = "group",
         test_df = test_perf_df, import_single = import_single, legend_pos = legend_pos,
         pal = pal, font = font, font_size = font_size
@@ -276,7 +277,7 @@ plot_ppc <- function(
       ggplot2::ggtitle(group_title, subtitle = "Test performance (grouped)")
 
     if (length(indiv_pairs) > 0) {
-      indiv_bar_ppc <- pstpipeline::plot_import(
+      indiv_bar_ppc <- plot_import(
         parsed_list = NULL, types = "test", plt.test = indiv_pairs, grp_compare = "group",
         test_df = test_perf_df, import_single = import_single, legend_pos = legend_pos,
         pal = pal, font = font, font_size = font_size

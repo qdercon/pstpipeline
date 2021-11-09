@@ -5,23 +5,30 @@ Version: 0.1.0
 Author: Quentin Dercon
 Maintainer: <quentindercon@gmail.com>
 Description: A high-level hierarchical Bayesian analysis pipeline for the PST with memory optimisations.
-Depends: R (>= 3.6.2)
-License: MIT
+Depends: R (>= 3.6.0)
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Imports:
     dplyr (>= 1.0.0),
     tidyr,
     ggplot2,
+    tibble,
+    tidyselect,
     data.table,
     runner,
     cowplot,
-    posterior
+    posterior,
+    rlang,
+    magrittr,
+    methods
 Suggests:
     cmdstanr,
     jsonlite,
     bayesplot,
-    loo
+    loo,
+    extrafont,
+    vipor,
+    Matrix
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE) 

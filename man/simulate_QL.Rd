@@ -31,6 +31,9 @@ subset of individual parameters across a number of models).}
 
 \item{raw_df}{Provide the raw data used to fit the data originally, so that subject IDs can be
 labelled appropriately.}
+
+\item{...}{Other arguments which can be used to control the parameters of the gamma/Gaussian distributions
+from which parameter values are sampled.}
 }
 \value{
 Simulated training data (and test data relevant) for a random or previously fitted sample of

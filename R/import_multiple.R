@@ -9,11 +9,12 @@
 #' @param indiv Return individual-level data? This can then be passed to the plot_single function
 #' and plotted for one individual at a time.
 #' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
-#' @param ... Other arguments passed to [pstpipeline::import_single()].
+#' @param ... Other arguments passed to [import_single()].
 #'
 #' @return \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
 #'
 #' @importFrom magrittr %>%
+#' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 
 import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, indiv = FALSE,
@@ -100,7 +101,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
     setTxtProgressBar(pb, i)
 
     if (separate) {
-      res <- pstpipeline::import_single(
+      res <- import_single(
         indiv_res_complete[[i]],
         multiple = TRUE,
         accuracy = l$accuracy,
@@ -139,7 +140,7 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
         }
       }
     } else {
-      parsed_results[[i]] <- pstpipeline::import_single(
+      parsed_results[[i]] <- import_single(
         indiv_res_complete[[i]],
         multiple = TRUE,
         accuracy = l$accuracy,

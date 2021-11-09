@@ -1,7 +1,7 @@
 #' Quantify and plot associations between learning parameters and variables of interest
 #'
-#' \code{parameter_glm} is a wrapper around [pstpipeline::cmdstan_glm()], taking as inputs
-#' summary tables and raw data from [pstpipeline::fit_learning_model()], and outputting
+#' \code{parameter_glm} is a wrapper around [cmdstan_glm()], taking as inputs
+#' summary tables and raw data from [fit_learning_model()], and outputting
 #' the results of GLMs quantifying the association between the individual-level posterior
 #' means of each parameter and the independent variable(s) of interest. Gamma GLMs with
 #' log link functions are used for learning rate models, while standard Gaussian models with
@@ -10,8 +10,19 @@
 #' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of interest.
 #' @param raw_df List of raw data inputs to the above fits (in the same order). Used to
 #' correctly link subject IDs to independent variables.
-#' @param indep_vars Vector of independent variables to include in the GLMs.
-#' @param ... Other arguments to pass to [pstpipeline::cmdstan_glm()] (e.g., to control
+#' @param var_of_interest Variable of interest.
+#' @param covariates Vector of covariates to control for in the GLMs.
+#' @param interaction Optional variable to interact with the variable of interest. The
+#' GLMs will then be run twice with this variable reverse coded the second time to obtain
+#' posterior samples for the variable of interest in both groups. This variable must be binary
+#' and only 1 interaction is allowed.
+#' @param recode_na Some demographic questions were conditional, and so there exist NAs. This
+#' argument allows these terms to be recoded as appropriate (in all binary cases, this should
+#' be set to 0).
+#' @param factor_scores Given the factor scores were derived separately, this argument allows the
+#' \code{data.frame} containing the factor scores to be supplied, so that these factors can
+#' be included in models.
+#' @param ... Other arguments to pass to [cmdstan_glm()] (e.g., to control
 #' number of warm-up and sampling iterations). In addition, use \code{cores} to chnage the
 #' number of parallel chains to sample from.
 #'
@@ -38,7 +49,7 @@ parameter_glm <- function(summary_df = list(),
   if (is.null(l$refresh)) l$refresh <- 0
   if (is.null(l$cores)) l$cores <- getOption("mc.cores", 4)
 
-  if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
+  if (is.null(getOption("mc.cores"))) options(mc.cores = l$cores)
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
@@ -92,9 +103,9 @@ parameter_glm <- function(summary_df = list(),
   beta_names <- attr(mod$terms , "term.labels")
 
   for (par in unique(all_data$parameter)) {
-    cmdstan_fit <- pstpipeline::cmdstan_glm(
+    cmdstan_fit <- cmdstan_glm(
       formula = rlang::parse_expr(formula),
-      family = pstpipeline::family_ch(par),
+      family = family_ch(par),
       data = dplyr::filter(all_data, parameter == par),
       algorithm = l$algorithm, iter_warmup = l$iter_warmup,
       iter_sampling = l$iter_sampling, chains = l$chains,
@@ -106,9 +117,9 @@ parameter_glm <- function(summary_df = list(),
   }
   if (!is.null(interaction)) {
     for (par in unique(all_data_recode$parameter)) {
-      cmdstan_fit <- pstpipeline::cmdstan_glm(
+      cmdstan_fit <- cmdstan_glm(
         formula = rlang::parse_expr(formula),
-        family = pstpipeline::family_ch(par),
+        family = family_ch(par),
         data = dplyr::filter(all_data_recode, parameter == par),
         algorithm = l$algorithm, iter_warmup = l$iter_warmup,
         iter_sampling = l$iter_sampling, chains = l$chains,

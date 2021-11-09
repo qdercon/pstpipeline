@@ -4,14 +4,18 @@
 #' with an optional method to help avoid memory overload (and crashes).
 #'
 #' @param out_files Vector of .csv file names which contain posterior predictions (e.g., outputted from
-#' [pstpipeline::generate_posterior_quantities()]).
+#' [generate_posterior_quantities()]).
 #' @param out_dir Path to output directory (defaults to current working directory).
-#' @param obs_df Raw training data, e.g., outputted from [pstpipeline::fit_learning_model()] (this is best
+#' @param obs_df Raw training data, e.g., outputted from [fit_learning_model()] (this is best
 #' as it ensures individuals are matched with the correct predictions.)
 #' @param n_draws_chain Number of MCMC sampling iterations per chain.
 #' @param save_dir Directory to save items to, will be created if it does not exist. Defaults to the
 #' directory of the output files.
+#' @param test Boolean indicating whether the posterior samples are from the test phase.
 #' @param prefix Optional prefix to add to the saved objects.
+#' @param splits A list specifying which individual and summed blocks to average draws over; may be interesting
+#' e.g., to see whether predictions become more accurate later in the task.
+#' @param exclude ID numbers to exclude from output (e.g., if there was insufficient mixing for their parameters).
 #' @param memory_save An alternative method to obtain predictions, which loads the predictions for each
 #' individual (across all chains) one-by-one, as opposed to importing all the draws for all individuals.
 #' This will be significantly slower but enables the function to run with very limited RAM.
@@ -23,6 +27,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom rlang := !!
 #' @importFrom data.table rbindlist
+#' @importFrom utils tail
 #' @export
 
 get_preds_by_chain <-
@@ -130,14 +135,15 @@ get_preds_by_chain <-
         all_indiv_draws[[o]] <-
           cmdstanr::read_cmdstan_csv(paths[o], variables = indiv_vars[[id]], format = "draws_list")[[2]][[1]]
         if (is.list(all_indiv_draws[[o]])) all_indiv_draws[[o]] <- data.table::as.data.table(all_indiv_draws[[o]])
-        all_indiv_draws[[o]] <- all_indiv_draws[[o]] %>% dplyr::select(-where(~ any(. == -1)))
+        all_indiv_draws[[o]] <- all_indiv_draws[[o]] %>%
+          dplyr::select(-tidyselect::vars_select_helpers$where(~ any(. == -1)))
       }
       all_indiv_draws <- data.table::rbindlist(all_indiv_draws)
     }
     else {
       all_indiv_draws <- all_draws_df %>%
         dplyr::select(indiv_vars[[id]]) %>%
-        dplyr::select(-where(~ any(. == -1)))
+        dplyr::select(-tidyselect::vars_select_helpers$where(~ any(. == -1)))
     }
 
     indiv_obs_list_id <- indiv_obs_list[[id]]
@@ -181,7 +187,7 @@ get_preds_by_chain <-
 
       ## get different types of rowsum
       summed_trials <- rowSums(preds)/dim(preds)[2]
-      all_trials_q <- pstpipeline::quantile_hdi(summed_trials, c(0.025, 0.5, 0.975))
+      all_trials_q <- quantile_hdi(summed_trials, c(0.025, 0.5, 0.975))
       trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
         dplyr::bind_rows(
           tibble::tibble(
@@ -215,7 +221,7 @@ get_preds_by_chain <-
             preds_blk <- preds %>%
               dplyr::select(tidyselect::all_of(pred_names[[blknames[blk]]]))
             summed_trials_blk <- rowSums(preds_blk)/dim(preds_blk)[2]
-            blk_trials_q <- pstpipeline::quantile_hdi(summed_trials_blk, c(0.025, 0.5, 0.975))
+            blk_trials_q <- quantile_hdi(summed_trials_blk, c(0.025, 0.5, 0.975))
 
             trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
               dplyr::bind_rows(
@@ -246,7 +252,7 @@ get_preds_by_chain <-
             preds_blkgrp <- preds %>%
               dplyr::select(tidyselect::all_of(included_names))
             summed_trials_blkgrp <- rowSums(preds_blkgrp)/dim(preds_blkgrp)[2]
-            blk_trial_grp_q <- pstpipeline::quantile_hdi(summed_trials_blkgrp, c(0.025, 0.5, 0.975))
+            blk_trial_grp_q <- quantile_hdi(summed_trials_blkgrp, c(0.025, 0.5, 0.975))
 
             trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
               dplyr::bind_rows(
@@ -279,7 +285,7 @@ get_preds_by_chain <-
             indiv_obs_list_id[indiv_obs_list_id$type == type_key[[l$pred_types[stim]]],]
           )
         group_sum_trials <- rowSums(preds)/dim(preds)[2]
-        group_trials_q <- pstpipeline::quantile_hdi(group_sum_trials, c(0.025, 0.5, 0.975))
+        group_trials_q <- quantile_hdi(group_sum_trials, c(0.025, 0.5, 0.975))
         trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
           dplyr::bind_rows(
             tibble::tibble(
@@ -309,7 +315,7 @@ get_preds_by_chain <-
   saveRDS(indiv_obs_df, file = paste0(save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS"))
   saveRDS(trial_obs_df, file = paste0(save_dir, "/", prefix, "trial_block_avg_hdi_ppcs_df.RDS"))
 
-  message(paste0("Finished in ", round(difftime(Sys.time(), start, unit = "secs")[[1]], digits = 1), " seconds."))
+  message(paste0("Finished in ", round(difftime(Sys.time(), start, units = "secs")[[1]], digits = 1), " seconds."))
 
   ret <- list()
   ret$indiv_obs_df <- indiv_obs_df

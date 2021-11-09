@@ -1,5 +1,10 @@
 #' @noRd
 #' @keywords internal
+#' @importFrom stats Gamma cor dlogis dnorm gaussian is.empty.model
+#' lm median model.matrix model.offset model.response model.weights
+#' qbeta qexp rgamma rnorm rt runif sd uniroot
+#' @importFrom methods as is
+#' @importFrom utils shortPathName
 
 # This function is a slightly modified version of rstanarm::stan_glm.fit
 # All credit to https://github.com/stan-dev/stan
@@ -381,9 +386,6 @@ cmdstan_glm.fit <-
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
     standata$len_y <- length(y)
-    full_fn_path <- system.file(
-      "extdata/stan_files/include/csr_matrix_times_vector2.hpp", package = "pstpipeline"
-    )
     stan_model <- cmdstanr::cmdstan_model(
       system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
       include_paths = shortPathName(system.file(
@@ -901,37 +903,10 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   for (i in 1:length(p)) {
-    Ztlist[[i]] <- rbind(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
+    Ztlist[[i]] <- rbind(Ztlist[[i]], Matrix::Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
   }
   Z <- t(do.call(rbind, args = Ztlist))
   return(nlist(Z, cnms, flist))
-}
-
-# Drop the extra reTrms from a matrix x
-unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
-unpad_reTrms.default <- function(x, ...) {
-  if (is.matrix(x) || is.array(x))
-    return(unpad_reTrms.array(x, ...))
-  keep <- !grepl("_NEW_", names(x), fixed = TRUE)
-  x[keep]
-}
-
-unpad_reTrms.array <- function(x, columns = TRUE, ...) {
-  ndim <- length(dim(x))
-  if (ndim > 3)
-    stop("'x' should be a matrix or 3-D array")
-
-  nms <- if (columns)
-    last_dimnames(x) else rownames(x)
-  keep <- !grepl("_NEW_", nms, fixed = TRUE)
-  if (length(dim(x)) == 2) {
-    x_keep <- if (columns)
-      x[, keep, drop = FALSE] else x[keep, , drop = FALSE]
-  } else {
-    x_keep <- if (columns)
-      x[, , keep, drop = FALSE] else x[keep, , , drop = FALSE]
-  }
-  return(x_keep)
 }
 
 make_b_nms <- function(group, m = NULL, stub = "Long") {
@@ -951,8 +926,15 @@ make_b_nms <- function(group, m = NULL, stub = "Long") {
   }
   return(b_nms)
 }
-
-
+get_m_stub <- function(m, stub = "Long") {
+  if (is.null(m)) {
+    return(NULL)
+  } else if (is.numeric(m)) {
+    return(paste0(stub, m, "|"))
+  } else if (is.character(m)) {
+    return(paste0(m, "|"))
+  }
+}
 # Create "prior.info" attribute needed for prior_summary()
 summarize_glm_prior <-
   function(user_prior,
@@ -1086,7 +1068,7 @@ array1D_check <- function(y) {
       idx[j + 1:a] <- k
       j <- j + a
     }
-    if (j < n_draws && c >= runif(1)) {
+    if (j < n_draws && c >= stats::runif(1)) {
       c <- c - 1
       j <- j + 1
       idx[j] <- k

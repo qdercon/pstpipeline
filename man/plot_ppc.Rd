@@ -45,6 +45,8 @@ numeric value i, which will select the ith participant in the output.}
 \item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.}
 
 \item{font_size}{Base plot font size.}
+
+\item{...}{Other rarely used arguments which set the number of trials/blocks or the name of the predicted variable.}
 }
 \value{
 Either a single or named \code{list} of \code{ggplot} objects

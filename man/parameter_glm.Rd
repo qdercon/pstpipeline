@@ -21,11 +21,26 @@ parameter_glm(
 \item{raw_df}{List of raw data inputs to the above fits (in the same order). Used to
 correctly link subject IDs to independent variables.}
 
+\item{var_of_interest}{Variable of interest.}
+
+\item{covariates}{Vector of covariates to control for in the GLMs.}
+
+\item{interaction}{Optional variable to interact with the variable of interest. The
+GLMs will then be run twice with this variable reverse coded the second time to obtain
+posterior samples for the variable of interest in both groups. This variable must be binary
+and only 1 interaction is allowed.}
+
+\item{recode_na}{Some demographic questions were conditional, and so there exist NAs. This
+argument allows these terms to be recoded as appropriate (in all binary cases, this should
+be set to 0).}
+
+\item{factor_scores}{Given the factor scores were derived separately, this argument allows the
+\code{data.frame} containing the factor scores to be supplied, so that these factors can
+be included in models.}
+
 \item{...}{Other arguments to pass to \code{\link[=cmdstan_glm]{cmdstan_glm()}} (e.g., to control
 number of warm-up and sampling iterations). In addition, use \code{cores} to chnage the
 number of parallel chains to sample from.}
-
-\item{indep_vars}{Vector of independent variables to include in the GLMs.}
 }
 \value{
 A \code{\link[posterior:draws_df]{posterior::draws_df()}}.

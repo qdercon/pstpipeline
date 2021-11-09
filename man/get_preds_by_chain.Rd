@@ -32,7 +32,14 @@ as it ensures individuals are matched with the correct predictions.)}
 \item{save_dir}{Directory to save items to, will be created if it does not exist. Defaults to the
 directory of the output files.}
 
+\item{test}{Boolean indicating whether the posterior samples are from the test phase.}
+
 \item{prefix}{Optional prefix to add to the saved objects.}
+
+\item{splits}{A list specifying which individual and summed blocks to average draws over; may be interesting
+e.g., to see whether predictions become more accurate later in the task.}
+
+\item{exclude}{ID numbers to exclude from output (e.g., if there was insufficient mixing for their parameters).}
 
 \item{memory_save}{An alternative method to obtain predictions, which loads the predictions for each
 individual (across all chains) one-by-one, as opposed to importing all the draws for all individuals.

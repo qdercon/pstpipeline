@@ -1,5 +1,7 @@
 #' @noRd
 #' @keywords internal
+#' @importFrom graphics points
+#' @export
 
 # Taken from https://github.com/teunbrand/ggh4x/tree/master/R/utils.R
 # Function for grabbing internal functions of ggplot2 that are also used here
@@ -9,7 +11,7 @@
     "expand_range4",
     "pos_dodge"
   )
-  
+
   objects <- stats::setNames(objects, objects)
   out <- lapply(objects, function(i) utils::getFromNamespace(i, "ggplot2"))
 }
@@ -17,24 +19,15 @@
 # Store the needed ggplot internals here
 .beeint <- .grab_ggplot_internals()
 
-crop_half <- function(df, left_group, nudge) {
-  groups <- split(df, df$group)
-  if (is.null(left_group) | length(groups) != 2) {
-    df <- dplyr::filter(df, x >= mean(df$x)) # right by default
-  } 
+# This is the primary modification made
+crop_half <- function(df, right, nudge) {
+  if (right) {
+    df <- dplyr::filter(df, x >= mean(df$x)) # right by default (as this --> top)
+    if (!is.null(nudge)) df$x <- df$x + nudge
+  }
   else {
-    if (left_group == 1) {
-      df1 <- dplyr::filter(groups[[1]], x <= mean(df$x)) 
-      df2 <- dplyr::filter(groups[[2]], x >= mean(df$x)) 
-    } else {
-      df1 <- dplyr::filter(groups[[2]], x <= mean(df$x))
-      df2 <- dplyr::filter(groups[[1]], x >= mean(df$x))
-    }
-    if (!is.null(nudge)) {
-      df1$x <- df1$x - nudge
-      df2$x <- df2$x + nudge
-    }
-  df <- rbind(df1, df2)
+    df <- dplyr::filter(df, x <= mean(df$x))
+    if (!is.null(nudge)) df$x <- df$x - nudge
   }
   df
 }
@@ -45,34 +38,34 @@ crop_half <- function(df, left_group, nudge) {
 
 position_quasirandom <- function(method = "quasirandom",
                                  width = NULL, varwidth = FALSE,
-                                 bandwidth = 0.5, nbins = NULL, 
+                                 bandwidth = 0.5, nbins = NULL,
                                  dodge.width = NULL, half = FALSE,
-                                 left_group = NULL, nudge = NULL) {
+                                 right = NULL, nudge = NULL) {
   ggplot2::ggproto(NULL, PositionQuasirandom,
                    method = method,
-                   width = width, 
+                   width = width,
                    varwidth = varwidth,
-                   bandwidth = bandwidth, 
-                   nbins = nbins, 
+                   bandwidth = bandwidth,
+                   nbins = nbins,
                    dodge.width = dodge.width,
                    half = half,
-                   left_group = left_group,
+                   right = right,
                    nudge = nudge
   )
 }
 
 PositionQuasirandom <- ggplot2::ggproto(
- "PositionQuasirandom", 
- ggplot2::Position, 
+ "PositionQuasirandom",
+ ggplot2::Position,
  required_aes = c("x", "y"),
  setup_params = function(self, data) {
    flipped_aes <- ggplot2::has_flipped_aes(data)
    data <- ggplot2::flip_data(data, flipped_aes)
-   
-   # get number of points in each x axis group and 
+
+   # get number of points in each x axis group and
    # find the largest group
    max.length <- max(data.frame(table(data$x))$Freq)
-   
+
    list(
      method = self$method,
      width = self$width,
@@ -82,20 +75,20 @@ PositionQuasirandom <- ggplot2::ggproto(
      max.length = max.length,
      dodge.width = self$dodge.width,
      half = self$half,
-     left_group = self$left_group,
+     right = self$right,
      nudge = self$nudge,
      flipped_aes = flipped_aes
    )
  },
  compute_panel = function(data, params, scales) {
    data <- ggplot2::flip_data(data, params$flipped_aes)
-   
+
    # set width if not specified
    if (is.null(params$width)) {
      params$width <- ggplot2::resolution(
        data$x, zero = FALSE) * 0.05
    }
-   
+
    data <- .beeint$collide(
      data,
      params$dodge.width,
@@ -103,14 +96,14 @@ PositionQuasirandom <- ggplot2::ggproto(
      strategy = .beeint$pos_dodge,
      check.width = FALSE
    )
-   
+
    # split data.frame into list of data.frames
    if(!is.null(params$dodge.width)) {
      data <- split(data, data$group)
    } else {
      data <- split(data, data$x)
    }
-   
+
    # perform swarming separately for each data.frame
    data <- lapply(
      data,
@@ -124,18 +117,18 @@ PositionQuasirandom <- ggplot2::ggproto(
    )
 
    if (params$half) {
-     data <- 
+     data <-
        lapply(
-         seq_along(data), 
-         function(i) crop_half(data[[i]], 
-                               params$left_group,
+         seq_along(data),
+         function(i) crop_half(data[[i]],
+                               params$right,
                                params$nudge)
        )
    }
-   
+
    # recombine list of data.frames into one
    data <- Reduce(rbind, data)
-   
+
    ggplot2::flip_data(data, params$flipped_aes)
  }
 )
@@ -143,45 +136,45 @@ PositionQuasirandom <- ggplot2::ggproto(
 pos_quasirandom <- function(df, width = 0.4, vary.width = FALSE,
                             max.length = NULL,...) {
   x.offset <- vipor::aveWithArgs(
-    df$y, df$x, 
+    df$y, df$x,
     FUN = vipor::offsetSingleGroup,
     maxLength = if (vary.width) {max.length} else {NULL},
     ...
   )
-  
+
   x.offset <- x.offset * width
   df$x <- df$x + x.offset
   df
 }
 
 geom_quasirandom <- function(
-  mapping = NULL, 
+  mapping = NULL,
   data = NULL,
-  stat = "identity", ..., 
+  stat = "identity", ...,
   method = "quasirandom",
-  width = NULL, 
+  width = NULL,
   varwidth = FALSE,
   bandwidth = 0.5, #
-  nbins = NULL, 
+  nbins = NULL,
   dodge.width = NULL,
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE,
   half = FALSE,
-  left_group = NULL,
-  nudge = NULL) {
+  right = TRUE,
+  nudge = 0) {
     position <- position_quasirandom(
       method = method,
-      width = width, 
-      varwidth = varwidth, 
+      width = width,
+      varwidth = varwidth,
       bandwidth = bandwidth,
-      nbins = nbins, 
+      nbins = nbins,
       dodge.width = dodge.width,
       half = half,
-      left_group = left_group,
+      right = right,
       nudge = nudge
     )
-    
+
     ggplot2::layer(
       data = data,
       mapping = mapping,

@@ -1,11 +1,11 @@
 #' Plot raw experiment data
 #'
-#' \code{plot_import} plots a single participant's data from \code{pstpipeline::import_single()}, or
+#' \code{plot_import} plots a single participant's data from [import_single()], or
 #' a single participant (if \code{!is.null(id)}), or all participants' data from
-#' \code{pstpipeline::import_multiple()}.
+#' [import_multiple()].
 #'
-#' @param parsed_list \code{pstpipeline::import_single()} or \code{pstpipeline::import_multiple()} output.
-#' @param import_single Is the output from \code{pstpipeline::import_single()}?
+#' @param parsed_list [import_single()] or [import_multiple()] output.
+#' @param import_single Is the output from [import_single()]?
 #' @param id subjID to select if only plots for a single participant are desired. Will also accept a single
 #' numeric value i, which will select the ith participant in the output.
 #' @param types Types of plot to output, choose from any (or all) of \code{train}, \code{test}, and
@@ -29,7 +29,7 @@
 #' This will override grp_compare (but won't affect other types of plots).
 #' @param legend_pos Enables the legend positions to be set manually.
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
-#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.
+#' @param font Use a custom font for the plots? Warnings suggest [extrafont::font_import()] should be run.
 #' @param font_size Base plot font size.
 #' @param ... Other arguments, used internally by other functions calling this one.
 #'
@@ -263,7 +263,7 @@ plot_import <-
             linetype = "dashed", alpha = 0.5
           ) +
           ggplot2::xlab("Trial number") +
-          ggplot2::ylab("Cumulative A/C/E choice probability (± SE)") +
+          ggplot2::ylab("Cumulative A/C/E choice probability (\u00B1 SE)") +
           ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
           ggplot2::scale_fill_manual(name = "Trial Type", values = unlist(pal)) +
           cowplot::theme_half_open(

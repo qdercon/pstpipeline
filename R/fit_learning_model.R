@@ -12,6 +12,7 @@
 #' designed primarily to be less memory-intensive for our specific use-case and provide only
 #' relevant output.
 #'
+#' @param df_all Raw data outputted from [import_multiple()].
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param exp_part Fit to \code{training} or \code{test}?
 #' @param vb Use variational inference to get the approximate posterior? Default is \code{TRUE}
@@ -19,11 +20,9 @@
 #' @param ppc Generate quantities including mean parameters, log likelihood, and posterior predictions?
 #' Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
 #' quantities function as this is far less memory intensive.
-#' @param diagnostics Outputs and saves diagnostics from [cmdstanr::cmdstan_diagnose()]. This will not work on
-#' saved model objects, nor will it work if \code{vb = TRUE}.
 #' @param task_excl Apply task-related exclusion criteria (catch questions, digit span = 0)?
 #' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB accuracy >= 0.6)?
-#' @param model_checks Runs [pstpipeline::check_learning_models()], returning plots of the group-level posterior
+#' @param model_checks Runs [check_learning_models()], returning plots of the group-level posterior
 #' densities for the free parameters, and some visual model checks (traceplots of the chains, and rank histograms).
 #' Note the visual checks will only be returned if \code{!vb}, as they are only relevant for MCMC fits, and require
 #' the \pkg{bayesplot} package.
@@ -36,9 +35,10 @@
 #' and "loo_obj". The latter includes the theoretical expected log-predictive density (ELPD) for a new dataset,
 #' plus the leave-one-out information criterion (LOOIC), a fully Bayesian metric for model comparison; this
 #' requires the \pkg{loo} package.
+#' @param save_outputs Save the specified outputs to the disk? Will save to \code{out_dir}.
 #' @param cores Maximum number of chains to run in parallel. Defaults to \code{options(mc.cores = cores)}
 #' or 4 if this is not set (this option will then apply for the rest of the session).
-#' @param ... Other arguments passed to [cmdstanr::sample()] and/or [pstpipeline::check_learning_models]. See the
+#' @param ... Other arguments passed to [cmdstanr::sample()] and/or [check_learning_models]. See the
 #' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html) for full details and defaults.
 #'
 #' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC] fit object, plus any other
@@ -257,12 +257,12 @@ fit_learning_model <-
   ret <- list()
   if (model_checks) {
     if (vb) {
-      ret$mu_par_dens <- pstpipeline::check_learning_models(
+      ret$mu_par_dens <- check_learning_models(
         fit$draws(format = "list"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
       )
     } else {
       ret$model_checks <- list()
-      ret$model_checks <- pstpipeline::check_learning_models(
+      ret$model_checks <- check_learning_models(
         fit$draws(format = "list"), pal = l$pal, font = l$font, font_size = l$font_size
       )
     }

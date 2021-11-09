@@ -33,11 +33,11 @@ quantile_hdi <- function(var, quantile, transform = FALSE) {
       returns <- cbind(returns, max(var))
     } else if (q < 0.5) {
       cred_mass = 1 - 2*q
-      HDI_lower <- pstpipeline::single_hdi(vars = var, cred = cred_mass)[1]
+      HDI_lower <- single_hdi(vars = var, cred = cred_mass)[1]
       returns <- cbind(returns, HDI_lower)
     } else {
       cred_mass = 2*q - 1
-      HDI_upper <- pstpipeline::single_hdi(vars = var, cred = cred_mass)[2]
+      HDI_upper <- single_hdi(vars = var, cred = cred_mass)[2]
       returns <- cbind(returns, HDI_upper)
     }
   }

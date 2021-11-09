@@ -7,7 +7,7 @@
 take_subsample(parsed_list, n_ppts)
 }
 \arguments{
-\item{parsed_list}{An \code{pstpipeline::import_multiple()} output.}
+\item{parsed_list}{A list outputted from \code{\link[=import_multiple]{import_multiple()}}.}
 
 \item{n_ppts}{Sample size to take.}
 }
@@ -15,5 +15,5 @@ take_subsample(parsed_list, n_ppts)
 A named \code{list}.
 }
 \description{
-\code{take_subsample} takes a \code{pstpipeline::import_multiple()} output, and takes a sample of size n.
+\code{take_subsample} takes a sample of size n to enable model fitting on a smaller sample.
 }

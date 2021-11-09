@@ -22,6 +22,8 @@ fit_learning_model(
 )
 }
 \arguments{
+\item{df_all}{Raw data outputted from \code{\link[=import_multiple]{import_multiple()}}.}
+
 \item{model}{Learning model to use, choose from \code{1a} or \code{2a}.}
 
 \item{exp_part}{Fit to \code{training} or \code{test}?}
@@ -54,14 +56,13 @@ and "loo_obj". The latter includes the theoretical expected log-predictive densi
 plus the leave-one-out information criterion (LOOIC), a fully Bayesian metric for model comparison; this
 requires the \pkg{loo} package.}
 
+\item{save_outputs}{Save the specified outputs to the disk? Will save to \code{out_dir}.}
+
 \item{cores}{Maximum number of chains to run in parallel. Defaults to \code{options(mc.cores = cores)}
 or 4 if this is not set (this option will then apply for the rest of the session).}
 
 \item{...}{Other arguments passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} and/or \link{check_learning_models}. See the
 \href{https://mc-stan.org/docs/2_28/cmdstan-guide/index.html}{CmdStan user guide} for full details and defaults.}
-
-\item{diagnostics}{Outputs and saves diagnostics from \code{\link[cmdstanr:fit-method-cmdstan_summary]{cmdstanr::cmdstan_diagnose()}}. This will not work on
-saved model objects, nor will it work if \code{vb = TRUE}.}
 }
 \value{
 List containing a \link[cmdstanr:CmdStanVB]{cmdstanr::CmdStanVB} or \link[cmdstanr:CmdStanMCMC]{cmdstanr::CmdStanMCMC} fit object, plus any other

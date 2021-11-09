@@ -15,6 +15,8 @@
 #' subset of individual parameters across a number of models).
 #' @param raw_df Provide the raw data used to fit the data originally, so that subject IDs can be
 #' labelled appropriately.
+#' @param ... Other arguments which can be used to control the parameters of the gamma/Gaussian distributions
+#' from which parameter values are sampled.
 #'
 #' @return Simulated training data (and test data relevant) for a random or previously fitted sample of
 #' parameter values.

@@ -18,12 +18,9 @@ plot_recovery(
 
 \item{sim_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values for the relevant model.}
 
-\item{pal}{Custom colour palette to use.}
+\item{test}{Boolean indicating whether recovered parameters are from the test phase.}
 
-\item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
-be run.}
-
-\item{font_size}{Base plot font size.}
+\item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
 \value{
 A named \code{list} of \code{ggplot} objects.
