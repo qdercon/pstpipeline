@@ -10,6 +10,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
+3.  To do the above in a high-level manner, while still giving the user control over important aspects - most functionality of the package can be achieved with single-line function calls.
 
 #### 1. quickstart
 
