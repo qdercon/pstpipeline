@@ -24,8 +24,9 @@
 #' @importFrom magrittr %>%
 #' @export
 
-plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn = NA, hyp_alph = 0.1,
-                         group = NULL, pal = NULL, font = "", font_size = 11) {
+plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn = NA,
+                         hyp_alph = 0.1, group = NULL, pal = NULL, font = "",
+                         font_size = 11) {
   if (font != "") {
     extrafont::loadfonts(device = "win", quiet = TRUE)
   }
@@ -33,6 +34,10 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
   }
   ret <- list()
+
+  ## to appease R CMD check
+  Factor <- Score <- Weight <- ..count.. <- ..density.. <- factor_score_pred <- alpha <-
+    n_items <- id <- value <- obs <- predicted <- question <- NULL
 
   if (any(plot_type == "factor_hist")) {
     hist_factors <- list()
@@ -99,7 +104,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
     r2_col <- round(r2[, grep(qn, colnames(r2))],3)
     pred_plots <- list()
     scores <- tibble::as_tibble(df[["scores"]]) %>%
-      dplyr::mutate(value = "true")
+      dplyr::mutate(value = "obs")
     df_all <- cbind(scores$id, tibble::as_tibble(df[["preds"]])) %>%
       setNames(nm = c("id", colnames)) %>%
       dplyr::mutate(value = "predicted") %>%
@@ -110,7 +115,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
     for (f in seq_along(colnames)) {
       pred_plots[[f]] <- df_all %>%
         dplyr::filter(Factor == colnames[f]) %>%
-        ggplot2::ggplot(ggplot2::aes(x = true, y = predicted)) +
+        ggplot2::ggplot(ggplot2::aes(x = obs, y = predicted)) +
         ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[f]], colour = pal[[f]]) +
         ggplot2::geom_smooth(method = "lm", formula = "y~x", se = FALSE, fill = pal[[f]], colour = pal[[f]]) +
         ggplot2::guides(colour = "none", fill = "none") +

@@ -89,6 +89,9 @@ fit_learning_model <-
     }
   }
 
+  ## to appease R CMD check
+  subjID <- exclusion <- final_block_AB <- choice <- NULL
+
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl) {
       ids <- df_all[["ppt_info"]] %>%

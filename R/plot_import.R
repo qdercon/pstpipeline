@@ -68,6 +68,15 @@ plot_import <-
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
 
+    ## useless assignments to appease R CMD check
+    subjID <- exclusion <- group <- type <- value <- choice <- trial_no <- trial_no_group <-
+      cuml_acc_mean <- cuml_acc_mean_sub_se <- cuml_acc_mean_pl_se <- fatigue_response <-
+      fatigue_slider_start <- reward <- question_type <- question_response <-
+      question_slider_start <- question_no_group <- cum_resp_l <- cum_resp_l_mean <-
+      cum_resp_l_mean_sub_se <- cum_resp_l_mean_pl_se <- test_type <- test_type_perf <-
+      count <- mean_prop_correct <- colour_stim <- mean_prop_correct_sub_se <-
+      mean_prop_correct_pl_se <- NULL
+
     l <- list(...)
 
     if (import_single & is.null(l$test_df)) {
@@ -295,7 +304,7 @@ plot_import <-
       if (any(af_types == "fatigue")) {
         fatigue_qs <- training %>%
           dplyr::filter(!is.na(fatigue_response)) %>%
-          dplyr::mutate(across(.cols = c(2:3, 8:17), ~ replace(.x, values = NA))) %>%
+          dplyr::mutate(dplyr::across(.cols = c(2:3, 8:17), ~ replace(.x, values = NA))) %>%
           dplyr::mutate(question_type = "fatigue") %>%
           dplyr::mutate(question_slider_start = fatigue_slider_start) %>%
           dplyr::mutate(question_response = fatigue_response)

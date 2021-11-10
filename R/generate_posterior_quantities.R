@@ -54,7 +54,7 @@ generate_posterior_quantities <-
   outnames <- fit_gq$output_files()
   if (save_model_as == "") {
     save_model_as <- paste(
-      fit$metadata()[["model_name"]], model, ifelse(test, "test", "training"), "gq", sep = "_"
+      fit_mcmc$metadata()[["model_name"]], train_test, "gq", sep = "_"
     )
   }
   csv_files <- vector(mode = "character", length = length(outnames))

@@ -49,6 +49,8 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
   cred_l1 <- (1-cred[2])/2
   cred_l2 <- (1-cred[1])/2
 
+  parameter <- value <- NULL
+
   par_df <- par_df %>%
     dplyr::rename(value = plot_var)
 
@@ -85,7 +87,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
     plots[[par]] <- plot +
       geom_quasirandom(
         alpha = point_alpha, size = point_size, width = max_dist_width,
-        half = TRUE, right = right_top, nudge = dist_nudge
+        half = TRUE, right = top_right, nudge = dist_nudge
       ) +
       ggplot2::stat_summary(
         geom = "boxplot",
@@ -129,10 +131,10 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
     nrow = 1
   )
 
-  if (!is.null(group_title)) {
+  if (!is.null(ovrll_title)) {
     title <- cowplot::ggdraw() +
       cowplot::draw_label(
-        group_title, x = 0, hjust = 0,
+        ovrll_title, x = 0, hjust = 0,
         fontfamily = font, size = 16,
         fontface = "bold"
       ) +

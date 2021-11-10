@@ -48,10 +48,13 @@ parameter_glm <- function(summary_df = list(),
   if (is.null(l$chains)) l$chains <- 4
   if (is.null(l$refresh)) l$refresh <- 0
   if (is.null(l$cores)) l$cores <- getOption("mc.cores", 4)
-
   if (is.null(getOption("mc.cores"))) options(mc.cores = l$cores)
 
+  ## to appease R CMD check
+  variable <- parameter <- . <- subjID <- value <- trial_no <- id_no <-  NULL
+
   all_data <- list()
+  all_res_split <- all_res_split
   for (s in seq_along(summary_df)) {
     ids <- raw_df[[s]] %>%
       dplyr::distinct(subjID) %>%

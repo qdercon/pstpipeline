@@ -14,7 +14,8 @@
 #' @importFrom rlang !!
 #' @export
 
-plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "", font_size = 11) {
+plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "",
+                          font_size = 11) {
 
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -22,6 +23,10 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
   if (font != "") {
     extrafont::loadfonts(device = "win", quiet = TRUE)
   }
+
+  # to appease R CMD check
+  variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
+    obs_var <- corr <- NULL
 
   sim_pars_df <- sim_pars %>%
     dplyr::filter(grepl("alpha|beta", variable)) %>%
@@ -35,7 +40,7 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
 
   pars_df <- raw_pars %>%
     dplyr::select(-tidyselect::any_of("subjID")) %>%
-    tidyr::pivot_longer(cols = c(contains("alpha"), contains("beta")),
+    tidyr::pivot_longer(cols = c(tidyselect::contains("alpha"), tidyselect::contains("beta")),
                         names_to = "parameter", values_to = "obs_mean") %>%
     dplyr::left_join(sim_pars_df, by = c("id_no", "parameter"))
 
@@ -77,7 +82,7 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
   }
 
   cor_mat <- pars_df %>%
-    tidyr::pivot_wider(names_from = parameter, values_from = contains("mean")) %>%
+    tidyr::pivot_wider(names_from = parameter, values_from = tidyselect::contains("mean")) %>%
     dplyr::select(-id_no) %>%
     cor()
 
@@ -96,7 +101,7 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
       cor_mat[-(1:n_pars), -((n_pars+1):(2*n_pars))], rownames = NA
     ) %>%
     dplyr::mutate(sim_var = sub("sim_mean_", "", row.names(.))) %>%
-    tidyr::pivot_longer(cols = contains("obs"), names_to = "obs_var",
+    tidyr::pivot_longer(cols = tidyselect::contains("obs"), names_to = "obs_var",
                         names_prefix = "obs_mean_", values_to = "corr") %>%
     dplyr::mutate(sim_var = factor(sim_var, levels = order)) %>%
     dplyr::mutate(obs_var = factor(obs_var, levels = order)) %>%

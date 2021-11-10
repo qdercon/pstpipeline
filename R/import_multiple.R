@@ -32,6 +32,9 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
   message("Reading text file...")
 
+  ## to appease R CMD check
+  subjID <- NULL
+
   all_comp <-
     jsonlite::fromJSON(
       sprintf('[%s]', paste(

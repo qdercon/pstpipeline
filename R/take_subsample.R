@@ -16,6 +16,7 @@ take_subsample <- function(parsed_list, n_ppts) {
     stop("Could not find a list of participant info to take a sample of IDs. Perhaps the list is split?")
   }
 
+  subjID <- NULL # to appease R CMD check
   ids <- sample(unique(parsed_list[["ppt_info"]][["subjID"]]), size = n_ppts)
   subsample <- list()
   elements <- names(parsed_list)

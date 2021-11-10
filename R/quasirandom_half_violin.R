@@ -21,6 +21,7 @@
 
 # This is the primary modification made
 crop_half <- function(df, right, nudge) {
+  x <- NULL # to appease R CMD check
   if (right) {
     df <- dplyr::filter(df, x >= mean(df$x)) # right by default (as this --> top)
     if (!is.null(nudge)) df$x <- df$x + nudge

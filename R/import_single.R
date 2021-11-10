@@ -41,7 +41,6 @@ import_single <-
   }
 
   if (prolific) {
-
     pro_id <- list(tryCatch(all_comp[[3]]$prolific_id[1], error = function(e) return(NA)),
                    tryCatch(all_comp[[4]]$prolific_id[1], error = function(e) return(NA)),
                    tryCatch(all_comp[[5]]$prolific_id[1], error = function(e) return(NA)))
@@ -88,6 +87,20 @@ import_single <-
   names(distanced) <- "distanced"
 
   ret <- list()
+
+  ## useless assignments to appease R CMD check
+  age <- question <- questionnaire <- question_no <- catch_question_pass <- ZDS_total <- OCIR_total <-
+    LSAS_fear_total <- LSAS_avoidance_total <- EAT_total <- BIS_total <- STAI_total <- AES_total <-
+    DARS_hobbies <- DARS_food_drink <- DARS_social <- DARS_sensory <- DARS_total <- MFIS_physical <-
+    MFIS_cognitive <- MFIS_psychosocial <- MFIS_total <- BPQ_total <- SPQ_cognitive_perceptual <-
+    SPQ_interpersonal <- SPQ_disorganised <- SPQ_total <- gender <- test_part <- trial_index <-
+    trial_type <- correct <- timeout <- stimulus <- glyph_seq <- type <- trial_no <- choice <-
+    reward <- trial_block <- trial_no_group <- key_press <- correct_response <- cuml_accuracy_l20 <-
+    slider_start <- response <- question_type <- question_slider_start <- question_rt <-
+    question_response <- fatigue_rt <- fatigue_slider_start <- fatigue_response <- participant_id <-
+    Sex <- sex_prolific <- test_type <- test_trial_no_group <- test_trial_no <- cuml_accuracy_test <-
+    gillan_name <- score <- enjoyment <- concentration <- NULL
+
 
   ## demographics
 

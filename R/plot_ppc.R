@@ -52,6 +52,12 @@ plot_ppc <- function(
     extrafont::loadfonts(device = "win", quiet = TRUE)
   }
 
+  ## useless assignments to appease R CMD check
+  choice <- trial_no <- trial_no_group <- choice_type <- type <- acc_type <- subjID <-
+    cuml_acc_mean <- cuml_acc_mean_sub_se <- cuml_acc_mean_pl_se <- choice_pred_prop <-
+    obs <- post_mean_pred <- mean_obs_type <- mean_pred_type <- ..count.. <- avg_type <-
+    obs_mean <- pred_post_mean <- pred_post_lower_95_hdi <- pred_post_upper_95_hdi <- NULL
+
   l <- list(...)
   if (is.null(l$max_trials_grp)) l$max_trials_grp <- 120
   if (is.null(l$block_size)) l$block_size <- 20
@@ -67,9 +73,9 @@ plot_ppc <- function(
 
   if (length(train_indiv) > 0) {
     train_indiv_df <- train_indiv[[1]] %>%
-      dplyr::select(-contains("cuml_accuracy")) %>%
+      dplyr::select(-tidyselect::contains("cuml_accuracy")) %>%
       dplyr::rename(choice_obs = choice) %>%
-      tidyr::pivot_longer(contains("choice"), names_to = "choice_type", values_to = "choice",
+      tidyr::pivot_longer(tidyselect::contains("choice"), names_to = "choice_type", values_to = "choice",
                           names_prefix = "choice_") %>%
       dplyr::arrange(trial_no) %>%
       dplyr::mutate(acc_type = ifelse(grepl("obs", choice_type), "Observed", "Predicted")) %>%
@@ -254,9 +260,9 @@ plot_ppc <- function(
     indiv_pairs <- tryCatch(test_perf[[3]], error = function(e) return(list()))
 
     test_perf_df <- test_perf[[1]] %>%
-      dplyr::select(-contains("cuml_accuracy")) %>%
+      dplyr::select(-tidyselect::contains("cuml_accuracy")) %>%
       dplyr::rename(choice_obs = choice) %>%
-      tidyr::pivot_longer(contains("choice"), names_to = "choice_type", values_to = "choice",
+      tidyr::pivot_longer(tidyselect::contains("choice"), names_to = "choice_type", values_to = "choice",
                           names_prefix = "choice_") %>%
       dplyr::arrange(trial_no) %>%
       dplyr::mutate(group = ifelse(grepl("obs", choice_type), "Observed", "Predicted"))

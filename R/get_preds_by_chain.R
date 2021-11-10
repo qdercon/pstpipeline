@@ -48,6 +48,9 @@ get_preds_by_chain <-
   save_dir <- file.path(getwd(), save_dir)
   if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
 
+  ## to appease R CMD check
+  . <- subjID <- value <- trial_no <- id_no <- NULL
+
   l <- list(...)
   if (!test) {
     if (is.null(l$n_trials)) l$n_trials <- 360

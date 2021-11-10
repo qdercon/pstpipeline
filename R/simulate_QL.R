@@ -26,7 +26,10 @@
 simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
                         test = FALSE, prev_sample = NULL, raw_df = NULL, ...) {
 
-  ids_df <- NULL
+  # to appease R CMD check
+  variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
+    hidden_reward <- NULL
+
   if (is.null(summary_df)) {
     if (is.null(sample_size)) sample_size <- 100
     l <- list(...)

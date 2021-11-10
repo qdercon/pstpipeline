@@ -39,7 +39,6 @@ cmdstan_glm.fit <-
            prior_intercept = default_prior_intercept(family),
            prior_aux = exponential(autoscale = TRUE),
            prior_smooth = exponential(autoscale = FALSE),
-           group = list(),
            prior_PD = FALSE,
            mean_PPD = !prior_PD,
            sparse = FALSE) {
@@ -69,7 +68,7 @@ cmdstan_glm.fit <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- prior_scale_for_smooth <-
     prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <-
     prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <- slab_df <-
-    slab_scale <- NULL
+    slab_scale <- xtemp <- xbar <- NULL
 
   if (is.list(x)) {
     x_stuff <- center_x(x[[1]], sparse)
@@ -273,103 +272,31 @@ cmdstan_glm.fit <-
 
   # make a copy of user specification before modifying 'group' (used for keeping
   # track of priors)
-  user_covariance <- if (!length(group)) NULL else group[["decov"]]
-
-  if (length(group) && length(group$flist)) {
-    if (length(group$strata)) {
-      standata$clogit <- TRUE
-      standata$J <- nlevels(group$strata)
-      standata$strata <- c(as.integer(group$strata)[y == 1],
-                           as.integer(group$strata)[y == 0])
-    }
-    check_reTrms(group)
-    decov <- group$decov
-    if (is.null(group$SSfun)) {
-      standata$SSfun <- 0L
-      standata$input <- double()
-      standata$Dose <- double()
-    } else {
-      standata$SSfun <- group$SSfun
-      standata$input <- group$input
-      if (group$SSfun == 5) standata$Dose <- group$Dose
-      else standata$Dose <- double()
-    }
-    Z <- t(group$Zt)
-    group <-
-      pad_reTrms(Ztlist = group$Ztlist,
-                 cnms = group$cnms,
-                 flist = group$flist)
-    Z <- group$Z
-    p <- sapply(group$cnms, FUN = length)
-    l <- sapply(attr(group$flist, "assign"), function(i)
-      nlevels(group$flist[[i]]))
-    t <- length(l)
-    b_nms <- make_b_nms(group)
-    g_nms <- unlist(lapply(1:t, FUN = function(i) {
-      paste(group$cnms[[i]], names(group$cnms)[i], sep = "|")
-    }))
-    standata$t <- t
-    standata$p <- as.array(p)
-    standata$l <- as.array(l)
-    standata$q <- ncol(Z)
-    standata$len_theta_L <- sum(choose(p, 2), p)
-    parts <- extract_sparse_parts(Z)
-    standata$num_non_zero <- length(parts$w)
-    standata$w <- parts$w
-    standata$v <- parts$v - 1L
-    standata$u <- parts$u - 1L
-    standata$shape <- as.array(maybe_broadcast(decov$shape, t))
-    standata$scale <- as.array(maybe_broadcast(decov$scale, t))
-    standata$len_concentration <- sum(p[p > 1])
-    standata$concentration <-
-      as.array(maybe_broadcast(decov$concentration, sum(p[p > 1])))
-    standata$len_regularization <- sum(p > 1)
-    standata$regularization <-
-      as.array(maybe_broadcast(decov$regularization, sum(p > 1)))
-    standata$special_case <- all(sapply(group$cnms, FUN = function(x) {
-      length(x) == 1 && x == "(Intercept)"
-    }))
-  } else { # not multilevel
-    if (length(group)) {
-      standata$clogit <- TRUE
-      standata$J <- nlevels(group$strata)
-      standata$strata <- c(as.integer(group$strata)[y == 1],
-                           as.integer(group$strata)[y == 0])
-    }
-    standata$t <- 0L
-    standata$p <- integer(0)
-    standata$l <- integer(0)
-    standata$q <- 0L
-    standata$len_theta_L <- 0L
-    standata$num_non_zero <- 0L
-    standata$w <- double(0)
-    standata$v <- integer(0)
-    standata$u <- integer(0)
-    standata$special_case <- 0L
-    standata$shape <- standata$scale <- standata$concentration <-
-      standata$regularization <- rep(0, 0)
-    standata$len_concentration <- 0L
-    standata$len_regularization <- 0L
-    standata$SSfun <- 0L
-    standata$input <- double()
-    standata$Dose <- double()
-  }
+  user_covariance <- NULL
+  standata$t <- 0L
+  standata$p <- integer(0)
+  standata$l <- integer(0)
+  standata$q <- 0L
+  standata$len_theta_L <- 0L
+  standata$num_non_zero <- 0L
+  standata$w <- double(0)
+  standata$v <- integer(0)
+  standata$u <- integer(0)
+  standata$special_case <- 0L
+  standata$shape <- standata$scale <- standata$concentration <-
+    standata$regularization <- rep(0, 0)
+  standata$len_concentration <- 0L
+  standata$len_regularization <- 0L
+  standata$SSfun <- 0L
+  standata$input <- double()
+  standata$Dose <- double()
 
   if (!is_bernoulli) {
-    if (sparse) {
-      parts <- extract_sparse_parts(xtemp)
-      standata$nnz_X <- length(parts$w)
-      standata$w_X <- parts$w
-      standata$v_X <- parts$v - 1L
-      standata$u_X <- parts$u - 1L
-      standata$X <- array(0, dim = c(0L, dim(xtemp)))
-    } else {
-      standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
-      standata$nnz_X <- 0L
-      standata$w_X <- double(0)
-      standata$v_X <- integer(0)
-      standata$u_X <- integer(0)
-    }
+    standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
+    standata$nnz_X <- 0L
+    standata$w_X <- double(0)
+    standata$v_X <- integer(0)
+    standata$u_X <- integer(0)
     standata$y <- y
     standata$weights <- weights
     standata$offset_ <- offset
@@ -413,7 +340,6 @@ cmdstan_glm.fit <-
   pars <- c(if (has_intercept) "alpha",
             "beta",
             if (ncol(S)) "beta_smooth",
-            if (length(group)) "b",
             if (is_continuous) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
@@ -742,24 +668,6 @@ check_constant_vars <- function(mf) {
   }
   return(mf)
 }
-
-check_reTrms <- function(reTrms) {
-  stopifnot(is.list(reTrms))
-  nms <- names(reTrms$cnms)
-  dupes <- duplicated(nms)
-  for (i in which(dupes)) {
-    original <- reTrms$cnms[[nms[i]]]
-    dupe <- reTrms$cnms[[i]]
-    overlap <- dupe %in% original
-    if (any(overlap))
-      stop("rstanarm does not permit formulas with duplicate group-specific terms.\n",
-           "In this case ", nms[i], " is used as a grouping factor multiple times and\n",
-           dupe[overlap], " is included multiple times.\n",
-           "Consider using || or -1 in your formulas to prevent this from happening.")
-  }
-  return(invisible(NULL))
-}
-
 handle_glm_prior <- function(prior, nvars, default_scale, link,
                              ok_dists = nlist("normal", student_t = "t",
                                               "cauchy", "hs", "hs_plus",
@@ -892,49 +800,6 @@ fake_y_for_prior_PD <- function(N, family) {
   return(fake_y)
 }
 
-# Add extra level _NEW_ to each group
-pad_reTrms <- function(Ztlist, cnms, flist) {
-  stopifnot(is.list(Ztlist))
-  l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
-  p <- sapply(cnms, FUN = length)
-  n <- ncol(Ztlist[[1]])
-  for (i in attr(flist, "assign")) {
-    levels(flist[[i]]) <- c(gsub(" ", "_", levels(flist[[i]])),
-                            paste0("_NEW_", names(flist)[i]))
-  }
-  for (i in 1:length(p)) {
-    Ztlist[[i]] <- rbind(Ztlist[[i]], Matrix::Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
-  }
-  Z <- t(do.call(rbind, args = Ztlist))
-  return(nlist(Z, cnms, flist))
-}
-
-make_b_nms <- function(group, m = NULL, stub = "Long") {
-  group_nms <- names(group$cnms)
-  b_nms <- character()
-  m_stub <- if (!is.null(m)) get_m_stub(m, stub = stub) else NULL
-  for (i in seq_along(group$cnms)) {
-    nm <- group_nms[i]
-    nms_i <- paste(group$cnms[[i]], nm)
-    levels(group$flist[[nm]]) <- gsub(" ", "_", levels(group$flist[[nm]]))
-    if (length(nms_i) == 1) {
-      b_nms <- c(b_nms, paste0(m_stub, nms_i, ":", levels(group$flist[[nm]])))
-    } else {
-      b_nms <- c(b_nms, c(t(sapply(paste0(m_stub, nms_i), paste0, ":",
-                                   levels(group$flist[[nm]])))))
-    }
-  }
-  return(b_nms)
-}
-get_m_stub <- function(m, stub = "Long") {
-  if (is.null(m)) {
-    return(NULL)
-  } else if (is.numeric(m)) {
-    return(paste0(stub, m, "|"))
-  } else if (is.character(m)) {
-    return(paste0(m, "|"))
-  }
-}
 # Create "prior.info" attribute needed for prior_summary()
 summarize_glm_prior <-
   function(user_prior,
@@ -1047,7 +912,6 @@ array1D_check <- function(y) {
   if (is.gaussian(fam)) "sigma" else
     if (is.gamma(fam)) "shape"
 }
-
 .sample_indices <- function(wts, n_draws) {
   ## Stratified resampling
   ##   Kitagawa, G., Monte Carlo Filter and Smoother for Non-Gaussian
@@ -1076,19 +940,6 @@ array1D_check <- function(y) {
   }
   return(idx)
 }
-
-## other internal fns (e.g., from rstan) ------------------
-
-extract_sparse_parts <- function(A) {
-  if (!requireNamespace("Matrix"))
-    stop("You have to install the Matrix package to call 'extract_sparse_parts'")
-  if (!is(A, 'Matrix'))
-    A <- Matrix::Matrix(A, sparse=TRUE)
-  A <- Matrix::t(A)
-  A <- as(A, "dgCMatrix")
-  return(.Call(extract_sparse_components, A))
-}
-
 maybe_broadcast <- function(x, n) {
   if (!length(x)) {
     rep(0, times = n)

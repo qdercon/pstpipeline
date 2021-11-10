@@ -16,6 +16,9 @@
 check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TRUE, pal = NULL, font = "",
                                   font_size = 11) {
 
+  ## to appease R CMD check
+  value <- ..count.. <- ..density.. <- NULL
+
   if (grepl("draws", class(draws)[1])) {
     if (!grepl("df", class(draws)[1])) {
       if (grepl("draws_list", class(draws)[1])) draws <- posterior::as_draws_array(draws)
