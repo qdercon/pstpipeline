@@ -16,7 +16,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 #### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally and (if relevant) on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected); specifically, it contains:
+The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected); specifically, it contains:
 
 * All R package dependencies (see "DESCRIPTION" file for full details)
 * Python dependencies, including rpy2 for running R code in Jupyter notebooks
@@ -29,7 +29,9 @@ To mount the image, and open a Jupyter notebook in your browser, run the followi
 docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/local_mount/ pstpipeline-docker:latest
 ```
 
-The -v flag and the path that follows is optional; this allows you to mount a local drive to enable notebooks/model outputs to be saved to locally should you wish. Alternatively, to install the R package and all dependencies locally, run the following:
+The -v flag and the path that follows is optional; this allows you to mount a local drive to enable notebooks/model outputs to be saved to locally should you wish.
+
+Alternatively, to install the R package and all dependencies locally, run the following:
 
 ```R
 remotes::install_github("qdercon/pstpipeline")
