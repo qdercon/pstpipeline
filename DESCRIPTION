@@ -23,12 +23,11 @@ Imports:
     methods
 Suggests:
     jsonlite,
-    bayesplot,
-    loo,
-    extrafont,
+    cmdstanr,
     vipor,
-    Matrix,
-    cmdstanr
+    Matrix
+    bayesplot,
+    loo
 Additional_repositories: https://mc-stan.org/r-packages/
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2

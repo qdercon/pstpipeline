@@ -17,12 +17,14 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 #### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected); specifically, it contains:
+The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
+
+Specifically, it contains:
 
 * All R package dependencies (see "DESCRIPTION" file for full details)
 * Python dependencies, including rpy2 for running R code in Jupyter notebooks
 * Jupyter Lab
-* CmdStan
+* CmdStan v2.28.1
 
 To mount the image, and open a Jupyter notebook in your browser, run the following:
 
