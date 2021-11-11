@@ -195,11 +195,15 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
                                function(i) questionnaire_totals_d[[i]] <- parsed_results_d[[i]]$questionnaires)
 
     ret$non_distanced$ppt_info <- dplyr::left_join(
-      tibble::as_tibble(dplyr::bind_rows(demographics_nd)), dplyr::bind_rows(questionnaires_nd),
+      tibble::as_tibble(
+        dplyr::bind_rows(demographics_nd)
+        ),
+      dplyr::bind_rows(questionnaires_nd),
       by = c("subjID", "sessionID", "studyID")
     )
     ret$distanced$ppt_info <- dplyr::left_join(
-      tibble::as_tibble(dplyr::bind_rows(demographics_d)), dplyr::bind_rows(questionnaires_d),
+      tibble::as_tibble(dplyr::bind_rows(demographics_d)),
+      dplyr::bind_rows(questionnaires_d),
       by = c("subjID", "sessionID", "studyID")
     )
 
