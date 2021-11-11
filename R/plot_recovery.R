@@ -20,9 +20,6 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
   }
-  if (font != "") {
-    extrafont::loadfonts(device = "win", quiet = TRUE)
-  }
 
   # to appease R CMD check
   variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-

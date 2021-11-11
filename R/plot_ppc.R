@@ -18,9 +18,7 @@
 #' numeric value i, which will select the ith participant in the output.
 #' @param group_title Sets consistent titles for all plots.
 #' @param legend_pos Enables the legend positions to be set manually.
-#' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
-#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.
-#' @param font_size Base plot font size.
+#' @param pal,font,font_size Same as [plot_import()].
 #' @param ... Other rarely used arguments which set the number of trials/blocks or the name of the predicted variable.
 #'
 #' @return Either a single or named \code{list} of \code{ggplot} objects
@@ -47,9 +45,6 @@ plot_ppc <- function(
   else if (!is.null(pal) & length(pal) < 8) {
     message("Need at least 8 colours, reverting to defaults.")
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80", "#94FBAB", "#B1740F")
-  }
-  if (font != "") {
-    extrafont::loadfonts(device = "win", quiet = TRUE)
   }
 
   ## useless assignments to appease R CMD check

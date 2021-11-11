@@ -41,9 +41,6 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
   }
-  if (font != "") {
-    extrafont::loadfonts(device = "win", quiet = TRUE)
-  }
 
   cred <- sort(cred)
   cred_l1 <- (1-cred[2])/2

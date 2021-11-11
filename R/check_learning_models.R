@@ -53,9 +53,6 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
   else stop("Unrecognised data format, see help file.")
 
   if (is.null(pal)) pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
-  if (font != "") {
-    extrafont::loadfonts(device = "win", quiet = TRUE)
-  }
 
   ret <- list()
 

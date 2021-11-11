@@ -172,10 +172,6 @@ plot_import <-
     std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
     ret <- list()
 
-    if (font != "") {
-      extrafont::loadfonts(device = "win", quiet = TRUE)
-    }
-
     if (any(types == "train")) {
       pairs <- list("AB", "CD", "EF")
       names(pairs) <- c("12", "34", "56")
