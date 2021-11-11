@@ -33,8 +33,8 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
   ret <- list()
 
   ## to appease R CMD check
-  Factor <- Score <- Weight <- ..count.. <- ..density.. <- factor_score_pred <- alpha <-
-    n_items <- id <- value <- obs <- predicted <- question <- NULL
+  Factor <- Score <- Weight <- ..count.. <- ..density.. <- alpha <- n_items <- id <-
+    value <- obs <- predicted <- question <- NULL
 
   if (any(plot_type == "factor_hist")) {
     hist_factors <- list()
@@ -54,9 +54,9 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
                        binwidth = 0.2, position = "identity"
           )  +
         ggplot2::geom_line(
-          ggplot2::aes(y = (..density..*(dim(factor_score_pred)[1]*0.2)), colour = !!group),
+          ggplot2::aes(y = (..density..*(dim(df)[1]*0.2)), colour = !!group),
           size = 1, stat = 'density'
-          ) +
+        ) +
         ggplot2::scale_colour_manual(values = unlist(pal[[f]])) +
         ggplot2::scale_fill_manual(values = pal[[f]]) +
         ggplot2::guides(colour = "none", fill = "none") +
