@@ -11,20 +11,20 @@ on:
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r-version }})
+    name: ${{ matrix.config.os }} (${{ matrix.config.R }})
     strategy:
       matrix:
         config:
-          - {os: macOS-latest,   r: '4.1.2'}
-          - {os: macOS-oldver,   r: '3.6.3'}
-          - {os: windows-latest, r: '4.1.2'}
-          - {os: windows-oldver, r: '3.6.3'}
+          - {os: macOS-latest,   R: '4.1.2'}
+          - {os: macOS-oldver,   R: '3.6.3'}
+          - {os: windows-latest, R: '4.1.2'}
+          - {os: windows-oldver, R: '3.6.3'}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up R ${{ matrix.r }}
+      - name: Set up R ${{ matrix.R }}
         uses: r-lib/actions/setup-r@v1
         with:
-          r-version: ${{ matrix.r }}
+          r-version: ${{ matrix.R }}
       - name: Install dependencies
         run: |
           install.packages(c("remotes", "rcmdcheck"))
