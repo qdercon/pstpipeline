@@ -12,28 +12,33 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
-3.  To do the above in a high-level manner, while still giving the user control over important aspects - most functionality of the package can be achieved with single-line function calls.
+3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
 
-#### 1. quickstart
+#### Using the package
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/qdercon/pstpipeline/)
+The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally and (if relevant) on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected); specifically, it contains:
 
-*I will write a Dockerfile because realistically there are too many dependencies for this to be reasonable...*
+* All R package dependencies (see "DESCRIPTION" file for full details)
+* Python dependencies, including rpy2 for running R code in Jupyter notebooks
+* Jupyter Lab
+* CmdStan
 
+To mount the image, and open a Jupyter notebook in your browser, run the following:
 
-#### 2. running locally
+```
+docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/local_mount/ pstpipeline-docker:latest
+```
 
-To install the R package and all dependencies:
+The -v flag and the path that follows is optional; this allows you to mount a local drive to enable notebooks/model outputs to be saved to locally should you wish. Alternatively, to install the R package and all dependencies locally, run the following:
 
 ```R
-if (!require(remotes)) install.packages("remotes")
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-To get started, I would recommend taking a look at the Jupyter notebooks (under 'notebooks'). The vast majority of the code is written in R, so while these notebooks can be run locally using Jupyter Lab as is, note that this will require a Python environment and the [ryp2 package](https://github.com/rpy2). As such, to just play around with the data, it's probably easier to copy paste the relevant cells and run them in RStudio (or another IDE) instead.
+The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks/R documentation, and then copy/paste or write your own function calls as appropriate.
 
 
-#### 3. package components and use-cases
+#### Package components
 
 Key components of the package:
 
