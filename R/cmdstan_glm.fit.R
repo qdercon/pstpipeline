@@ -4,7 +4,6 @@
 #' lm median model.matrix model.offset model.response model.weights
 #' qbeta qexp rgamma rnorm rt runif sd uniroot
 #' @importFrom methods as is
-#' @importFrom utils shortPathName
 
 # This function is a slightly modified version of rstanarm::stan_glm.fit
 # All credit to https://github.com/stan-dev/stan
