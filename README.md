@@ -1,5 +1,7 @@
 # pstpipeline
 
+![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/r.yml/badge.svg)
+
 **p**robabilistic **s**election **t**ask **pipeline**
 
 ### an R package to clean, analyse, and present data from a large online learning study.
