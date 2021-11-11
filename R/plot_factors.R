@@ -55,7 +55,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
         dplyr::filter(Factor == colnames[f]) %>%
         ggplot2::ggplot(ggplot2::aes(x = Score)) +
         ggplot2::geom_histogram(
-          ggplot2::aes(y = ..count.., fill = !!group), colour = "black", alpha = 0.65,
+          ggplot2::aes(y = ..count.., fill = !!group), colour = "black", alpha = 1,
                        binwidth = 0.2, position = "identity"
           )  +
         ggplot2::geom_line(
