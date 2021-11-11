@@ -34,6 +34,7 @@ The -v flag and the path that follows is optional; this allows you to mount a lo
 Alternatively, to install the R package and all dependencies locally, run the following:
 
 ```R
+# install.packages("remotes")
 remotes::install_github("qdercon/pstpipeline")
 ```
 
