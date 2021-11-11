@@ -40,9 +40,7 @@ remotes::install_github("qdercon/pstpipeline")
 The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks/R documentation, and then copy/paste or write your own function calls as appropriate.
 
 
-#### Package components
-
-Key components of the package:
+#### Key components of the package
 
 - **parsing functions**:
     - ```import_single``` converts .txt JATOS outputs for a single participant to a list of cleaned dataframes.
