@@ -130,8 +130,9 @@ Distributions for rstanarm Models}}.
 If not using the default, \code{prior_aux} can be a call to
 \code{exponential} to use an exponential distribution, or \code{normal},
 \code{student_t} or \code{cauchy}, which results in a half-normal, half-t,
-or half-Cauchy prior. See \href{http://mc-stan.org/rstanarm/reference/priors.html}
-{\emph{here}} for details on these functions. To omit a prior ---i.e., to use
+or half-Cauchy prior. See
+\href{http://mc-stan.org/rstanarm/reference/priors.html}{\emph{here}}
+for details on these functions. To omit a prior ---i.e., to use
 a flat (improper) uniform prior--- set \code{prior_aux} to \code{NULL}.}
 
 \item{prior_PD}{A logical scalar (defaulting to \code{FALSE}) indicating
