@@ -41,7 +41,7 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
       for (d in seq_along(df)) {
         all_datasets[[d]] <- df[[d]] %>% dplyr::mutate(dataset = paste0("group_", d))
       }
-      df <- data.table::rbindlist(all_datasets)
+      df <- data.table::rbindlist(all_datasets, use.names = TRUE)
       pal <- split(pal, ceiling(seq_along(pal)/length(unique(df[["dataset"]]))))
       group <- rlang::sym("dataset")
     }
