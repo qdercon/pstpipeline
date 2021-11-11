@@ -54,7 +54,6 @@ parameter_glm <- function(summary_df = list(),
   variable <- parameter <- . <- subjID <- value <- trial_no <- id_no <-  NULL
 
   all_data <- list()
-  all_res_split <- all_res_split
   for (s in seq_along(summary_df)) {
     ids <- raw_df[[s]] %>%
       dplyr::distinct(subjID) %>%
@@ -72,7 +71,7 @@ parameter_glm <- function(summary_df = list(),
       dplyr::rename(posterior_mean = mean) %>%
       dplyr::right_join(ids, by = "id_no")
 
-    all_data[[s]] <- all_res_split[[s]][["ppt_info"]] %>%
+    all_data[[s]] <- ppt_info %>%
       dplyr::inner_join(summary, by = "subjID")
   }
 

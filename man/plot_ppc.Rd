@@ -40,11 +40,7 @@ numeric value i, which will select the ith participant in the output.}
 
 \item{legend_pos}{Enables the legend positions to be set manually.}
 
-\item{pal}{Define a custom colour palette for the plots? Otherwise reverts to defaults.}
-
-\item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should be run.}
-
-\item{font_size}{Base plot font size.}
+\item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 
 \item{...}{Other rarely used arguments which set the number of trials/blocks or the name of the predicted variable.}
 }

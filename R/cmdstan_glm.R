@@ -18,9 +18,7 @@
 #' Bayesian generalized linear models via CmdStan
 #'
 #' Generalized linear modeling for Gaussian and gamma responses, with optional prior
-#' distributions for the coefficients, intercept, and auxiliary parameters. Essentially
-#' identical to [rstanarm::stan_glm], except that it does not require \code{RStan} and
-#' other associated dependencies.
+#' distributions for the coefficients, intercept, and auxiliary parameters.
 #'
 #' @param formula,data,subset Same as \code{\link[stats]{glm}},
 #' but \emph{we strongly advise against omitting the \code{data}

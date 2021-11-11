@@ -162,9 +162,7 @@ A \code{cmdstanr::CmdStanMCMC()} object.
 }
 \description{
 Generalized linear modeling for Gaussian and gamma responses, with optional prior
-distributions for the coefficients, intercept, and auxiliary parameters. Essentially
-identical to \link[rstanarm:stan_glm]{rstanarm::stan_glm}, except that it does not require \code{RStan} and
-other associated dependencies.
+distributions for the coefficients, intercept, and auxiliary parameters.
 }
 \details{
 The \code{stan_glm} function is similar in syntax to

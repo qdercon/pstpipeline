@@ -62,7 +62,6 @@ summary boxplot.}
 \code{plot_glm} is designed to plot the results of fitting Bayesian GLMs, with
 QL model parameters as the response variables, via the \code{\link[=parameter_glm]{parameter_glm()}}
 function. It plots both a box-and-whisker plot (defaulting to 95\% HDIs for the box,
-and 99\% HDIs for the lines), plus the posterior distribution of coefficients, using
-a version of \code{\link[ggbeeswarm:geom_quasirandom]{ggbeeswarm::geom_quasirandom()}} which has been modified to output
-half-violin plots made up of (half of) the individual posterior draws.
+and 99\% HDIs for the lines), plus the posterior distribution of coefficients
+(half-violin plots made up of the individual posterior draws).
 }
