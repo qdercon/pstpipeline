@@ -312,12 +312,21 @@ cmdstan_glm.fit <-
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
     standata$len_y <- length(y)
-    stan_model <- cmdstanr::cmdstan_model(
-      system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
-      include_paths = shortPathName(system.file(
-        "extdata/stan_files/from_rstanarm", package = "pstpipeline") ## this will fail if path has spaces!
+    if(.Platform$OS.type == "windows") {
+      stan_model <- cmdstanr::cmdstan_model(
+        system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
+        include_paths = utils::shortPathName(system.file(
+          "extdata/stan_files/from_rstanarm", package = "pstpipeline") ## this will fail if path has spaces!
+        )
       )
-    )
+    } else {
+      stan_model <- cmdstanr::cmdstan_model(
+        system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
+        include_paths = system.file(
+          "extdata/stan_files/from_rstanarm", package = "pstpipeline"
+        ) ## this will fail if path has spaces!
+      )
+    }
   }
   else {
     stop(paste(famname, "is not supported in this version of the function."))
