@@ -25,7 +25,7 @@ Suggests:
     jsonlite,
     cmdstanr,
     vipor,
-    Matrix
+    Matrix,
     bayesplot,
     loo
 Additional_repositories: https://mc-stan.org/r-packages/
