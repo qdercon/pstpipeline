@@ -20,7 +20,8 @@ Imports:
     posterior,
     rlang,
     magrittr,
-    methods
+    methods,
+    utils
 Suggests:
     cmdstanr,
     jsonlite,
