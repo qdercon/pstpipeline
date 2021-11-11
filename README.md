@@ -1,6 +1,6 @@
 # pstpipeline
 
-![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/r.yml/badge.svg)
+![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
