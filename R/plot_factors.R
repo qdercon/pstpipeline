@@ -5,7 +5,8 @@
 #'
 #' @param df Data frame with factor scores or questions to plot. For \code{predictive} and
 #' \code{factor_htmp} plots, this should be a named list of \code{data.frames} (including "preds"
-#' & "scores" or "qns" & "coefs" respectively).
+#' & "scores" or "qns" & "coefs" respectively). If a \code{factor_hist} plot with \code{grouped = TRUE}
+#' is desired, it should be a list of \code{data.frames} (one per group).
 #' @param plot_type Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
 #' \code{predictive}, and \code{factor_htmp}.
 #' @param colnames Column names to get data from.
@@ -13,11 +14,8 @@
 #' @param r2 Array of \eqn{R^{2}}{R^2} values.
 #' @param qn Number of questions - used to find correct \eqn{R^{2}}{R^2} values.
 #' @param hyp_alph Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).
-#' @param group Grouping for each of the plots (relevant only for \code{plot_type = factor_hist}).
-#' @param pal Custom colour palette to use.
-#' @param font Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
-#' be run.
-#' @param font_size Base plot font size.
+#' @param grouped .
+#' @param pal,font,font_size Same as [plot_import].
 #'
 #' @return A single or \code{list} of \code{ggplot} object(s).
 #'
@@ -25,7 +23,7 @@
 #' @export
 
 plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn = NA,
-                         hyp_alph = 0.1, group = NULL, pal = NULL, font = "",
+                         hyp_alph = 0.1, grouped = FALSE, pal = NULL, font = "",
                          font_size = 11) {
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -34,16 +32,23 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
 
   ## to appease R CMD check
   Factor <- Score <- Weight <- ..count.. <- ..density.. <- alpha <- n_items <- id <-
-    value <- obs <- predicted <- question <- NULL
+    value <- obs <- predicted <- question <- size <- NULL
 
   if (any(plot_type == "factor_hist")) {
-    hist_factors <- list()
-    if (!is.null(group)) {
-      pal <- split(pal, ceiling(seq_along(pal)/length(unique(df[[group]]))))
-      group <- rlang::sym(group)
-    } else {
+
+    if (grouped) {
+      all_datasets <- list()
+      for (d in seq_along(df)) {
+        all_datasets[[d]] <- df[[d]] %>% dplyr::mutate(dataset = paste0("group_", d))
+      }
+      df <- data.table::rbindlist(all_datasets)
+      pal <- split(pal, ceiling(seq_along(pal)/length(unique(df[["dataset"]]))))
+      group <- rlang::sym("dataset")
+    }
+    else {
       group <- rlang::sym("Factor")
     }
+    hist_factors <- list()
     for (f in seq_along(colnames)) {
       hist_plot <- df %>%
         tidyr::pivot_longer(cols = colnames, names_to = "Factor", values_to = "Score") %>%
@@ -54,11 +59,10 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
                        binwidth = 0.2, position = "identity"
           )  +
         ggplot2::geom_line(
-          ggplot2::aes(y = (..density..*(dim(df)[1]*0.2)), colour = !!group),
-          size = 1, stat = 'density'
+          ggplot2::aes(y = ..count.., colour = !!group), binwidth = 0.2, stat = 'bin'
         ) +
         ggplot2::scale_colour_manual(values = unlist(pal[[f]])) +
-        ggplot2::scale_fill_manual(values = pal[[f]]) +
+        ggplot2::scale_fill_manual(values = unlist(pal[[f]])) +
         ggplot2::guides(colour = "none", fill = "none") +
         ggplot2::scale_y_continuous(name = "Count") +
         cowplot::theme_half_open(

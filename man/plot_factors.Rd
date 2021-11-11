@@ -12,7 +12,7 @@ plot_factors(
   r2 = NA,
   qn = NA,
   hyp_alph = 0.1,
-  group = NULL,
+  grouped = FALSE,
   pal = NULL,
   font = "",
   font_size = 11
@@ -21,7 +21,8 @@ plot_factors(
 \arguments{
 \item{df}{Data frame with factor scores or questions to plot. For \code{predictive} and
 \code{factor_htmp} plots, this should be a named list of \code{data.frames} (including "preds"
-& "scores" or "qns" & "coefs" respectively).}
+& "scores" or "qns" & "coefs" respectively). If a \code{factor_hist} plot with \code{grouped = TRUE}
+is desired, it should be a list of \code{data.frames} (one per group).}
 
 \item{plot_type}{Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
 \code{predictive}, and \code{factor_htmp}.}
@@ -36,14 +37,9 @@ plot_factors(
 
 \item{hyp_alph}{Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).}
 
-\item{group}{Grouping for each of the plots (relevant only for \code{plot_type = factor_hist}).}
+\item{grouped}{.}
 
-\item{pal}{Custom colour palette to use.}
-
-\item{font}{Use a custom font for the plots? Warnings suggest \code{extrafont::font_import()} should
-be run.}
-
-\item{font_size}{Base plot font size.}
+\item{pal, font, font_size}{Same as \link{plot_import}.}
 }
 \value{
 A single or \code{list} of \code{ggplot} object(s).
