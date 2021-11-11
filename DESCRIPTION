@@ -22,15 +22,14 @@ Imports:
     magrittr,
     methods
 Suggests:
-    cmdstanr,
     jsonlite,
     bayesplot,
     loo,
     extrafont,
     vipor,
-    Matrix
-Additional_repositories: 
-    https://mc-stan.org/r-packages/
+    Matrix,
+    cmdstanr
+Additional_repositories: https://mc-stan.org/r-packages/
 SystemRequirements: GNU make
 RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE) 
