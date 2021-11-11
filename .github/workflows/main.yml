@@ -36,7 +36,7 @@ jobs:
           r-version: ${{ matrix.r-version }}
       - name: Install dependencies
         run: |
-          install.packages(c("remotes", "rcmdcheck"))
+          install.packages("remotes")
           remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
       - name: Check
@@ -44,5 +44,6 @@ jobs:
           _R_CHECK_CRAN_INCOMING_: false
         run: |
           options(crayon.enabled = TRUE)
+          install.packages("rcmdcheck")
           rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
         shell: Rscript {0}
