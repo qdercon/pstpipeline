@@ -22,6 +22,7 @@
 #' parameter values.
 #'
 #' @importFrom magrittr %>%
+#' @export
 
 simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
                         test = FALSE, prev_sample = NULL, raw_df = NULL, ...) {
