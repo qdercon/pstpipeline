@@ -78,7 +78,7 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
 
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
-      ids_df <- raw_df %>%
+      raw_df <- raw_df %>%
         dplyr::select(subjID) %>%
         dplyr::distinct() %>%
         dplyr::mutate(id_no = dplyr::row_number()) %>%
@@ -267,11 +267,11 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
   all_res <- tibble::as_tibble(all_res) %>%
     dplyr::select(-hidden_reward)
 
-  if (!is.null(ids_df)) {
+  if (!is.null(raw_df)) {
     all_res <- all_res %>%
-      dplyr::left_join(ids_df, by = "id_no")
+      dplyr::left_join(raw_df, by = "id_no")
     pars_df <- pars_df %>%
-      dplyr::inner_join(ids_df, by = "id_no")
+      dplyr::inner_join(raw_df, by = "id_no")
   }
   else {
     all_res <- all_res %>%
