@@ -19,22 +19,22 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
 
-Specifically, it contains:
+Specifically, the image is a Ubuntu Linux environment with:
 
-* All R package dependencies (see "DESCRIPTION" file for full details)
-* Python dependencies, including rpy2 for running R code in Jupyter notebooks
+* R v4.1.2 plus all package dependencies (see "DESCRIPTION" file for full details)
+* Python v3.9.5 plus all dependencies, including rpy2 for running R code in Jupyter notebooks
 * Jupyter Lab
 * CmdStan v2.28.1
 
 To mount the image, and open a Jupyter notebook in your browser, run the following:
 
 ```
-docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/local_mount/ pstpipeline-docker:latest
+docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker:latest
 ```
 
-The -v flag and the path that follows is optional; this allows you to mount a local drive to enable notebooks/model outputs to be saved to locally should you wish.
+The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally.
 
-Alternatively, to install the R package and all dependencies locally, run the following:
+Alternatively, to install the R package and all dependencies directly, run the following:
 
 ```R
 # install.packages("remotes")
