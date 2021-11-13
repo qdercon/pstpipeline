@@ -6,3 +6,4 @@ notebooks
 outputs
 .ipynb_checkpoints
 .github
+docker
