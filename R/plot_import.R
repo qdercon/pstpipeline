@@ -29,7 +29,7 @@
 #' This will override grp_compare (but won't affect other types of plots).
 #' @param legend_pos Enables the legend positions to be set manually.
 #' @param pal Define a custom colour palette for the plots? Otherwise reverts to defaults.
-#' @param font Use a custom font for the plots? Warnings suggest [extrafont::font_import()] should be run.
+#' @param font Use a custom font for the plots?
 #' @param font_size Base plot font size.
 #' @param ... Other arguments, used internally by other functions calling this one.
 #'

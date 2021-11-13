@@ -62,7 +62,7 @@ This will override grp_compare (but won't affect other types of plots).}
 
 \item{pal}{Define a custom colour palette for the plots? Otherwise reverts to defaults.}
 
-\item{font}{Use a custom font for the plots? Warnings suggest \code{\link[extrafont:font_import]{extrafont::font_import()}} should be run.}
+\item{font}{Use a custom font for the plots?}
 
 \item{font_size}{Base plot font size.}
 
