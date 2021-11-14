@@ -18,7 +18,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 #### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
+The easiest way to interactively run all the analyses is to download and mount the Docker image (click the "Docker" badge above). This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
 
 Specifically, the image is a Ubuntu Linux environment with:
 
