@@ -30,7 +30,7 @@ Specifically, the image is a Ubuntu Linux environment with:
 To mount the image, run the following in a command prompt:
 
 ```
-docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker:latest
+docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
 ```
 
 The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
