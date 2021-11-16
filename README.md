@@ -6,7 +6,7 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
-## an R package to clean, analyse, and present data from a large online learning study.
+### an R package to clean, analyse, and present data from a large online learning study.
 
 The idea of this package is not to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)], which inspired both the approach and execution of the analysis itself, and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
