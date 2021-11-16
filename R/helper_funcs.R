@@ -3,7 +3,6 @@
 
 single_hdi <- function(vars, cred) {
   # adapted from hBayesDM::HDIofMCMC
-
   sampleVec <- as.vector(t(vars))
   sortedPts = sort(sampleVec)
   ciIdxInc = floor(cred * length(sortedPts))
@@ -55,6 +54,7 @@ family_ch <- function(param) {
   else return(gaussian())
 }
 make_par_df <- function(raw, summary) {
+  subjID <- variable <- . <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID) %>%
     dplyr::mutate(id_no = dplyr::row_number())
