@@ -62,9 +62,9 @@ remotes::install_github("qdercon/pstpipeline")
 The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio.
 
 
-#### Key components of the package
+### Key functions
 
-- **parsing functions**:
+- **parsing**:
     - ```import_single``` converts .txt JATOS outputs for a single participant to a list of cleaned dataframes.
     - ```import_multiple``` converts .txt JATOS outputs for multiple participants to a list of cleaned dataframes.
 
@@ -76,7 +76,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
     - ```simulate_QL``` can be used to simulate data from the various QL models, either using random samples from chosen distributions or the observed individual-level parameter estimates. The output can then be fit to the models, to check whether the parameters can be adequately recovered.
 
 
-- **plotting functions**:
+- **plotting**:
     - ```plot_factors``` produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from a subset of questionnaire questions.
     - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria), and can also be used to compare groups based on any binary covariate.
     - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains (traces and rank histograms for each of the chains).
