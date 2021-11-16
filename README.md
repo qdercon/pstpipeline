@@ -26,7 +26,7 @@ Specifically, the image is a Ubuntu Linux environment with:
 * Python v3.9.5 plus all dependencies, including rpy2 for running R code in Jupyter notebooks
 * JupyterLab
 * CmdStan v2.28.1
-* All notebooks and required raw data
+* Jupyter notebooks and required raw data
 
 To mount the image, run the following in a command prompt:
 
@@ -43,7 +43,7 @@ Alternatively, to install the R package and all dependencies directly, run the f
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks/R documentation, and then copy/paste or write your own function calls as appropriate.
+The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio.
 
 
 #### Key components of the package
@@ -67,6 +67,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
     - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants.
     - ```plot_glm``` plots the results of Bayesian GLMs with both a boxplot (depicting HDIs), and a posterior density made up of the posterior draws themselves, using a modified version of [```geom_quasirandom```](https://www.rdocumentation.org/packages/ggbeeswarm/versions/0.5.3/topics/geom_quasirandom) from the [```ggbeeswarm```](https://github.com/eclarke/ggbeeswarm) package.
     - ```plot_recovery``` produces correlation plots for the observed and recovered QL parameters (after running of ```fit_learning_model``` on simulated data from ```simulate_QL```), as well as confusion matrices.
+    - ```plot_raincloud``` produces plots of the posterior mean parameter values or transdiagnostic factors, optionally by group. This function includes code adapted from the [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) repository [[3](#References)].
 
 
 - **other helper functions**
@@ -80,3 +81,5 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
 2.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
+
+3.   Allen M, Poggiali D, Whitaker K et al. Raincloud plots: a multi-platform tool for robust data visualization [version 2; peer review: 2 approved]. *Wellcome Open Res.* **4**, 63 (2021).
