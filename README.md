@@ -1,6 +1,7 @@
 # pstpipeline
 
 ![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)
+[![Docker](https://img.shields.io/docker/cloud/build/eaudeweb/scratch?label=Docker&style=flat)](https://hub.docker.com/repository/docker/qdercon/pstpipeline/general#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://cran.r-project.org/web/licenses/MIT)
 
 **p**robabilistic **s**election **t**ask **pipeline**
@@ -17,22 +18,22 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 #### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image. This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
+The easiest way to interactively run all the analyses is to download and mount the Docker image (click the "Docker" badge above). This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
 
 Specifically, the image is a Ubuntu Linux environment with:
 
 * R v4.1.2 plus all package dependencies (see "DESCRIPTION" file for full details)
 * Python v3.9.5 plus all dependencies, including rpy2 for running R code in Jupyter notebooks
-* Jupyter Lab
+* JupyterLab
 * CmdStan v2.28.1
 
-To mount the image, and open a Jupyter notebook in your browser, run the following:
+To mount the image, run the following in a command prompt:
 
 ```
-docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker:latest
+docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
 ```
 
-The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally.
+The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
 
 Alternatively, to install the R package and all dependencies directly, run the following:
 
