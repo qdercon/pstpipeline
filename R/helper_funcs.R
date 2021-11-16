@@ -3,7 +3,6 @@
 
 single_hdi <- function(vars, cred) {
   # adapted from hBayesDM::HDIofMCMC
-
   sampleVec <- as.vector(t(vars))
   sortedPts = sort(sampleVec)
   ciIdxInc = floor(cred * length(sortedPts))
@@ -53,4 +52,27 @@ quantile_hdi <- function(var, quantile, transform = FALSE) {
 family_ch <- function(param) {
   if (grepl("alpha", param)) return(Gamma(link = "log"))
   else return(gaussian())
+}
+make_par_df <- function(raw, summary) {
+  subjID <- variable <- . <- NULL # appease R CMD check
+  ids <- raw %>%
+    dplyr::distinct(subjID) %>%
+    dplyr::mutate(id_no = dplyr::row_number())
+
+  summ <- summary %>%
+    dplyr::filter(grepl("alpha|beta", variable)) %>%
+    dplyr::filter(!grepl("_pr", variable)) %>%
+    dplyr::filter(!grepl("mu_", variable)) %>%
+    dplyr::select(variable, mean) %>%
+    dplyr::mutate(id_no = as.numeric(sub("\\].*$", "",
+                                         sub(".*\\[", "", .[["variable"]])))) %>%
+    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
+    dplyr::rename(parameter = variable) %>%
+    dplyr::rename(posterior_mean = mean) %>%
+    dplyr::right_join(ids, by = "id_no")
+
+  par_df <- ppt_info %>%
+    dplyr::inner_join(summ, by = "subjID")
+
+  return(par_df)
 }

@@ -55,31 +55,14 @@ parameter_glm <- function(summary_df = list(),
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
-    ids <- raw_df[[s]] %>%
-      dplyr::distinct(subjID) %>%
-      dplyr::mutate(id_no = dplyr::row_number())
-
-    summary <- summary_df[[s]] %>%
-      dplyr::filter(grepl("alpha|beta", variable)) %>%
-      dplyr::filter(!grepl("_pr", variable)) %>%
-      dplyr::filter(!grepl("mu_", variable)) %>%
-      dplyr::select(variable, mean) %>%
-      dplyr::mutate(id_no = as.numeric(sub("\\].*$", "",
-                                           sub(".*\\[", "", .[["variable"]])))) %>%
-      dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
-      dplyr::rename(parameter = variable) %>%
-      dplyr::rename(posterior_mean = mean) %>%
-      dplyr::right_join(ids, by = "id_no")
-
-    all_data[[s]] <- ppt_info %>%
-      dplyr::inner_join(summary, by = "subjID")
+    all_data[[s]] <- make_par_df(raw_df[[s]], summary_df[[s]])
   }
-
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
   if (!is.null(factor_scores)) {
     all_data <- all_data %>%
       dplyr::left_join(factor_scores, by = "subjID")
   }
+
   formula <- paste0("posterior_mean ~ ",
                     paste0(var_of_interest, collapse = "+"), "+",
                     paste0(covariates, collapse = "+"))
