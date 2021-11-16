@@ -39,7 +39,7 @@ The image can also be built locally from the included Dockerfile by running (in 
 ```
 git clone https://github.com/qdercon/pstpipeline
 cd pstpipeline/docker
-docker build -t pstpipeline-docker:latest .
+docker build -t pstpipeline-docker .
 ```
 
 Once downloaded or built, to mount the image, run the following in a command prompt:
