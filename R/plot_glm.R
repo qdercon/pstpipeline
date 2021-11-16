@@ -27,8 +27,8 @@
 #' summary boxplot.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
-#'
 #' @importFrom stats setNames
+#' @export
 
 plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
                      grp_labs = NULL, ovrll_title = NULL, cred = c(0.95, 0.99),

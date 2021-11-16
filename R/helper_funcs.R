@@ -3,7 +3,6 @@
 
 single_hdi <- function(vars, cred) {
   # adapted from hBayesDM::HDIofMCMC
-
   sampleVec <- as.vector(t(vars))
   sortedPts = sort(sampleVec)
   ciIdxInc = floor(cred * length(sortedPts))
