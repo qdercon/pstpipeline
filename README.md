@@ -18,7 +18,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 ### Using the package
 
-#### Quickstart: Docker
+#### Docker container
 
 The easiest way to interactively run all the analyses is to download and mount the Docker image. To do so, first download and install the relevant version of [Docker](https://docs.docker.com/get-docker/) for your OS, and then run the following in a command prompt:
 
