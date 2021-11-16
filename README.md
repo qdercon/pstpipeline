@@ -6,7 +6,7 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
-### an R package to clean, analyse, and present data from a large online learning study.
+## an R package to clean, analyse, and present data from a large online learning study.
 
 The idea of this package is not to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is modified from other packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)], which inspired both the approach and execution of the analysis itself, and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
@@ -16,11 +16,17 @@ This package is not meant to supercede or replace this work; instead its main ai
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
 
-#### Using the package
+### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image (click "Docker" above to access the repo). This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
+#### Quickstart: Docker
 
-Specifically, the image is a Ubuntu Linux environment with:
+The easiest way to interactively run all the analyses is to download and mount the Docker image. To do so, first download and install the relevant version of [Docker](https://docs.docker.com/get-docker/) for your OS, and then run the following in a command prompt:
+
+```
+docker pull qdercon/pstpipeline:v0.1.0
+```
+
+The image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected). Specifically, it is a Linux environment with:
 
 * R v4.1.2 plus all package dependencies (see "DESCRIPTION" file for full details)
 * Python v3.9.5 plus all dependencies, including rpy2 for running R code in Jupyter notebooks
@@ -44,7 +50,9 @@ docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]
 
 The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
 
-Alternatively, to install the R package and all dependencies directly, run the following:
+#### Local R installation
+
+To install the R package and all dependencies directly, run the following:
 
 ```R
 # install.packages("remotes")
