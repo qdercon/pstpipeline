@@ -59,7 +59,7 @@ To install the R package and all dependencies directly, run the following:
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio.
+The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio. Though written primarily for our specific data/analyses, the functions are written to be relatively flexible, and can be easily modified (e.g., to add new models).
 
 
 ### Key functions
