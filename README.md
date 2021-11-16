@@ -18,7 +18,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 
 #### Using the package
 
-The easiest way to interactively run all the analyses is to download and mount the Docker image (click the "Docker" badge above). This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
+The easiest way to interactively run all the analyses is to download and mount the Docker image (click "Docker" above to access the repo). This image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected).
 
 Specifically, the image is a Ubuntu Linux environment with:
 
@@ -28,7 +28,15 @@ Specifically, the image is a Ubuntu Linux environment with:
 * CmdStan v2.28.1
 * Jupyter notebooks and required raw data
 
-To mount the image, run the following in a command prompt:
+The image can also be built locally from the included Dockerfile by running (in a directory of your choice):
+
+```
+git clone https://github.com/qdercon/pstpipeline
+cd pstpipeline/docker
+docker build -t pstpipeline-docker:latest .
+```
+
+Once downloaded or built, to mount the image, run the following in a command prompt:
 
 ```
 docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
