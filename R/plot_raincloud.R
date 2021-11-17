@@ -9,7 +9,7 @@
 #' @param type Type of plot to retunn - either separate plots for each \code{parameter},
 #' or each transdiagnostic rlang::symptom \code{factor}.
 #' @param by Separately plot distributions by a certain demographic variable?
-#' @param legend_title,legend_labels,legend_position Controls to name and label the items
+#' @param legend_title,legend_labels,legend_pos Controls to name and label the items
 #' in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its
 #' position.
 #' @param factor_scores \code{data.frame} with the derived transdiagnostic factor scores,
@@ -25,7 +25,7 @@
 #' @export
 
 plot_raincloud <- function(summary_df, raw_df, type = "parameter", by = NULL,
-                           legend_title = by, legend_labels = NULL, legend_position = "right",
+                           legend_title = by, legend_labels = NULL, legend_pos = "right",
                            factor_scores = NULL, flip = TRUE, cred = c(0.95, 0.99),
                            pal = NULL, font_size = 11, font = "") {
 
@@ -80,7 +80,6 @@ plot_raincloud <- function(summary_df, raw_df, type = "parameter", by = NULL,
       ggplot2::ggplot(ggplot2::aes(x = !!type, y = value, fill = factor(!!by),
                                    colour = interaction(!!by, !!type))) +
       ggplot2::guides(colour = "none") +
-      ggplot2::theme(legend.position = legend_position) +
       ggplot2::scale_colour_manual(values = pal[c(1:2, 1:2, 1:2)])
     if (!is.null(legend_labels)) {
       rain_plot <- rain_plot +
@@ -112,7 +111,9 @@ plot_raincloud <- function(summary_df, raw_df, type = "parameter", by = NULL,
     cowplot::theme_half_open(
       font_size = font_size,
       font_family = font
-    )
+    ) +
+    ggplot2::theme(legend.position = legend_pos)
+
 
   if (flip) {
     rain_plot <- rain_plot +

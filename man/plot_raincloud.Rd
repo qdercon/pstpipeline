@@ -11,7 +11,7 @@ plot_raincloud(
   by = NULL,
   legend_title = by,
   legend_labels = NULL,
-  legend_position = "right",
+  legend_pos = "right",
   factor_scores = NULL,
   flip = TRUE,
   cred = c(0.95, 0.99),
@@ -31,8 +31,8 @@ or each transdiagnostic rlang::symptom \code{factor}.}
 
 \item{by}{Separately plot distributions by a certain demographic variable?}
 
-\item{legend_title, legend_labels, legend_position}{Manual naming for the legend title
-and/or labels, as these may be formatted poorly if \code{by != NULL}, and setting of its
+\item{legend_title, legend_labels, legend_pos}{Controls to name and label the items
+in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its
 position.}
 
 \item{factor_scores}{\code{data.frame} with the derived transdiagnostic factor scores,
