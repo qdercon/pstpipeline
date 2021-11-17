@@ -10,6 +10,8 @@ plot_raincloud(
   type = "parameter",
   test = FALSE,
   by = NULL,
+  rhat_upper = 1.1,
+  ess_lower = 100,
   legend_title = by,
   legend_labels = NULL,
   legend_pos = "right",
@@ -33,6 +35,11 @@ or each transdiagnostic rlang::symptom \code{factor}.}
 \item{test}{Boolean indicating whether summaries are from the test phase.}
 
 \item{by}{Separately plot distributions by a certain demographic variable?}
+
+\item{rhat_upper, ess_lower}{Upper and lower bounds for individuals' rhat and effective
+sample size (ESS) for the parameters of interest. For consistency, if one of an
+individual's parameters do not meet these criteria, all their parameters are removed from
+the plot. Set to \code{Inf} and \code{0} to avoid excluding any individuals.}
 
 \item{legend_title, legend_labels, legend_pos}{Controls to name and label the items
 in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its

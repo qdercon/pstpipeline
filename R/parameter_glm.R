@@ -22,6 +22,7 @@
 #' @param factor_scores Given the factor scores were derived separately, this argument allows the
 #' \code{data.frame} containing the factor scores to be supplied, so that these factors can
 #' be included in models.
+#' @param rhat_upper,ess_lower Same as [plot_raincloud()].
 #' @param ... Other arguments to pass to [cmdstan_glm()] (e.g., to control
 #' number of warm-up and sampling iterations). In addition, use \code{cores} to chnage the
 #' number of parallel chains to sample from.
@@ -39,6 +40,8 @@ parameter_glm <- function(summary_df = list(),
                           interaction = NULL,
                           recode_na = NULL,
                           factor_scores = NULL,
+                          rhat_upper = 1.1,
+                          ess_lower = 100,
                           ...) {
 
   l <- list(...)
@@ -55,7 +58,9 @@ parameter_glm <- function(summary_df = list(),
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
-    all_data[[s]] <- make_par_df(raw_df[[s]], summary_df[[s]])
+    all_data[[s]] <- make_par_df(
+      raw_df[[s]], summary_df[[s]], rhat_upper = rhat_upper, ess_lower = ess_lower
+    )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
   if (!is.null(factor_scores)) {

@@ -53,7 +53,7 @@ family_ch <- function(param) {
   if (grepl("alpha", param)) return(Gamma(link = "log"))
   else return(gaussian())
 }
-make_par_df <- function(raw, summary) {
+make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
   subjID <- variable <- . <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID) %>%
@@ -63,13 +63,18 @@ make_par_df <- function(raw, summary) {
     dplyr::filter(grepl("alpha|beta", variable)) %>%
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
-    dplyr::select(variable, mean) %>%
+    dplyr::select(variable, mean, rhat, contains("ess")) %>%
     dplyr::mutate(id_no = as.numeric(sub("\\].*$", "",
                                          sub(".*\\[", "", .[["variable"]])))) %>%
     dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
     dplyr::rename(parameter = variable) %>%
     dplyr::rename(posterior_mean = mean) %>%
-    dplyr::right_join(ids, by = "id_no")
+    dplyr::right_join(ids, by = "id_no") %>%
+    dplyr::group_by(subjID) %>%
+    dplyr::filter(!any(rhat > rhat_upper)) %>%
+    dplyr::filter(!any(ess_bulk < ess_lower)) %>%
+    dplyr::filter(!any(ess_tail < ess_lower)) %>%
+    dplyr::ungroup()
 
   par_df <- ppt_info %>%
     dplyr::inner_join(summ, by = "subjID")

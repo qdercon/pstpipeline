@@ -12,6 +12,8 @@ parameter_glm(
   interaction = NULL,
   recode_na = NULL,
   factor_scores = NULL,
+  rhat_upper = 1.1,
+  ess_lower = 100,
   ...
 )
 }
@@ -37,6 +39,8 @@ be set to 0).}
 \item{factor_scores}{Given the factor scores were derived separately, this argument allows the
 \code{data.frame} containing the factor scores to be supplied, so that these factors can
 be included in models.}
+
+\item{rhat_upper, ess_lower}{Same as \code{\link[=plot_raincloud]{plot_raincloud()}}.}
 
 \item{...}{Other arguments to pass to \code{\link[=cmdstan_glm]{cmdstan_glm()}} (e.g., to control
 number of warm-up and sampling iterations). In addition, use \code{cores} to chnage the

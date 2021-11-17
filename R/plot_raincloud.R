@@ -10,6 +10,10 @@
 #' or each transdiagnostic rlang::symptom \code{factor}.
 #' @param test Boolean indicating whether summaries are from the test phase.
 #' @param by Separately plot distributions by a certain demographic variable?
+#' @param rhat_upper,ess_lower Upper and lower bounds for individuals' rhat and effective
+#' sample size (ESS) for the parameters of interest. For consistency, if one of an
+#' individual's parameters do not meet these criteria, all their parameters are removed from
+#' the plot. Set to \code{Inf} and \code{0} to avoid excluding any individuals.
 #' @param legend_title,legend_labels,legend_pos Controls to name and label the items
 #' in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its
 #' position.
@@ -25,7 +29,8 @@
 #' @importFrom stats setNames
 #' @export
 
-plot_raincloud <- function(summary_df, raw_df, type = "parameter", test = FALSE, by = NULL,
+plot_raincloud <- function(summary_df, raw_df, type = "parameter", test = FALSE,
+                           by = NULL, rhat_upper = 1.1, ess_lower = 100,
                            legend_title = by, legend_labels = NULL, legend_pos = "right",
                            factor_scores = NULL, flip = TRUE, cred = c(0.95, 0.99),
                            pal = NULL, font_size = 11, font = "") {
@@ -42,7 +47,9 @@ plot_raincloud <- function(summary_df, raw_df, type = "parameter", test = FALSE,
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
-    all_data[[s]] <- make_par_df(raw_df[[s]], summary_df[[s]])
+    all_data[[s]] <- make_par_df(
+      raw_df[[s]], summary_df[[s]], rhat_upper = rhat_upper, ess_lower = ess_lower
+    )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
   if (!is.null(factor_scores)) {
