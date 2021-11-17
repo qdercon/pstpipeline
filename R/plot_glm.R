@@ -60,7 +60,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp =
 
   for (p in seq_along(pars)) {
     par <- pars[[p]]
-    alpha <- grepl("_", par)
+    alpha <- grepl("alpha", par)
     voi <- rlang::sym(plot_var)
 
     par_df_tr <- par_df %>% dplyr::filter(parameter == par)
