@@ -54,7 +54,8 @@ family_ch <- function(param) {
   else return(gaussian())
 }
 make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
-  subjID <- variable <- . <- NULL # appease R CMD check
+  subjID <- variable <- . <- ess_bulk <- ess_tail <-
+    rhat <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID) %>%
     dplyr::mutate(id_no = dplyr::row_number())
@@ -64,7 +65,7 @@ make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
     dplyr::filter(grepl("alpha|beta", variable)) %>%
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
-    dplyr::select(variable, mean, rhat, contains("ess")) %>%
+    dplyr::select(variable, mean, rhat, tidyselect::contains("ess")) %>%
     dplyr::mutate(id_no = as.numeric(sub("\\].*$", "",
                                          sub(".*\\[", "", .[["variable"]])))) %>%
     dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
