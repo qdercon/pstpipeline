@@ -8,6 +8,7 @@ plot_glm(
   par_df,
   plot_var,
   id.col = "parameter",
+  test = FALSE,
   grp = id.col,
   grp_labs = NULL,
   ovrll_title = NULL,
@@ -33,6 +34,8 @@ plot_glm(
 \item{plot_var}{The variable of interest to plot (e.g., distanced vs non-distanced).}
 
 \item{id.col}{The column that contains the QL model parameter names.}
+
+\item{test}{Boolean indicating whether summaries are from the test phase.}
 
 \item{grp}{Optional group to plot separately on each plot, which should be the interaction
 variable specified in \code{\link[=parameter_glm]{parameter_glm()}}.}

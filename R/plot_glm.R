@@ -10,6 +10,7 @@
 #' [parameter_glm()].
 #' @param plot_var The variable of interest to plot (e.g., distanced vs non-distanced).
 #' @param id.col The column that contains the QL model parameter names.
+#' @param test Boolean indicating whether summaries are from the test phase.
 #' @param grp Optional group to plot separately on each plot, which should be the interaction
 #' variable specified in [parameter_glm()].
 #' @param grp_labs Optional labels for the groups defined by \code{grp}. It is recommended to
@@ -30,7 +31,7 @@
 #' @importFrom stats setNames
 #' @export
 
-plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
+plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp = id.col,
                      grp_labs = NULL, ovrll_title = NULL, cred = c(0.95, 0.99),
                      top_right = TRUE, coord_flip = TRUE, dist_nudge = 0,
                      max_dist_width = 0.5, point_alpha = 0.25, point_size = 0.75,
@@ -107,7 +108,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
         name = bquote(
           .(title) ~ .(
             rlang::parse_expr(
-              paste0(strsplit(par, "_")[[1]][1],
+              paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
                      ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]"))
               )
             )
