@@ -8,6 +8,7 @@ plot_raincloud(
   summary_df,
   raw_df,
   type = "parameter",
+  test = FALSE,
   by = NULL,
   legend_title = by,
   legend_labels = NULL,
@@ -28,6 +29,8 @@ correctly link subject IDs to independent variables.}
 
 \item{type}{Type of plot to retunn - either separate plots for each \code{parameter},
 or each transdiagnostic rlang::symptom \code{factor}.}
+
+\item{test}{Boolean indicating whether summaries are from the test phase.}
 
 \item{by}{Separately plot distributions by a certain demographic variable?}
 

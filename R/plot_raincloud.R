@@ -8,6 +8,7 @@
 #' correctly link subject IDs to independent variables.
 #' @param type Type of plot to retunn - either separate plots for each \code{parameter},
 #' or each transdiagnostic rlang::symptom \code{factor}.
+#' @param test Boolean indicating whether summaries are from the test phase.
 #' @param by Separately plot distributions by a certain demographic variable?
 #' @param legend_title,legend_labels,legend_pos Controls to name and label the items
 #' in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its
@@ -24,7 +25,7 @@
 #' @importFrom stats setNames
 #' @export
 
-plot_raincloud <- function(summary_df, raw_df, type = "parameter", by = NULL,
+plot_raincloud <- function(summary_df, raw_df, type = "parameter", test = FALSE, by = NULL,
                            legend_title = by, legend_labels = NULL, legend_pos = "right",
                            factor_scores = NULL, flip = TRUE, cred = c(0.95, 0.99),
                            pal = NULL, font_size = 11, font = "") {
@@ -121,22 +122,17 @@ plot_raincloud <- function(summary_df, raw_df, type = "parameter", by = NULL,
   }
   if (type == "parameter") {
     if (length(unique(df[[type]])) == 2) {
-      rain_plot <- rain_plot +
-        ggplot2::scale_x_discrete(
-          name ="Parameter",
-          labels = c(expression(alpha), expression(beta))
-      ) +
+      if (test) labs <- c(expression(alpha*minute), expression(beta*minute))
+      else labs <- c(expression(alpha), expression(beta))
+    }
+    else {
+      if (test) labs <- c(expression(alpha*minute[pos]), expression(alpha*minute[neg]), expression(beta*minute))
+      else labs <- c(expression(alpha[pos]), expression(alpha[neg]), expression(beta))
+    }
+    rain_plot <- rain_plot +
+      ggplot2::scale_x_discrete(name = NULL, labels = labs) +
       ggplot2::scale_y_continuous(name ="Posterior mean", breaks = c(0, 0.5, 1, 2, 4, 8),
                                   trans = "pseudo_log")
-    } else {
-      rain_plot <- rain_plot +
-        ggplot2::scale_x_discrete(
-          name = NULL,
-          labels = c(expression(alpha[pos]), expression(alpha[neg]), expression(beta))
-        ) +
-        ggplot2::scale_y_continuous(name ="Posterior mean", breaks = c(0, 0.5, 1, 2, 4, 8),
-                                    trans = "pseudo_log")
-    }
   }
   else {
     if (flip) x_labels <- c("Social Withdrawal", "Compulsivity", "Anxiety/depression")
