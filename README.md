@@ -34,10 +34,14 @@ The image includes everything required to run the Jupyter notebooks both locally
 * CmdStan v2.28.1
 * Jupyter notebooks and required raw data
 
-The image can also be built locally from the included Dockerfile by running (in a directory of your choice):
+The image can also be built locally from the included Dockerfile. For example, on Windows, to clone the repo, extract the relevant data & notebooks, and build the Docker image, you could run the following:
 
 ```
 git clone https://github.com/qdercon/pstpipeline
+cd pstpipeline
+md docker\outputs\factor_prediction
+cp -a data-raw docker/data-raw
+cp -a notebooks docker/notebooks
 cd pstpipeline/docker
 docker build -t pstpipeline-docker .
 ```
