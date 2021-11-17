@@ -50,5 +50,5 @@ lines respectively.}
 }
 \description{
 \code{plot_raincloud} plots simple "raincloud" plots of posterior densities, most likely
-for model parameters (by group).#'
+for model parameters (by group).
 }

@@ -52,10 +52,10 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
 
   plots <- list()
   pars <- unique(par_df[[id.col]])
-  if (y_grp != id.col & is.null(y_labs)) {
-    y_labs <- levels(factor(par_df[[y_grp]]))
+  if (grp != id.col & is.null(grp_labs)) {
+    grp_labs <- levels(factor(par_df[[grp]]))
   }
-  y_grp <- rlang::sym(y_grp)
+  grp <- rlang::sym(grp)
 
   for (p in seq_along(pars)) {
     par <- pars[[p]]
@@ -67,17 +67,17 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", grp = id.col,
       title <- "Estimated mean % difference in"
       plot <- par_df_tr %>%
         ggplot2::ggplot(
-          ggplot2::aes(x = !!y_grp, y = (exp(value) - 1)*100, fill = id.col, colour = id.col)
+          ggplot2::aes(x = !!grp, y = (exp(value) - 1)*100, fill = id.col, colour = id.col)
           )
     }
     else {
       title <- "Estimated mean difference in"
       plot <- par_df_tr %>%
         ggplot2::ggplot(
-          ggplot2::aes(x = !!y_grp, y = value, fill = id.col, colour = id.col)
+          ggplot2::aes(x = !!grp, y = value, fill = id.col, colour = id.col)
         )
     }
-    if (p==1 | !coord_flip) y_labels <- y_labs
+    if (p==1 | !coord_flip) y_labels <- grp_labs
     else y_labels <- NULL
 
     plots[[par]] <- plot +

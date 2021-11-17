@@ -1,7 +1,7 @@
 #' Raincloud plots
 #'
 #' \code{plot_raincloud} plots simple "raincloud" plots of posterior densities, most likely
-#' for model parameters (by group).#'
+#' for model parameters (by group).
 #'
 #' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of interest.
 #' @param raw_df List of raw data inputs to the above fits (in the same order). Used to
