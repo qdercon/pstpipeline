@@ -26,7 +26,7 @@ The easiest way to interactively run all the analyses is to download and mount t
 docker pull qdercon/pstpipeline:v0.1.0
 ```
 
-The image contains everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected). Specifically, it is a Linux environment with:
+The image includes everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected). More specifically, it is a Ubuntu Linux environment containing:
 
 * R v4.1.2 plus all package dependencies (see "DESCRIPTION" file for full details)
 * Python v3.9.5 plus all dependencies, including rpy2 for running R code in Jupyter notebooks
@@ -48,7 +48,7 @@ Once downloaded or built, to mount the image, run the following in a command pro
 docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
 ```
 
-The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks/model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
+The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks and model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
 
 #### Local R installation
 
@@ -59,7 +59,7 @@ To install the R package and all dependencies directly, run the following:
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio. Though written primarily for our specific data/analyses, the functions are written to be relatively flexible, and can be easily modified (e.g., to add new models).
+The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio. Though written primarily for our specific data/analyses, the functions are written to be relatively flexible, and hopefully can be easily modified (e.g., to add new models).
 
 
 ### Key functions
@@ -71,7 +71,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 - **analysis and model checking**:
     - ```fit_learning_model``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC. Its functionality is comparable to [```hBayesDM::hBayesDM_model()```](https://rdrr.io/cran/hBayesDM/src/R/hBayesDM_model.R), but with a CmdStan backend.
-    - ```generate_posterior_quantities``` enables posterior predictions for each MCMC sample to be generated in a separate session using a previously fitted model (as this can be memory-intensive otherwise).
+    - ```generate_posterior_quantities``` enables posterior predictions for each MCMC sample to be generated in a separate session using a previously fitted model (as this can be memory-intensive otherwise). This is achieved by running CmdStanR's [$generate_quantities()](https://mc-stan.org/cmdstanr/reference/model-method-generate-quantities.html) method.
     - ```parameter_glm``` is a wrapper for```cmdstan_glm```, a version of [```stan_glm```](https://mc-stan.org/rstanarm/reference/stan_glm.html) from the [```rstanarm```](https://github.com/stan-dev/rstanarm) package which has been modified to use [```cmdstanr```](https://mc-stan.org/cmdstanr/) rather than [```rstan```](https://cran.r-project.org/web/packages/rstan/index.html) as its backend (which greatly reduces the number of dependencies required). It is used to run adjusted Bayesian GLMs relating the individual-level posterior means of the learning parameters to outcome variable(s) of interest.
     - ```simulate_QL``` can be used to simulate data from the various QL models, either using random samples from chosen distributions or the observed individual-level parameter estimates. The output can then be fit to the models, to check whether the parameters can be adequately recovered.
 
