@@ -17,6 +17,7 @@
 #' first run the function with this kept as \code{NULL} to make sure you label the correct
 #' densities.
 #' @param ovrll_title Title to set for the whole plot.
+#' @param title_rel_ht Relative height of the title compared to the main plot.
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot boxes and
 #' lines respectively.
 #' @param top_right,coord_flip Booleans; if \code{TRUE} the densities will be on the top
@@ -32,11 +33,11 @@
 #' @export
 
 plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp = id.col,
-                     grp_labs = NULL, ovrll_title = NULL, cred = c(0.95, 0.99),
-                     top_right = TRUE, coord_flip = TRUE, dist_nudge = 0,
-                     max_dist_width = 0.5, point_alpha = 0.25, point_size = 0.75,
-                     box_alpha = 0.6, box_width = 0.125, box_nudge = 0.1,
-                     pal = NULL, font_size = 11, font = "") {
+                     grp_labs = NULL, ovrll_title = NULL, title_rel_ht = NULL,
+                     cred = c(0.95, 0.99), top_right = TRUE, coord_flip = TRUE,
+                     dist_nudge = 0, max_dist_width = 0.5, point_alpha = 0.25,
+                     point_size = 0.75, box_alpha = 0.6, box_width = 0.125,
+                     box_nudge = 0.1, pal = NULL, font_size = 11, font = "") {
 
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -130,6 +131,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp =
   )
 
   if (!is.null(ovrll_title)) {
+    if (is.null(title_rel_ht)) title_rel_ht <- c(0.15, 1)
     title <- cowplot::ggdraw() +
       cowplot::draw_label(
         ovrll_title, x = 0, hjust = 0,
@@ -141,7 +143,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp =
       )
     plot_together <- cowplot::plot_grid(
       title, plot_together,
-      nrow = 2, rel_heights = c(0.15, 1)
+      nrow = 2, rel_heights = title_rel_ht
     )
   }
   return(plot_together)
