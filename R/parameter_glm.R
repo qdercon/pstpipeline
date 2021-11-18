@@ -124,9 +124,11 @@ parameter_glm <- function(summary_df = list(),
 
   pars_df <- data.table::rbindlist(par_ls, idcol = "parameter")
   if (!is.null(interaction)) {
+    int_nm <- rlang::sym(interaction)
     pars_df <- pars_df %>% dplyr::mutate(recode = FALSE)
     pars_df_recode <- data.table::rbindlist(par_ls_recode, idcol = "parameter")
-    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode)
+    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) %>%
+      dplyr::rename(!!int_nm := recode)
   }
   return(pars_df)
 }
