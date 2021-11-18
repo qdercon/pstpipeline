@@ -136,11 +136,11 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp =
         fontface = "bold"
       ) +
       ggplot2::theme(
-        plot.margin = ggplot2::margin(0, 0, 0, 7)
+        plot.margin = ggplot2::margin(2.5, 0, 2.5, 7)
       )
     plot_together <- cowplot::plot_grid(
       title, plot_together,
-      nrow = 2, rel_heights = c(0.1, 1)
+      nrow = 2, rel_heights = c(0.15, 1)
     )
   }
   return(plot_together)
