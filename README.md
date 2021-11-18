@@ -1,8 +1,8 @@
 # pstpipeline
 
-![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)
+[![R-CMD-check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml)
 [![Docker](https://img.shields.io/docker/cloud/build/eaudeweb/scratch?label=Docker&style=flat)](https://hub.docker.com/repository/docker/qdercon/pstpipeline/general#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://cran.r-project.org/web/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/qdercon/pstpipeline/blob/main/LICENSE)
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
@@ -83,7 +83,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 - **plotting**:
     - ```plot_factors``` produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from a subset of questionnaire questions.
     - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria), and can also be used to compare groups based on any binary covariate.
-    - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains (traces and rank histograms for each of the chains).
+    - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains via the [```bayesplot```](https://mc-stan.org/bayesplot/) package (traces and rank histograms for each of the chains).
     - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants.
     - ```plot_glm``` plots the results of Bayesian GLMs with both a boxplot (depicting HDIs), and a posterior density made up of the posterior draws themselves, using a modified version of [```geom_quasirandom```](https://www.rdocumentation.org/packages/ggbeeswarm/versions/0.5.3/topics/geom_quasirandom) from the [```ggbeeswarm```](https://github.com/eclarke/ggbeeswarm) package.
     - ```plot_recovery``` produces correlation plots for the observed and recovered QL parameters (after running of ```fit_learning_model``` on simulated data from ```simulate_QL```), as well as confusion matrices.
