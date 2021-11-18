@@ -73,9 +73,12 @@ make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
     dplyr::rename(posterior_mean = mean) %>%
     dplyr::right_join(ids, by = "id_no") %>%
     dplyr::group_by(subjID) %>%
-    dplyr::filter(!any(rhat > rhat_upper)) %>%
-    dplyr::filter(!any(ess_bulk < ess_lower)) %>%
-    dplyr::filter(!any(ess_tail < ess_lower)) %>%
+    dplyr::filter(dplyr::across(
+      tidyselect::any_of("rhat"), ~!any(.x > rhat_upper))
+    ) %>%
+    dplyr::filter(dplyr::across(
+      tidyselect::any_of(tidyselect::starts_with("ess_")), ~!any(.x < ess_lower)
+    )) %>%
     dplyr::ungroup()
 
   lost_ids <- n_id - length(unique(summ$subjID))

@@ -54,7 +54,7 @@ plot_glm <- function(par_df, plot_var, id.col = "parameter", test = FALSE, grp =
   plots <- list()
   pars <- unique(par_df[[id.col]])
   if (grp != id.col) {
-    grp <- paste0(grp, "_recode")
+    if (!is.null(par_df[[paste0(grp, "_recode")]])) grp <- paste0(grp, "_recode")
     if (is.null(grp_labs)) grp_labs <- levels(factor(par_df[[grp]]))
   }
   grp <- rlang::sym(grp)

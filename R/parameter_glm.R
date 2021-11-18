@@ -54,7 +54,8 @@ parameter_glm <- function(summary_df = list(),
   if (is.null(getOption("mc.cores"))) options(mc.cores = l$cores)
 
   ## to appease R CMD check
-  variable <- parameter <- . <- subjID <- value <- trial_no <- id_no <-  NULL
+  variable <- parameter <- . <- subjID <- value <- trial_no <-
+    id_no <- recode <- NULL
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
@@ -88,7 +89,7 @@ parameter_glm <- function(summary_df = list(),
   }
   par_ls <- list()
 
-  mod <- lm(rlang::parse_expr(formula), data = all_data[1:10,])
+  mod <- lm(rlang::parse_expr(formula), data = all_data)
     # used to get the correct names for betas (as ordering may change e.g., with interactions)
   beta_names <- attr(mod$terms , "term.labels")
 

@@ -3,6 +3,7 @@
 export(.grab_ggplot_internals)
 export(check_learning_models)
 export(cmdstan_glm)
+export(compare_block_diffs)
 export(fit_learning_model)
 export(generate_posterior_quantities)
 export(get_preds_by_chain)
