@@ -47,10 +47,14 @@ compare_block_diffs <- function(all_res,
     rel_data_tr <- rel_data
     rel_data_tr$training <- rel_data_tr$training %>%
       dplyr::filter(trial_no <= iter[i]*60)
+    fit_typ <- ifelse(vb, "vb", "mcmc")
     first_n_blks <- fit_learning_model(
-      rel_data_tr, model = model, exp_part = "training", vb = vb, out_dir = out_dir,
-      ppc = FALSE, task_excl = l$task_excl, accuracy_excl = l$accuracy_excl,
-      model_checks = FALSE, save_model_as = paste0("first_", i, "_blocks"),
+      rel_data_tr, model = model, exp_part = "training", vb = vb,
+      out_dir = out_dir, ppc = FALSE, task_excl = l$task_excl,
+      accuracy_excl = l$accuracy_excl, model_checks = FALSE,
+      save_model_as = paste(
+        "first", i, "training_blocks", model, fit_typ, sep = "_"
+        ),
       outputs = c("raw_df", "summary"), save_outputs = FALSE, ...
     )
     par_df_ls[[i]] <- parameter_glm(
@@ -71,5 +75,4 @@ compare_block_diffs <- function(all_res,
     dplyr::mutate(block_group = factor(block_group, levels = rev(names(par_df_ls))))
 
   return(glm_pars_df)
-
 }
