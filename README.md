@@ -42,7 +42,7 @@ cd pstpipeline
 md docker\outputs\factor_prediction
 cp -a data-raw docker/data-raw
 cp -a notebooks docker/notebooks
-cd pstpipeline/docker
+cd docker
 docker build -t pstpipeline-docker .
 ```
 
