@@ -1,6 +1,6 @@
 # pstpipeline
 
-![R CMD check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)
+[![R-CMD-check](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml/badge.svg)](https://github.com/qdercon/pstpipeline/actions/workflows/main.yml)
 [![Docker](https://img.shields.io/docker/cloud/build/eaudeweb/scratch?label=Docker&style=flat)](https://hub.docker.com/repository/docker/qdercon/pstpipeline/general#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://cran.r-project.org/web/licenses/MIT)
 
