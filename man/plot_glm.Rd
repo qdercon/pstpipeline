@@ -12,6 +12,7 @@ plot_glm(
   grp = id.col,
   grp_labs = NULL,
   ovrll_title = NULL,
+  title_rel_ht = NULL,
   cred = c(0.95, 0.99),
   top_right = TRUE,
   coord_flip = TRUE,
@@ -45,6 +46,9 @@ first run the function with this kept as \code{NULL} to make sure you label the 
 densities.}
 
 \item{ovrll_title}{Title to set for the whole plot.}
+
+\item{title_rel_ht}{Relative height of the title compared to the main plot, given as a
+2 element vector. Defaults to \code{c(0.15, 1)}.}
 
 \item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot boxes and
 lines respectively.}

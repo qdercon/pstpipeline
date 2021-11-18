@@ -17,7 +17,8 @@
 #' first run the function with this kept as \code{NULL} to make sure you label the correct
 #' densities.
 #' @param ovrll_title Title to set for the whole plot.
-#' @param title_rel_ht Relative height of the title compared to the main plot.
+#' @param title_rel_ht Relative height of the title compared to the main plot, given as a
+#' 2 element vector. Defaults to \code{c(0.15, 1)}.
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot boxes and
 #' lines respectively.
 #' @param top_right,coord_flip Booleans; if \code{TRUE} the densities will be on the top
