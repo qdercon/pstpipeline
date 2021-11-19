@@ -82,7 +82,7 @@ make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
     dplyr::ungroup()
 
   lost_ids <- n_id - length(unique(summ$subjID))
-  if (lost_ids > 0) message(lost_ids, " individuals dropped due to high rhat and/or low bulk ESS.")
+  if (lost_ids > 0) message(lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS.")
 
   par_df <- ppt_info %>%
     dplyr::inner_join(summ, by = "subjID")
