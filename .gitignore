@@ -1,7 +1,7 @@
 .Rproj.user
 .Rhistory
-.RData
 .Ruserdata
 .ipynb_checkpoints
+*.RData
 outputs
 data-raw/*.txt
