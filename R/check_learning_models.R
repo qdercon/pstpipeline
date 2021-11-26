@@ -90,8 +90,8 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
         ggplot2::scale_x_continuous(
           name = bquote(
             .(rlang::parse_expr(
-                paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                       ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]")
+                paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
+                       ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][3], "]")
                               )
                        )
                 )
