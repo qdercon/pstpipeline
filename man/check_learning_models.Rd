@@ -6,6 +6,7 @@
 \usage{
 check_learning_models(
   draws,
+  test = FALSE,
   mean_pars = TRUE,
   diagnostic_plots = TRUE,
   pal = NULL,
@@ -17,6 +18,8 @@ check_learning_models(
 \item{draws}{Post-warmup draws - either a \code{\link[posterior:draws_array]{posterior::draws_array()}}, a \code{\link[posterior:draws_list]{posterior::draws_list()}}, or a vector
 of file paths to the .csv output files. May also be a \code{\link[posterior:draws_df]{posterior::draws_df()}} but chain-by-chain diagnostics
 will not be possible.}
+
+\item{test}{Boolean indicating whether recovered parameters are from the test phase.}
 
 \item{mean_pars}{Output a plot of the mean parameters?}
 

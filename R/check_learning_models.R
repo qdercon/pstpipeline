@@ -6,6 +6,7 @@
 #' @param draws Post-warmup draws - either a [posterior::draws_array()], a [posterior::draws_list()], or a vector
 #' of file paths to the .csv output files. May also be a [posterior::draws_df()] but chain-by-chain diagnostics
 #' will not be possible.
+#' @param test Boolean indicating whether recovered parameters are from the test phase.
 #' @param mean_pars Output a plot of the mean parameters?
 #' @param diagnostic_plots Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.
 #' @param pal,font,font_size Same as [plot_import].
@@ -13,8 +14,8 @@
 #' @importFrom magrittr %>%
 #' @export
 
-check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TRUE, pal = NULL, font = "",
-                                  font_size = 11) {
+check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnostic_plots = TRUE,
+                                  pal = NULL, font = "", font_size = 11) {
 
   ## to appease R CMD check
   value <- ..count.. <- ..density.. <- NULL
@@ -88,10 +89,12 @@ check_learning_models <- function(draws, mean_pars = TRUE, diagnostic_plots = TR
         ggplot2::guides(colour = "none", fill = "none") +
         ggplot2::scale_x_continuous(
           name = bquote(
-            .(rlang::parse_expr(paste0(strsplit(par, "_")[[1]][2],
-                                ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][3], "]"))
-                                )
-                         )
+            .(rlang::parse_expr(
+                paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
+                       ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]")
+                              )
+                       )
+                )
               )
           )) +
         ggplot2::ylab("Count") +
