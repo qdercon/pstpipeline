@@ -252,16 +252,19 @@ fit_learning_model <-
   }
 
   if (save_model_as == "") {
-    save_model_as <- paste("fit_pst", exp_part, model,
-                           ifelse(vb, "vb", paste0("mcmc_", l$iter_sampling * l$chains)),
-                           sep = "_")
+    save_model_as <- paste(
+      "fit_pst", exp_part, model,
+      ifelse(vb, "vb", paste0("mcmc_", l$iter_sampling * l$chains)),
+      sep = "_"
+    )
   }
   fit$save_object(file = paste0(out_dir, "/", save_model_as, ".RDS"))
   ret <- list()
   if (model_checks) {
     if (vb) {
       ret$mu_par_dens <- check_learning_models(
-        fit$draws(format = "list"), diagnostic_plots = FALSE, pal = l$pal, font = l$font, font_size = l$font_size
+        fit$draws(format = "list"), diagnostic_plots = FALSE, pal = l$pal,
+        font = l$font, font_size = l$font_size
       )
     } else {
       ret$model_checks <- list()
