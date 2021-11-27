@@ -60,7 +60,7 @@ generate_posterior_quantities <-
   csv_files <- vector(mode = "character", length = length(outnames))
 
   for (o in seq_along(outnames)) {
-    chain_no <- strsplit(outnames[o], "-")[[1]][3]
+    chain_no <- strsplit(basename(outnames[o]), "-")[[1]][3]
     csv_files[o] <-
       paste0(out_dir, "/", save_model_as,
              paste0("_", fit_mcmc$metadata()$iter_sampling * fit_mcmc$metadata()$chains,
@@ -68,7 +68,7 @@ generate_posterior_quantities <-
     file.rename(from = outnames[o], to = csv_files[o])
   }
 
-  if (return_type == "paths") return(output_files)
+  if (return_type == "paths") return(csv_files)
   else if (return_type == "draws_list") return(fit_gq$draws(variables = "y_pred", format = "list"))
   else return(fit_gq)
 }

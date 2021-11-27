@@ -312,7 +312,7 @@ fit_learning_model <-
   outnames <- fit$output_files()
 
   for (output in outnames) {
-    chain_no <- strsplit(output, "-")[[1]][3]
+    chain_no <- strsplit(basename(output), "-")[[1]][3]
     file.rename(
       from = output,
       to = paste0(out_dir, "/", save_model_as,
