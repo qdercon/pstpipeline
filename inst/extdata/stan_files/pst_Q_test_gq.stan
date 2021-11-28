@@ -60,7 +60,6 @@ generated quantities {
       vector[6] ev;   // Expected values
 
       ev = initial_values;
-      log_lik[i] = 0;
 
       // Acquisition Phase
       for (t in 1:Tsubj[i]) {
