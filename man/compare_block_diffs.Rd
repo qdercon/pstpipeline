@@ -10,6 +10,7 @@ compare_block_diffs(
   covariates,
   model,
   vb = TRUE,
+  fit_together = vb,
   out_dir = "outputs/cmdstan/compare_blocks",
   iter_warmup_glm = 2000,
   iter_sampling_glm = 4000,
@@ -24,6 +25,9 @@ compare_block_diffs(
 \item{var_of_interest, covariates}{Same as \code{\link[=parameter_glm]{parameter_glm()}}.}
 
 \item{model, vb, out_dir}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
+
+\item{fit_together}{Whether or not to fit all participant data to the model at the
+same time, or by group (if \code{FALSE}). Recommended for variational fits.}
 
 \item{iter_warmup_glm, iter_sampling_glm}{Number of warm-up and sampling iterations
 to fit Bayesian GLMs with (passed to \code{\link[=parameter_glm]{parameter_glm()}}).}
