@@ -39,7 +39,6 @@ The image can also be built locally from the included Dockerfile. For example, o
 ```
 git clone https://github.com/qdercon/pstpipeline
 cd pstpipeline
-md docker\outputs\factor_prediction
 cp -a data-raw docker/data-raw
 cp -a notebooks docker/notebooks
 cd docker
