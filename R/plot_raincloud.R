@@ -142,8 +142,8 @@ plot_raincloud <- function(summary_df, raw_df, type = "parameter", test = FALSE,
                                   trans = "pseudo_log")
   }
   else {
-    if (flip) x_labels <- c("Social Withdrawal", "Compulsivity", "Anxiety/depression")
-    else x_labels <- c("Anxiety/depression", "Compulsivity", "Social Withdrawal")
+    if (flip) x_labels <- c("Social withdrawal", "Compulsive behaviour", "Anxiety/depression")
+    else x_labels <- c("Anxiety/depression", "Compulsive behaviour", "Social withdrawal")
     rain_plot <- rain_plot +
       ggplot2::scale_x_discrete(name = NULL, labels = x_labels) +
       ggplot2::ylab("Predicted factor score")

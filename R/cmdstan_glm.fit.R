@@ -487,7 +487,6 @@ default_prior_intercept = function(family) {
   out <- normal(0, 2.5, autoscale = TRUE)
   out$location <- NULL # not determined yet
   out$default <- TRUE
-  out$version <- utils::packageVersion("rstanarm")
   out
 }
 default_prior_coef = function(family) {
@@ -495,7 +494,6 @@ default_prior_coef = function(family) {
   # based on family if necessary
   out <- normal(0, 2.5, autoscale = TRUE)
   out$default <- TRUE
-  out$version <- utils::packageVersion("rstanarm")
   out
 }
 validate_parameter_value <- function(x) {
