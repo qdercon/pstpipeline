@@ -32,7 +32,8 @@ compare_block_diffs <- function(all_res,
   if (is.null(l$task_excl)) l$task_excl <- TRUE
   if (is.null(l$accuracy_excl)) l$accuracy_excl <- FALSE
 
-  block_group <- trial_no <- NULL # to appease R CMD check
+  block_group <- trial_no <- first_n_blks_gr1 <- first_n_blks_gr2 <- NULL
+    # to appease R CMD check
 
   rel_data <- list()
   if (fit_together) {
