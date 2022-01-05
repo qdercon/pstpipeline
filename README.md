@@ -37,18 +37,18 @@ The image includes everything required to run the Jupyter notebooks both locally
 The image can also be built locally from the included Dockerfile. For example, on Windows, to clone the repo, extract the relevant data & notebooks, and build the Docker image, you could run the following:
 
 ```
-git clone https://github.com/qdercon/pstpipeline
-cd pstpipeline
-cp -a data-raw docker/data-raw
-cp -a notebooks docker/notebooks
-cd docker
-docker build -t pstpipeline-docker .
+$ git clone https://github.com/qdercon/pstpipeline
+$ cd pstpipeline
+$ cp -a data-raw docker/data-raw
+$ cp -a notebooks docker/notebooks
+$ cd docker
+$ docker build -t pstpipeline-docker .
 ```
 
 Once downloaded or built, to mount the image, run the following in a command prompt:
 
 ```
-docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
+docker run -it --rm -p 8888:8888 -v <:/path/to/folder>:/root/<mount_folder_name>/ pstpipeline-docker
 ```
 
 The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks and model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
