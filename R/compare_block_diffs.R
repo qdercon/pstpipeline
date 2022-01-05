@@ -32,7 +32,7 @@ compare_block_diffs <- function(all_res,
   if (is.null(l$task_excl)) l$task_excl <- TRUE
   if (is.null(l$accuracy_excl)) l$accuracy_excl <- FALSE
 
-  block_group <- trial_no <- first_n_blks_gr1 <- first_n_blks_gr2 <- NULL
+  block_group <- trial_no <- NULL
     # to appease R CMD check
 
   rel_data <- list()
@@ -111,7 +111,7 @@ compare_block_diffs <- function(all_res,
 
       par_df_ls[[i]] <- parameter_glm(
         summary_df = list(first_n_blks_gr1$summary, first_n_blks_gr2$summary),
-        raw_df = list(first_n_blk_gr1$raw_df, first_n_blk_gr2$raw_df),
+        raw_df = list(first_n_blks_gr1$raw_df, first_n_blks_gr2$raw_df),
         var_of_interest = var_of_interest,
         covariates = covariates,
         iter_warmup = iter_warmup_glm,
