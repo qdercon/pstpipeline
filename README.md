@@ -23,7 +23,7 @@ This package is not meant to supercede or replace this work; instead its main ai
 The easiest way to interactively run all the analyses is to download and mount the Docker image. To do so, first download and install the relevant version of [Docker](https://docs.docker.com/get-docker/) for your OS, and then run the following in a command prompt:
 
 ```
-$ docker pull qdercon/pstpipeline:v0.1.0
+docker pull qdercon/pstpipeline:v0.1.0
 ```
 
 The image includes everything required to run the Jupyter notebooks both locally or even on a cloud server (e.g., Google Cloud) in a containerised environment (i.e., local package installs etc. will not be affected). More specifically, it is a Ubuntu Linux environment containing:
@@ -37,12 +37,12 @@ The image includes everything required to run the Jupyter notebooks both locally
 The image can also be built locally from the included Dockerfile. For example, on Windows, to clone the repo, extract the relevant data & notebooks, and build the Docker image, you could run the following:
 
 ```
-$ git clone https://github.com/qdercon/pstpipeline
-$ cd pstpipeline
-$ cp -a data-raw docker/data-raw
-$ cp -a notebooks docker/notebooks
-$ cd docker
-$ docker build -t pstpipeline-docker .
+git clone https://github.com/qdercon/pstpipeline
+cd pstpipeline
+cp -a data-raw docker/data-raw
+cp -a notebooks docker/notebooks
+cd docker
+docker build -t pstpipeline-docker .
 ```
 
 Once downloaded or built, to mount the image, run the following in a command prompt:
