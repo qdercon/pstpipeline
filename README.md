@@ -48,7 +48,7 @@ docker build -t pstpipeline-docker .
 Once downloaded or built, to mount the image, run the following in a command prompt:
 
 ```
-docker run -it --rm -p 8888:8888 -v [:/Path/To/Folder]:/root/[mount_folder_name]/ pstpipeline-docker
+docker run -it --rm -p 8888:8888 -v <:/path/to/folder>:/root/<mount_folder_name>/ pstpipeline-docker
 ```
 
 The -v flag and the path that follows is optional; this allows you to "mount" a folder on the disk to enable notebooks and model outputs to be saved locally. The command will output a link beginning with ```http//:127.0.0.1:8888/lab?token=``` which can be copied and pasted into a browser to open JupyterLab.
