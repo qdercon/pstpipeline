@@ -85,7 +85,7 @@ compare_block_diffs <- function(all_res,
 
       rel_data_gr1$training <- rel_data_gr1$training %>%
         dplyr::filter(trial_no <= iter[i]*60)
-      rel_data_gr1$training <- rel_data_gr1$training %>%
+      rel_data_gr2$training <- rel_data_gr2$training %>%
         dplyr::filter(trial_no <= iter[i]*60)
       fit_typ <- ifelse(vb, "vb", "mcmc")
       grp_names <- names(rel_data)
