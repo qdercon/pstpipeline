@@ -1,48 +1,60 @@
 #' General function to run Bayesian models using cmdstanr
 #'
-#' \code{fit_learning_model} uses the package \pkg{cmdstanr}, which is a lightweight R
-#' interface to CmdStan. Please note that while it checks if the C++ toolchain is correctly
-#' configured, running this function will not install CmdStan itself. This may be as simple as
-#' running [cmdstanr::install_cmdstan()], but may require some extra effort (e.g., pointing
-#' R to the install location via [cmdstanr::set_cmdstan_path()]) - see
-#' [this vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) for more detail.
+#' \code{fit_learning_model} uses the package \pkg{cmdstanr}, which is a
+#' lightweight R interface to CmdStan. Please note that while it checks if the
+#' C++ toolchain is correctly configured, running this function will not install
+#' CmdStan itself. This may be as simple as running
+#' [cmdstanr::install_cmdstan()], but may require some extra effort (e.g.,
+#' pointing R to the install location via [cmdstanr::set_cmdstan_path()]) - see
+#' the [cmdstanr vignette](https://mc-stan.org/cmdstanr/articles/cmdstanr.html)
+#' for more detail.
 #'
 #' \code{fit_learning_model} heavily leans on various helper functions from the
-#' [\pkg{hBayesDM}](https://ccs-lab.github.io/hBayesDM/) package, and is not as flexible; instead it is
-#' designed primarily to be less memory-intensive for our specific use-case and provide only
-#' relevant output.
+#' [\pkg{hBayesDM}](https://ccs-lab.github.io/hBayesDM/) package, and is not as
+#' flexible; instead it is designed primarily to be less memory-intensive for
+#' our specific use-case and provide only relevant output.
 #'
 #' @param df_all Raw data outputted from [import_multiple()].
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param exp_part Fit to \code{training} or \code{test}?
-#' @param vb Use variational inference to get the approximate posterior? Default is \code{TRUE}
-#' for computational efficiency.
-#' @param ppc Generate quantities including mean parameters, log likelihood, and posterior predictions?
-#' Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
-#' quantities function as this is far less memory intensive.
-#' @param task_excl Apply task-related exclusion criteria (catch questions, digit span = 0)?
-#' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB accuracy >= 0.6)?
-#' @param model_checks Runs [check_learning_models()], returning plots of the group-level posterior
-#' densities for the free parameters, and some visual model checks (traceplots of the chains, and rank histograms).
-#' Note the visual checks will only be returned if \code{!vb}, as they are only relevant for MCMC fits, and require
-#' the \pkg{bayesplot} package.
-#' @param save_model_as Name to give to saved model and used to name the .csv files and outputs. Defaults
-#' to the Stan model name.
-#' @param out_dir Output directory for model fit environment, plus all specified \code{outputs} if
-#' \code{save_outputs = TRUE}.
-#' @param outputs Specific outputs to return (and save, if \code{save_outputs}). In addition to the defaults,
-#' other options are "model_env" (note this is saved automatically, regardless of \code{save_outputs}),
-#' and "loo_obj". The latter includes the theoretical expected log-predictive density (ELPD) for a new dataset,
-#' plus the leave-one-out information criterion (LOOIC), a fully Bayesian metric for model comparison; this
-#' requires the \pkg{loo} package.
-#' @param save_outputs Save the specified outputs to the disk? Will save to \code{out_dir}.
-#' @param cores Maximum number of chains to run in parallel. Defaults to \code{options(mc.cores = cores)}
-#' or 4 if this is not set (this option will then apply for the rest of the session).
-#' @param ... Other arguments passed to [cmdstanr::sample()] and/or [check_learning_models]. See the
-#' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html) for full details and defaults.
+#' @param vb Use variational inference to get the approximate posterior? Default
+#' is \code{TRUE} for computational efficiency.
+#' @param ppc Generate quantities including mean parameters, log likelihood, and
+#' posterior predictions? Intended for use with variational algorithm; for MCMC
+#' it is recommended to run the separate [generate_posterior_quantities()]
+#' function, as this is far less memory intensive.
+#' @param task_excl Apply task-related exclusion criteria (catch questions,
+#' digit span = 0)?
+#' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB
+#' accuracy >= 0.6)?
+#' @param model_checks Runs [check_learning_models()], returning plots of the
+#' group-level posterior densities for the free parameters, and some visual
+#' model checks (traceplots of the chains, and rank histograms). Note the visual
+#' checks will only be returned if \code{!vb}, as they are only relevant for
+#' MCMC fits, and require the \pkg{bayesplot} package.
+#' @param save_model_as Name to give to saved model and used to name the .csv
+#' files and outputs. Defaults to the Stan model name.
+#' @param out_dir Output directory for model fit environment, plus all specified
+#' \code{outputs} if \code{save_outputs = TRUE}.
+#' @param outputs Specific outputs to return (and save, if \code{save_outputs}).
+#' In addition to the defaults, other options are "model_env" (note this is
+#' saved automatically, regardless of \code{save_outputs}), and "loo_obj". The
+#' latter includes the theoretical expected log-predictive density (ELPD) for a
+#' new dataset, plus the leave-one-out information criterion (LOOIC), a fully
+#' Bayesian metric for model comparison; this requires the \pkg{loo} package.
+#' @param save_outputs Save the specified outputs to the disk? Will save to
+#' \code{out_dir}.
+#' @param cores Maximum number of chains to run in parallel. Defaults to
+#' \code{options(mc.cores = cores)}
+#' or 4 if this is not set (this option will then apply for the rest of the
+#' session).
+#' @param ... Other arguments passed to [cmdstanr::sample()] and/or
+#' [check_learning_models]. See the
+#' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html)
+#' for full details and defaults.
 #'
-#' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC] fit object, plus any other
-#' outputs passed to \code{outputs}.
+#' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC]
+#' fit object, plus any other outputs passed to \code{outputs}.
 #'
 #' @importFrom data.table as.data.table .N
 #' @importFrom magrittr %>%
@@ -68,9 +80,16 @@ fit_learning_model <-
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
   if (ppc & !vb) {
-    warning("Loading posterior predictions following MCMC is memory intensive, and may result in crashes")
+    warning(
+      strwrap(
+        "Loading posterior predictions following MCMC is memory intensive, and
+        may result in crashes", prefix = " ", initial = ""
+        )
+      )
   }
-  if (any(outputs == "diagnostics") & vb) warning("Diagnostics are for MCMC only.")
+  if (any(outputs == "diagnostics") & vb) {
+    warning("Diagnostics are for MCMC only.")
+  }
 
   out_dir <- file.path(getwd(), out_dir)
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
@@ -81,8 +100,10 @@ fit_learning_model <-
     if (is.null(l$output_samples)) l$output_samples <- 1000
   }
   else { # clearly nothing is being changed, given here just to show defaults
-    if (is.null(l$chains)) l$chains <- 4 # default (explicitly defined here for file naming)
-    if (is.null(l$iter_sampling)) l$iter_sampling <- 1000 # default (explicitly defined here for file naming)
+    if (is.null(l$chains)) l$chains <- 4
+      # default (explicitly defined here for file naming)
+    if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
+      # default (explicitly defined here for file naming)
     if (model_checks) {
       if (is.null(l$font)) l$font <- ""
       if (is.null(l$font_size)) l$font_size <- 11
@@ -157,11 +178,14 @@ fit_learning_model <-
     t_max_t   <- max(t_subjs_t)
 
     general_info <- list(subjs, n_subj, t_subjs, t_max, t_subjs_t, t_max_t)
-    names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max", "t_subjs_t", "t_max_t")
+    names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max", "t_subjs_t",
+                             "t_max_t")
   }
 
   if (exp_part == "test") {
-    data_cmdstan <- preprocess_func_test(raw_df$train, raw_df$test, general_info)
+    data_cmdstan <- preprocess_func_test(
+      raw_df$train, raw_df$test, general_info
+      )
   }
   else {
     data_cmdstan <- preprocess_func_train(raw_df, general_info)
@@ -173,7 +197,8 @@ fit_learning_model <-
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
       paste0(
-        paste("extdata/stan_files/pst", ifelse(model == "2a", "gainloss_Q", "Q"), exp_part, sep = "_"),
+        paste("extdata/stan_files/pst",
+              ifelse(model == "2a", "gainloss_Q", "Q"), exp_part, sep = "_"),
         ifelse(ppc, "_ppc.stan", ".stan")
       ),
       package = "pstpipeline"
@@ -269,7 +294,8 @@ fit_learning_model <-
     } else {
       ret$model_checks <- list()
       ret$model_checks <- check_learning_models(
-        fit$draws(format = "list"), pal = l$pal, font = l$font, font_size = l$font_size
+        fit$draws(format = "list"), pal = l$pal, font = l$font,
+        font_size = l$font_size
       )
     }
   }
@@ -277,37 +303,50 @@ fit_learning_model <-
   if (any(outputs == "summary")) {
     ret$summary <- fit$summary()
     if (save_outputs) {
-      saveRDS(ret$summary, file = paste0(out_dir, "/", save_model_as, "_summary", ".RDS"))
+      saveRDS(ret$summary, file = paste0(
+        out_dir, "/", save_model_as, "_summary", ".RDS")
+        )
     }
   }
   if (any(outputs == "draws_list")) {
-    ret$draws <- fit$draws(format = "list") # the least memory intensive format to load
+    ret$draws <- fit$draws(format = "list")
+      # the least memory intensive format to load
     if (save_outputs) {
-      saveRDS(ret$draws, file = paste0(out_dir, "/", save_model_as, "_draws_list", ".RDS"))
+      saveRDS(ret$draws, file = paste0(
+        out_dir, "/", save_model_as, "_draws_list", ".RDS")
+        )
     }
   }
   if (any(outputs == "stan_datalist")) {
     ret$stan_datalist <- data_cmdstan
     if (save_outputs) {
-      saveRDS(ret$stan_datalist, file = paste0(out_dir, "/", save_model_as, "_stan_datalist", ".RDS"))
+      saveRDS(ret$stan_datalist, file = paste0(
+        out_dir, "/", save_model_as, "_stan_datalist", ".RDS")
+        )
     }
   }
   if (any(outputs == "raw_df")) {
     ret$raw_df <- raw_df
     if (save_outputs) {
-      saveRDS(ret$raw_df, file = paste0(out_dir, "/", save_model_as, "_raw_df", ".RDS"))
+      saveRDS(ret$raw_df, file = paste0(
+        out_dir, "/", save_model_as, "_raw_df", ".RDS")
+        )
     }
   }
   if (any(outputs == "loo_obj") & !vb) {
     ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
     if (save_outputs) {
-      saveRDS(ret$loo_obj, file = paste0(out_dir, "/", save_model_as, "_loo_obj", ".RDS"))
+      saveRDS(ret$loo_obj, file = paste0(
+        out_dir, "/", save_model_as, "_loo_obj", ".RDS")
+        )
     }
   }
   if (any(outputs == "diagnostics") & !vb) {
     ret$diagnostics <- fit$cmdstan_diagnose()
     if (save_outputs) {
-      saveRDS(ret$diagnostics, file = paste0(out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS"))
+      saveRDS(ret$diagnostics, file = paste0(
+        out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS")
+        )
     }
   }
 
@@ -318,12 +357,11 @@ fit_learning_model <-
     chain_no <- strsplit(basename(output), "-")[[1]][3]
     file.rename(
       from = output,
-      to = paste0(out_dir, "/", save_model_as,
-                  ifelse(vb, paste0("_", l$output_samples), paste0("_chain_", chain_no)),
-                  ".csv")
+      to = paste0(
+        out_dir, "/", save_model_as,
+        ifelse(vb, paste0("_", l$output_samples), paste0("_chain_", chain_no)),
+        ".csv")
       )
   }
-
   return(ret)
-
 }

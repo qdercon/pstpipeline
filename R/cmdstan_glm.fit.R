@@ -1,8 +1,8 @@
 #' @noRd
 #' @keywords internal
-#' @importFrom stats Gamma cor dlogis dnorm gaussian is.empty.model
-#' lm median model.matrix model.offset model.response model.weights
-#' qbeta qexp rgamma rnorm rt runif sd uniroot
+#' @importFrom stats Gamma cor dlogis dnorm gaussian is.empty.model lm median
+#' model.matrix model.offset model.response model.weights qbeta qexp rgamma
+#' rnorm rt runif sd uniroot
 #' @importFrom methods as is
 
 # This function is a slightly modified version of rstanarm::stan_glm.fit
@@ -12,19 +12,18 @@
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 cmdstan_glm.fit <-
   function(x, y,
@@ -48,7 +47,9 @@ cmdstan_glm.fit <-
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) {
     supported_families_err <- supported_families
-    stop("'family' must be one of ", paste(supported_families_err, collapse = ", "))
+    stop(
+      "'family' must be one of ", paste(supported_families_err, collapse = ", ")
+      )
   }
 
   supported_links <- supported_glm_links(supported_families[fam])
@@ -61,13 +62,15 @@ cmdstan_glm.fit <-
 
   # useless assignments to pass R CMD check
   has_intercept <-
-    prior_df <- prior_df_for_intercept <- prior_df_for_aux <- prior_df_for_smooth <-
-    prior_dist <- prior_dist_for_intercept <- prior_dist_for_aux <- prior_dist_for_smooth <-
-    prior_mean <- prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
-    prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <- prior_scale_for_smooth <-
-    prior_autoscale <- prior_autoscale_for_intercept <- prior_autoscale_for_aux <-
-    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <- slab_df <-
-    slab_scale <- xtemp <- xbar <- NULL
+    prior_df <- prior_df_for_intercept <- prior_df_for_aux <-
+    prior_df_for_smooth <- prior_dist <- prior_dist_for_intercept <-
+    prior_dist_for_aux <- prior_dist_for_smooth <- prior_mean <-
+    prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
+    prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <-
+    prior_scale_for_smooth <- prior_autoscale <-
+    prior_autoscale_for_intercept <- prior_autoscale_for_aux <-
+    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <-
+    slab_df <- slab_scale <- xtemp <- xbar <- NULL
 
   if (is.list(x)) {
     x_stuff <- center_x(x[[1]], sparse)
@@ -119,7 +122,9 @@ cmdstan_glm.fit <-
     ok_dists = ok_intercept_dists
   )
   # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
-  names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), "_for_intercept")
+  names(prior_intercept_stuff) <- paste0(
+    names(prior_intercept_stuff), "_for_intercept"
+    )
   for (i in names(prior_intercept_stuff))
     assign(i, prior_intercept_stuff[[i]])
 
@@ -141,7 +146,8 @@ cmdstan_glm.fit <-
   for (i in names(prior_aux_stuff))
     assign(i, prior_aux_stuff[[i]])
 
-  if (ncol(S) > 0) {   # prior_{dist, mean, scale, df, dist_name, autoscale}_for_smooth
+  if (ncol(S) > 0) {
+    # prior_{dist, mean, scale, df, dist_name, autoscale}_for_smooth
     prior_smooth_stuff <-
       handle_glm_prior(
         prior_smooth,
@@ -151,7 +157,9 @@ cmdstan_glm.fit <-
         ok_dists = ok_aux_dists
       )
 
-    names(prior_smooth_stuff) <- paste0(names(prior_smooth_stuff), "_for_smooth")
+    names(prior_smooth_stuff) <- paste0(
+      names(prior_smooth_stuff), "_for_smooth"
+      )
     if (is.null(prior_smooth)) {
       if (prior_PD)
         stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")
@@ -191,8 +199,15 @@ cmdstan_glm.fit <-
     } else {
       y <- fake_y_for_prior_PD(N = NROW(x), family = family)
       if (is_gaussian &&
-          (prior_autoscale || prior_autoscale_for_intercept || prior_autoscale_for_aux)) {
-        message("'y' not specified, will assume sd(y)=1 when calculating scaled prior(s). ")
+          (prior_autoscale || prior_autoscale_for_intercept ||
+           prior_autoscale_for_aux)
+          ) {
+        message(
+          strwrap(
+            "'y' not specified, will assume sd(y)=1 when calculating
+            scaled prior(s).", prefix = " ", initial = ""
+            )
+          )
       }
     }
   }
@@ -261,7 +276,8 @@ cmdstan_glm.fit <-
     prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
     prior_df_for_intercept = c(prior_df_for_intercept),
     prior_dist_for_aux = prior_dist_for_aux,
-    prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth, prior_df_for_smooth,
+    prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth,
+    prior_df_for_smooth,
     slab_df_z = 0, slab_scale_z = 0,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0),
@@ -314,7 +330,8 @@ cmdstan_glm.fit <-
     standata$len_y <- length(y)
     if(.Platform$OS.type == "windows") {
       stan_model <- cmdstanr::cmdstan_model(
-        system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
+        system.file("extdata/stan_files/from_rstanarm/continuous.stan",
+                    package = "pstpipeline"),
         include_paths = utils::shortPathName(system.file(
           "extdata/stan_files/from_rstanarm", package = "pstpipeline")
           ## Windows-only workaround if path has spaces!
@@ -322,7 +339,8 @@ cmdstan_glm.fit <-
       )
     } else {
       stan_model <- cmdstanr::cmdstan_model(
-        system.file("extdata/stan_files/from_rstanarm/continuous.stan", package = "pstpipeline"),
+        system.file("extdata/stan_files/from_rstanarm/continuous.stan",
+                    package = "pstpipeline"),
         include_paths = system.file(
           "extdata/stan_files/from_rstanarm", package = "pstpipeline"
         ) ## this will fail if path has spaces!
@@ -359,9 +377,12 @@ cmdstan_glm.fit <-
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
   }
-  else { # clearly nothing is being changed, given here just to show defaults
-    if (is.null(l$chains)) l$chains <- 4 # default (explicitly defined here for file naming)
-    if (is.null(l$iter_sampling)) l$iter_sampling <- 1000 # default (explicitly defined here for file naming)
+  else {
+      # clearly nothing is being changed, given here just to show defaults
+    if (is.null(l$chains)) l$chains <- 4
+      # default (explicitly defined here for file naming)
+    if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
+      # default (explicitly defined here for file naming)
     if (is.null(l$adapt_delta)) l$adapt_delta <- 0.95
   }
 
@@ -561,7 +582,7 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
     eta <- qexp(uniroot(FUN, interval = 0:1)$root)
   } else { # what == "log"
     stopifnot(location < 0)
-    FUN <- function(eta) digamma(half_K) - digamma(half_K + qexp(eta)) - location
+    FUN <- function(eta) digamma(half_K)-digamma(half_K + qexp(eta)) - location
     eta <- qexp(uniroot(FUN, interval = 0:1,
                         f.lower = -location,
                         f.upper = -.Machine$double.xmax)$root)
@@ -570,7 +591,7 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
   return(eta)
 }
 
-# rstanarm::stan_glm.fit internal fns ----------------------------------------------------------------
+# rstanarm::stan_glm.fit internal fns ------------------------------------------
 
 validate_family <- function(f) {
   if (is.character(f))
@@ -676,9 +697,10 @@ check_constant_vars <- function(mf) {
   return(mf)
 }
 handle_glm_prior <- function(prior, nvars, default_scale, link,
-                             ok_dists = nlist("normal", student_t = "t",
-                                              "cauchy", "hs", "hs_plus",
-                                              "laplace", "lasso", "product_normal")) {
+                             ok_dists = nlist(
+                               "normal", student_t = "t", "cauchy", "hs",
+                               "hs_plus", "laplace", "lasso", "product_normal")
+                             ) {
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
@@ -719,7 +741,8 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
     slab_df <- prior$slab_df
     slab_scale <- prior$slab_scale
   } else if (prior_dist_name %in% "exponential") {
-    prior_dist <- 3L # only used for scale parameters so 3 not a conflict with 3 for hs
+    prior_dist <- 3L
+    # only used for scale parameters so 3 not a conflict with 3 for hs
   }
 
   prior_df <- maybe_broadcast(prior_df, nvars)
@@ -828,7 +851,8 @@ summarize_glm_prior <-
       user_prior_intercept$prior_autoscale_for_intercept &&
       has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
-      (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
+      (user_prior_intercept$prior_scale_for_intercept !=
+         adjusted_prior_intercept_scale)
     rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
       !is.na(user_prior_aux$prior_dist_name_for_aux) &&
       (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)

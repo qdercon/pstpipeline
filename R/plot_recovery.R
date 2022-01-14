@@ -1,11 +1,13 @@
 #' Plots to check parameter recovery
 #'
-#' \code{plot_recovery} produces correlation plots between input and output parameter values,
-#' plus a confusability matrix.
+#' \code{plot_recovery} produces correlation plots between input and output
+#' parameter values, plus a confusability matrix.
 #'
 #' @param raw_pars Data frame with factor scores or questions to plot.
-#' @param sim_pars [cmdstanr::summary()] containing the fitted parameter values for the relevant model.
-#' @param test Boolean indicating whether recovered parameters are from the test phase.
+#' @param sim_pars [cmdstanr::summary()] containing the fitted parameter values
+#' for the relevant model.
+#' @param test Boolean indicating whether recovered parameters are from the test
+#' phase.
 #' @param pal,font,font_size Same as [plot_import()].
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
@@ -14,7 +16,11 @@
 #' @importFrom rlang !!
 #' @export
 
-plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "",
+plot_recovery <- function(raw_pars,
+                          sim_pars,
+                          test = FALSE,
+                          pal = NULL,
+                          font = "",
                           font_size = 11) {
 
   if (is.null(pal)) {
@@ -30,15 +36,19 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
     dplyr::select(variable, mean) %>%
-    dplyr::mutate(id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))) %>%
+    dplyr::mutate(
+      id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
+      ) %>%
     dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
     dplyr::rename(parameter = variable) %>%
     dplyr::rename(sim_mean = mean)
 
   pars_df <- raw_pars %>%
     dplyr::select(-tidyselect::any_of("subjID")) %>%
-    tidyr::pivot_longer(cols = c(tidyselect::contains("alpha"), tidyselect::contains("beta")),
-                        names_to = "parameter", values_to = "obs_mean") %>%
+    tidyr::pivot_longer(
+      cols = c(tidyselect::contains("alpha"), tidyselect::contains("beta")),
+      names_to = "parameter", values_to = "obs_mean"
+      ) %>%
     dplyr::left_join(sim_pars_df, by = c("id_no", "parameter"))
 
   pred_plots <- list()
@@ -50,8 +60,12 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
     pred_plots[[p]] <- pars_df %>%
       dplyr::filter(parameter == par) %>%
       ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = sim_mean)) +
-      ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[p]], colour = pal[[p]]) +
-      ggplot2::geom_smooth(method = "lm", formula = "y~x", se = FALSE, fill = pal[[p]], colour = pal[[p]]) +
+      ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[p]],
+                          colour = pal[[p]]) +
+      ggplot2::geom_smooth(
+        method = "lm", formula = "y~x", se = FALSE, fill = pal[[p]],
+        colour = pal[[p]]
+        ) +
       ggplot2::scale_colour_manual(values = pal[p]) +
       ggplot2::scale_fill_manual(values = pal[p]) +
       ggplot2::guides(colour = "none", fill = "none") +
@@ -59,8 +73,9 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
         bquote(
           .(rlang::parse_expr(
               paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                     ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][2], "]")
-                            )
+                     ifelse(!alpha, "", paste0(
+                       "[", strsplit(par, "_")[[1]][2], "]"
+                       ))
                      )
               )
             )
@@ -79,7 +94,8 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
   }
 
   cor_mat <- pars_df %>%
-    tidyr::pivot_wider(names_from = parameter, values_from = tidyselect::contains("mean")) %>%
+    tidyr::pivot_wider(names_from = parameter,
+                       values_from = tidyselect::contains("mean")) %>%
     dplyr::select(-id_no) %>%
     cor()
 
@@ -98,8 +114,9 @@ plot_recovery <- function(raw_pars, sim_pars, test = FALSE, pal = NULL, font = "
       cor_mat[-(1:n_pars), -((n_pars+1):(2*n_pars))], rownames = NA
     ) %>%
     dplyr::mutate(sim_var = sub("sim_mean_", "", row.names(.))) %>%
-    tidyr::pivot_longer(cols = tidyselect::contains("obs"), names_to = "obs_var",
-                        names_prefix = "obs_mean_", values_to = "corr") %>%
+    tidyr::pivot_longer(cols = tidyselect::contains("obs"),
+                        names_to = "obs_var", names_prefix = "obs_mean_",
+                        values_to = "corr") %>%
     dplyr::mutate(sim_var = factor(sim_var, levels = order)) %>%
     dplyr::mutate(obs_var = factor(obs_var, levels = order)) %>%
     ggplot2::ggplot(ggplot2::aes(x = obs_var, y = sim_var, fill = corr)) +

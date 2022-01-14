@@ -1,30 +1,44 @@
 #' JATOS text file parsing function (single result)
 #'
-#' \code{import_single()} parses a single JATOS .txt file to a (list of) R object(s)
+#' \code{import_single()} parses a single JATOS .txt file to a (list of) R
+#' object(s).
 #'
 #' @param jatos_txt_file JATOS text file path
-#' @param accuracy Include final block AB accuracy < 0.6 as part of exclusion criteria?
-#' @param task_excl Use digit span of 0 or > 95% preference for one button as exclusion criteria?
-#' @param hbayesDM Return additional df with training data formatted for hBayesDM?
+#' @param accuracy Include final block AB accuracy < 0.6 as part of exclusion
+#' criteria?
+#' @param task_excl Use digit span of 0 or > 95% preference for one button as
+#' exclusion criteria?
+#' @param hbayesDM Return additional df with training data formatted for
+#' hBayesDM?
 #' @param qstns_gillan Return formatted subset of questionnaire questions?
 #' @param prolific Use prolific IDs as subjID?
 #' @param combine Combine everything into a single data.frame?
 #' @param issues Return feedback from end of experiment?
 #' @param incomplete Is the text file of interest incomplete?
-#' @param add_sex Add sex to participant info? Imputes (assumed) birth-assigned sex for non-binary
-#' individuals from Prolific export - workaround to enable it to be more reasonably controlled for
-#' in models (given very low numbers of non-binary individuals).
+#' @param add_sex Add sex to participant info? Imputes (assumed) birth-assigned
+#' sex for non-binary individuals from Prolific export - workaround to enable it
+#' to be more reasonably controlled for in models (given very low numbers of
+#' non-binary individuals).
 #' @param ... Other arguments (used by [import_multiple()]).
 #'
-#' @return \code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE
+#' @return \code{list} of \code{tbl_df}, or a single \code{tbl_df} if
+#' \code{combine = TRUE}.
 #'
 #' @importFrom magrittr %>%
 
 #' @export
 
-import_single <-
-  function(jatos_txt_file, accuracy = FALSE, task_excl = TRUE, hbayesDM = FALSE, qstns_gillan = TRUE,
-           prolific = TRUE, combine = FALSE, issues = FALSE, incomplete = FALSE, add_sex = FALSE,...) {
+import_single <- function(jatos_txt_file,
+                          accuracy = FALSE,
+                          task_excl = TRUE,
+                          hbayesDM = FALSE,
+                          qstns_gillan = TRUE,
+                          prolific = TRUE,
+                          combine = FALSE,
+                          issues = FALSE,
+                          incomplete = FALSE,
+                          add_sex = FALSE,
+                          ...) {
 
   l <- list(...)
   if (is.null(l$multiple)) l$multiple <- FALSE
@@ -33,43 +47,59 @@ import_single <-
     all_comp = jatos_txt_file
   } else {
     all_comp <- jsonlite::fromJSON(
-      sprintf('[%s]', paste(readLines(jatos_txt_file, encoding="UTF-8", warn=F), collapse = ','))
+      sprintf('[%s]', paste(
+        readLines(jatos_txt_file, encoding="UTF-8", warn=F), collapse = ',')
+        )
       )
     if (length(all_comp)!=5) {
-      stop("Input is a non-standard length - check for reloads or missing components in text file.")
+      stop(
+        "Input is a non-standard length - check for missing tasks in text file."
+        )
     }
   }
 
   if (prolific) {
-    pro_id <- list(tryCatch(all_comp[[3]]$prolific_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$prolific_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$prolific_id[1], error = function(e) return(NA)))
+    pro_id <- list(tryCatch(all_comp[[3]]$prolific_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[4]]$prolific_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[5]]$prolific_id[1],
+                            error = function(e) return(NA)))
     pro_id <- pro_id[!is.na(pro_id)]
 
-    stu_id <- list(tryCatch(all_comp[[3]]$study_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$study_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$study_id[1], error = function(e) return(NA)))
+    stu_id <- list(tryCatch(all_comp[[3]]$study_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[4]]$study_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[5]]$study_id[1],
+                            error = function(e) return(NA)))
     stu_id <- stu_id[!is.na(stu_id)]
 
-    ses_id <- list(tryCatch(all_comp[[3]]$session_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$session_id[1], error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$session_id[1], error = function(e) return(NA)))
+    ses_id <- list(tryCatch(all_comp[[3]]$session_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[4]]$session_id[1],
+                            error = function(e) return(NA)),
+                   tryCatch(all_comp[[5]]$session_id[1],
+                            error = function(e) return(NA)))
     ses_id <- ses_id[!is.na(ses_id)]
 
     if (!all(sapply(pro_id, FUN = identical, all_comp[[1]]$prolific_id[1]))) {
-      warning(paste0("Prolific IDs inconsistent, recording as NA: ", paste(pro_id, sep=", ")))
+      warning(paste0("Prolific IDs inconsistent, recording as NA: ",
+                     paste(pro_id, sep=", ")))
       subjID=NA
     } else {
       subjID=all_comp[[1]]$prolific_id[1]
     }
     if (!all(sapply(stu_id, FUN = identical, all_comp[[1]]$study_id[1]))) {
-      warning(paste0("Study IDs inconsistent, recording as NA: ", paste(stu_id, sep=", ")))
+      warning(paste0("Study IDs inconsistent, recording as NA: ",
+                     paste(stu_id, sep=", ")))
       studyID=NA
     } else {
       studyID=all_comp[[1]]$study_id[1]
     }
     if (!all(sapply(ses_id, FUN = identical, all_comp[[1]]$session_id[1]))) {
-      warning(paste0("Session IDs inconsistent, recording as NA: ", paste(ses_id, sep=", ")))
+      warning(paste0("Session IDs inconsistent, recording as NA: ",
+                     paste(ses_id, sep=", ")))
       sessionID=NA
     } else {
       sessionID=all_comp[[1]]$session_id[1]
@@ -89,17 +119,21 @@ import_single <-
   ret <- list()
 
   ## useless assignments to appease R CMD check
-  age <- question <- questionnaire <- question_no <- catch_question_pass <- ZDS_total <- OCIR_total <-
-    LSAS_fear_total <- LSAS_avoidance_total <- EAT_total <- BIS_total <- STAI_total <- AES_total <-
-    DARS_hobbies <- DARS_food_drink <- DARS_social <- DARS_sensory <- DARS_total <- MFIS_physical <-
-    MFIS_cognitive <- MFIS_psychosocial <- MFIS_total <- BPQ_total <- SPQ_cognitive_perceptual <-
-    SPQ_interpersonal <- SPQ_disorganised <- SPQ_total <- gender <- test_part <- trial_index <-
-    trial_type <- correct <- timeout <- stimulus <- glyph_seq <- type <- trial_no <- choice <-
-    reward <- trial_block <- trial_no_group <- key_press <- correct_response <- cuml_accuracy_l20 <-
-    slider_start <- response <- question_type <- question_slider_start <- question_rt <-
-    question_response <- fatigue_rt <- fatigue_slider_start <- fatigue_response <- participant_id <-
-    Sex <- sex_prolific <- test_type <- test_trial_no_group <- test_trial_no <- cuml_accuracy_test <-
-    gillan_name <- score <- enjoyment <- concentration <- NULL
+  age <- question <- questionnaire <- question_no <- catch_question_pass <-
+    ZDS_total <- OCIR_total <- LSAS_fear_total <- LSAS_avoidance_total <-
+    EAT_total <- BIS_total <- STAI_total <- AES_total <- DARS_hobbies <-
+    DARS_food_drink <- DARS_social <- DARS_sensory <- DARS_total <-
+    MFIS_physical <- MFIS_cognitive <- MFIS_psychosocial <- MFIS_total <-
+    BPQ_total <- SPQ_cognitive_perceptual <- SPQ_interpersonal <-
+    SPQ_disorganised <- SPQ_total <- gender <- test_part <- trial_index <-
+    trial_type <- correct <- timeout <- stimulus <- glyph_seq <- type <-
+    trial_no <- choice <- reward <- trial_block <- trial_no_group <-
+    key_press <- correct_response <- cuml_accuracy_l20 <- slider_start <-
+    response <- question_type <- question_slider_start <- question_rt <-
+    question_response <- fatigue_rt <- fatigue_slider_start <-
+    fatigue_response <- participant_id <- Sex <- sex_prolific <- test_type <-
+    test_trial_no_group <- test_trial_no <- cuml_accuracy_test <- gillan_name <-
+    score <- enjoyment <- concentration <- NULL
 
 
   ## demographics
@@ -115,7 +149,9 @@ import_single <-
       demographics$neurological_disorder = NA
     } else {
       demographics$neurological_disorder <-
-        paste(unlist(jsonlite::parse_json(demographics$neurological_disorder)), collapse=', ')
+        paste(unlist(jsonlite::parse_json(
+          demographics$neurological_disorder)
+          ), collapse=', ')
     }
   }
 
@@ -129,22 +165,31 @@ import_single <-
 
   if (!is.null(demographics$psych_neurdev_condition)) {
       demographics$psych_neurdev_condition <-
-        paste(unlist(jsonlite::parse_json(demographics$psych_neurdev_condition)), collapse=', ')
+        paste(unlist(jsonlite::parse_json(
+          demographics$psych_neurdev_condition)
+          ), collapse=', ')
   }
 
   if (any(demographics$antidepressant)) {
     demographics$antidepressant_type <-
-      paste(unlist(jsonlite::parse_json(demographics$antidepressant_type)), collapse=', ')
+      paste(unlist(jsonlite::parse_json(
+        demographics$antidepressant_type)
+        ), collapse=', ')
   }
 
   if (any(demographics$other_medication)) {
     demographics$other_medication_type <-
-      paste(unlist(jsonlite::parse_json(demographics$other_medication_type)), collapse=', ')
+      paste(unlist(jsonlite::parse_json(
+        demographics$other_medication_type)
+        ), collapse=', ')
   }
 
-  if (any(!demographics$long_covid=="No") & any(demographics$long_covid_symptoms!="None")) {
+  if (any(!demographics$long_covid == "No") &
+      any(demographics$long_covid_symptoms != "None")) {
     demographics$long_covid_symptoms <-
-      paste(unlist(jsonlite::parse_json(demographics$long_covid_symptoms)), collapse=', ')
+      paste(unlist(jsonlite::parse_json(
+        demographics$long_covid_symptoms)
+        ), collapse=', ')
   }
 
   digit_span = data.frame(all_comp[[4]]$final_digit_span) %>% tidyr::drop_na()
@@ -163,16 +208,18 @@ import_single <-
   questionnaires_tr <- questionnaires %>%
     dplyr::select(
       ZDS_total, OCIR_total, LSAS_fear_total, LSAS_avoidance_total, EAT_total,
-      BIS_total, STAI_total, AES_total, tidyselect::any_of("AUDIT_score"), DARS_hobbies,
-      DARS_food_drink, DARS_social, DARS_sensory, DARS_total, MFIS_physical,
-      MFIS_cognitive, MFIS_psychosocial, MFIS_total, BPQ_total, SPQ_cognitive_perceptual,
-      SPQ_interpersonal, SPQ_disorganised, SPQ_total) %>%
+      BIS_total, STAI_total, AES_total, tidyselect::any_of("AUDIT_score"),
+      DARS_hobbies, DARS_food_drink, DARS_social, DARS_sensory, DARS_total,
+      MFIS_physical, MFIS_cognitive, MFIS_psychosocial, MFIS_total, BPQ_total,
+      SPQ_cognitive_perceptual, SPQ_interpersonal, SPQ_disorganised,
+      SPQ_total) %>%
     dplyr::summarise(dplyr::across(.fns=~max(.x, na.rm=T)))
 
-  ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span, catch_questions,
-                    demographics)
+  ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span,
+                    catch_questions, demographics)
 
-  if (add_sex & prolific) id_gender <- ppt_info %>% dplyr::select(subjID, gender)
+  if (add_sex & prolific) id_gender <- ppt_info %>%
+    dplyr::select(subjID, gender)
 
   questionnaires_tr <- cbind(subjID, sessionID, studyID, questionnaires_tr)
 
@@ -195,10 +242,17 @@ import_single <-
   # remove uninformative variables
 
   main_task <- main_task %>%
-    dplyr::filter(trial_type != "html-button-response", trial_type != "video-button-response",
-                  trial_type != "instructions", test_part != "fixation", test_part != "fixation",
-                  test_part != "fixation_test", test_part != "feedback", test_part != "congrats",
-                  test_part != "training_complete", test_part != "test_quiz", !is.na(test_part)) %>%
+    dplyr::filter(trial_type != "html-button-response",
+                  trial_type != "video-button-response",
+                  trial_type != "instructions",
+                  test_part != "fixation",
+                  test_part != "fixation",
+                  test_part != "fixation_test",
+                  test_part != "feedback",
+                  test_part != "congrats",
+                  test_part != "training_complete",
+                  test_part != "test_quiz",
+                  !is.na(test_part)) %>%
     dplyr::select(-tidyselect::contains("_id", ignore.case=F))
 
   training_blocks <- main_task %>%
@@ -216,7 +270,8 @@ import_single <-
                 ifelse(trial_index <= end_block_ind[3,1], 3,
                        ifelse(trial_index <= end_block_ind[4,1], 4,
                               ifelse(trial_index <= end_block_ind[5,1], 5,
-                                     ifelse(trial_index <= end_block_ind[6,1], 6, NA)))))))
+                                     ifelse(trial_index <= end_block_ind[6,1],
+                                            6, NA)))))))
   # training trials
 
   training_trials <- training_blocks %>%
@@ -227,13 +282,16 @@ import_single <-
                            ifelse(grepl("E", test_part), 56, NA)))) %>%
     dplyr::mutate(choice =
              ifelse(
-               ((test_part=="AB" | test_part=="BA" | test_part=="CD" | test_part=="DC" |
-                   test_part=="EF" |
-                   test_part=="FE") & correct==T) | # chose choice A/C/E on a standard trial
-               ((test_part=="AB_rev" | test_part=="BA_rev" | test_part=="CD_rev" |
-                   test_part=="DC_rev" |
-                   test_part=="EF_rev" | test_part=="FE_rev") & correct==F & !timeout), 1,
-               # chose choice A/C/E on a flipped trial
+               ((test_part=="AB" | test_part=="BA" | test_part=="CD" |
+                   test_part=="DC" | test_part=="EF" |
+                   test_part=="FE") & correct==T) |
+                 # chose choice A/C/E on a standard trial
+               ((test_part=="AB_rev" | test_part=="BA_rev" |
+                   test_part=="CD_rev" | test_part=="DC_rev" |
+                   test_part=="EF_rev" | test_part=="FE_rev") &
+                  correct==F & !timeout
+                ), 1,
+                # chose choice A/C/E on a flipped trial
               ifelse(!timeout, 0, NA))) %>%
     dplyr::mutate(reward = ifelse(timeout, NA, as.numeric(correct))) %>%
       # correct==F on timeout trials, so need extra check
@@ -244,12 +302,14 @@ import_single <-
     dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
     dplyr::mutate(
       cuml_accuracy_l20 =
-        runner::runner(x=choice, f=function(x) {sum(x, na.rm=T)/sum(!is.na(x))}, k=20)
+        runner::runner(x=choice,
+                       f=function(x) {sum(x, na.rm=T)/sum(!is.na(x))},
+                       k=20)
       ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(subjID, type, choice, reward, trial_block, trial_no, trial_no_group, glyph_seq,
-                  stimulus, test_part, key_press, rt, correct_response, correct, timeout, points,
-                  cuml_accuracy_l20)
+    dplyr::select(subjID, type, choice, reward, trial_block, trial_no,
+                  trial_no_group, glyph_seq, stimulus, test_part, key_press, rt,
+                  correct_response, correct, timeout, points, cuml_accuracy_l20)
 
 
   # training questions
@@ -261,24 +321,27 @@ import_single <-
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
                   question_response = response) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
-    dplyr::mutate(question_type = ifelse(grepl("happy", stimulus), "happy",
-                                      ifelse(grepl("engaged", stimulus), "engaged",
-                                             ifelse(grepl("confident", stimulus), "confident",
-                                                    "fatigue")))) %>%
-    dplyr::select(subjID, trial_block, trial_no, question_type, question_slider_start, question_rt,
-                  question_response)
+    dplyr::mutate(
+      question_type = ifelse(grepl("happy", stimulus), "happy",
+                             ifelse(grepl("engaged", stimulus), "engaged",
+                                    ifelse(grepl("confident", stimulus),
+                                           "confident", "fatigue")))) %>%
+    dplyr::select(subjID, trial_block, trial_no, question_type,
+                  question_slider_start, question_rt, question_response)
 
   fatigue_questions <- training_blocks %>%
     dplyr::filter(test_part=="fatigue_question") %>%
     dplyr::mutate(trial_no = trial_block*60) %>%
     dplyr::rename(fatigue_rt = rt, fatigue_slider_start = slider_start,
                   fatigue_response = response) %>%
-    dplyr::select(subjID, trial_block, trial_no, fatigue_rt, fatigue_slider_start,
-                  fatigue_response)
+    dplyr::select(subjID, trial_block, trial_no, fatigue_rt,
+                  fatigue_slider_start, fatigue_response)
 
   training <- training_trials %>%
-    dplyr::left_join(training_questions, by=c("subjID", "trial_block", "trial_no")) %>%
-    dplyr::left_join(fatigue_questions, by=c("subjID", "trial_block", "trial_no"))
+    dplyr::left_join(training_questions,
+                     by = c("subjID", "trial_block", "trial_no")) %>%
+    dplyr::left_join(fatigue_questions,
+                     by = c("subjID", "trial_block", "trial_no"))
 
   final_block_AB <- training %>%
     dplyr::filter(trial_block==6 & trial_no_group==120 & type==12) %>%
@@ -301,7 +364,8 @@ import_single <-
   keypress_percent = max((num_f/(num_f+num_j)*100), (num_j/(num_f+num_j)*100))
 
   if (!incomplete) {
-    if (ppt_info$english=="A1/A2" | ppt_info$english=="B1" | ppt_info$neurological |
+    if (ppt_info$english=="A1/A2" | ppt_info$english=="B1" |
+        ppt_info$neurological |
        !ppt_info$catch_question_1 | !ppt_info$catch_question_2 |
        (!ppt_info$catch_question_3 & !ppt_info$catch_question_4) |
        (final_block_AB < 0.6 & accuracy) |
@@ -350,18 +414,26 @@ import_single <-
 
 
   if (l$multiple) {
-    ret$ppt_info <- tibble::as_tibble(cbind(ppt_info, digit_span, catch_questions, demographics))
+    ret$ppt_info <- tibble::as_tibble(
+      cbind(ppt_info, digit_span, catch_questions, demographics)
+      )
     ret$questionnaires <- tibble::as_tibble(questionnaires_tr)
   } else {
     ppt_info <- cbind(ppt_info, digit_span, catch_questions, demographics)
-    ret$ppt_info <- tibble::as_tibble(dplyr::left_join(ppt_info, questionnaires_tr,
-                                                       by=c("subjID", "sessionID", "studyID")))
+    ret$ppt_info <- tibble::as_tibble(
+      dplyr::left_join(
+        ppt_info, questionnaires_tr, by=c("subjID", "sessionID", "studyID")
+        )
+      )
   }
 
   ret$training <- training
 
   ## TEST BLOCK
-  chars <- unique(test_block$test_part)[!unique(test_block$test_part) %in% "question_test"]
+  chars <-
+    unique(
+      test_block$test_part
+      )[!unique(test_block$test_part) %in% "question_test"]
   make_type_dict <- function(test_types) {
     vals <- list(1, 2, 3, 4, 5, 6)
     names(vals) <- c("A", "C", "E", "F", "D", "B")
@@ -374,7 +446,8 @@ import_single <-
       type[[t]] <- paste0(types[[as.character(min(vals[[substr(test, 1, 1)]],
                                                 vals[[substr(test, 2, 2)]]))]],
                           types[[as.character(max(vals[[substr(test, 1, 1)]],
-                                                  vals[[substr(test, 2, 2)]]))]])
+                                                  vals[[substr(test, 2, 2)]]))]]
+                          )
     }
     names(type) <- test_types
     return(type)
@@ -386,9 +459,11 @@ import_single <-
 
   test_trials <- test_block %>%
     dplyr::filter(!grepl("question", test_part)) %>%
-    dplyr::mutate(test_type = ifelse(grepl("(AB|BA)|(CD|DC)|(EF|FE)", test_part), "training",
+    dplyr::mutate(test_type = ifelse(grepl("(AB|BA)|(CD|DC)|(EF|FE)", test_part),
+                                     "training",
                                   ifelse(grepl("A", test_part), "chooseA",
-                                     ifelse(grepl("B", test_part), "avoidB", "novel")))) %>%
+                                     ifelse(grepl("B", test_part), "avoidB",
+                                            "novel")))) %>%
     dplyr::rowwise() %>%
     dplyr::mutate(type = as.numeric(get_type_val(test_part, type_key))) %>%
     dplyr::mutate(choice = ifelse(!timeout, as.numeric(correct), NA)) %>%
@@ -398,8 +473,9 @@ import_single <-
     dplyr::ungroup() %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse='')) %>%
-    dplyr::select(subjID, type, choice, test_type, test_trial_no, test_trial_no_group, rt,
-                  glyph_seq, stimulus, test_part, key_press, correct_response, correct, timeout,
+    dplyr::select(subjID, type, choice, test_type, test_trial_no,
+                  test_trial_no_group, rt, glyph_seq, stimulus, test_part,
+                  key_press, correct_response, correct, timeout,
                   cuml_accuracy_test)
 
   test_questions <- test_block %>%
@@ -409,12 +485,13 @@ import_single <-
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
                   question_response = response) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
-    dplyr::mutate(question_type = ifelse(grepl("happy", stimulus), "happy",
-                                      ifelse(grepl("engaged", stimulus), "engaged",
-                                             ifelse(grepl("confident", stimulus), "confident",
-                                                    "fatigue")))) %>%
-    dplyr::select(subjID, test_trial_no, question_type, question_slider_start, question_rt,
-           question_response)
+    dplyr::mutate(question_type =
+                    ifelse(grepl("happy", stimulus), "happy",
+                           ifelse(grepl("engaged", stimulus), "engaged",
+                                  ifelse(grepl("confident", stimulus),
+                                         "confident", "fatigue")))) %>%
+    dplyr::select(subjID, test_trial_no, question_type, question_slider_start,
+                  question_rt, question_response)
 
   test <- test_trials %>%
     dplyr::left_join(test_questions, by=c("subjID", "test_trial_no")) %>%
@@ -432,13 +509,20 @@ import_single <-
 
     template <- as.data.frame(
     matrix(nrow=0, ncol=210,
-     dimnames=list(NULL, c("subjID",sapply(1:43, function(i) paste0("SCZ_",i)),
-       sapply(1:18, function(i) paste0("OCI_",i)), sapply(1:26, function(i) paste0("EAT_",i)),
-       sapply(1:18, function(i) paste0("AES_",i)), sapply(1:10, function(i) paste0("AUDIT_",i)),
-       sapply(1:20, function(i) paste0("SDS_",i)), sapply(1:20, function(i) paste0("STAI_",i)),
-       sapply(1:30, function(i) paste0("BIS_",i)), sapply(1:24, function(i) paste0("LSAS_",i))
-       )
-      )
+     dimnames =
+       list(NULL,
+            c("subjID",
+              sapply(1:43, function(i) paste0("SCZ_",i)),
+              sapply(1:18, function(i) paste0("OCI_",i)),
+              sapply(1:26, function(i) paste0("EAT_",i)),
+              sapply(1:18, function(i) paste0("AES_",i)),
+              sapply(1:10, function(i) paste0("AUDIT_",i)),
+              sapply(1:20, function(i) paste0("SDS_",i)),
+              sapply(1:20, function(i) paste0("STAI_",i)),
+              sapply(1:30, function(i) paste0("BIS_",i)),
+              sapply(1:24, function(i) paste0("LSAS_",i))
+              )
+            )
      )
     )
 
@@ -449,7 +533,9 @@ import_single <-
     qstns <- questionnaires %>%
       dplyr::filter(!is.na(gillan_name)) %>%
       dplyr::select(gillan_name, score) %>%
-      tidyr::pivot_wider(names_from=gillan_name, values_from=score, values_fn=sum)
+      tidyr::pivot_wider(
+        names_from = gillan_name, values_from = score, values_fn = sum
+        )
 
     qstns <- cbind(subjID, qstns)
     ret$gillan_questions <- dplyr::bind_rows(template, qstns)
@@ -466,7 +552,8 @@ import_single <-
   if (issues) {
     issues_comments <- questionnaires %>%
       dplyr::select(enjoyment, concentration,
-                    tidyselect::contains("technical"), tidyselect::contains("layout"),
+                    tidyselect::contains("technical"),
+                    tidyselect::contains("layout"),
                     tidyselect::contains("other")) %>%
       tidyr::drop_na()
     ret$issues_comments <- tibble::as_tibble(issues_comments)

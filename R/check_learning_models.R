@@ -1,28 +1,39 @@
 #' Diagnostic plots and fit metrics for training and test data models
 #'
-#' This function is called automatically by [fit_learning_model()] when \code{model_checks = TRUE},
-#' but can also be run separately if desired.
+#' This function is called automatically by [fit_learning_model()] when
+#' \code{model_checks = TRUE}, but can also be run separately if desired.
 #'
-#' @param draws Post-warmup draws - either a [posterior::draws_array()], a [posterior::draws_list()], or a vector
-#' of file paths to the .csv output files. May also be a [posterior::draws_df()] but chain-by-chain diagnostics
+#' @param draws Post-warmup draws - either a [posterior::draws_array()], a
+#' [posterior::draws_list()], or a vector of file paths to the .csv output
+#' files. May also be a [posterior::draws_df()] but chain-by-chain diagnostics
 #' will not be possible.
-#' @param test Boolean indicating whether recovered parameters are from the test phase.
+#' @param test Boolean indicating whether recovered parameters are from the test
+#' phase.
 #' @param mean_pars Output a plot of the mean parameters?
-#' @param diagnostic_plots Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.
+#' @param diagnostic_plots Output diagnostic traces and histograms? Requires the
+#' \pkg{bayesplot} package.
 #' @param pal,font,font_size Same as [plot_import].
 #'
 #' @importFrom magrittr %>%
 #' @export
 
-check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnostic_plots = TRUE,
-                                  pal = NULL, font = "", font_size = 11) {
+check_learning_models <-
+  function(draws,
+           test = FALSE,
+           mean_pars = TRUE,
+           diagnostic_plots = TRUE,
+           pal = NULL,
+           font = "",
+           font_size = 11) {
 
   ## to appease R CMD check
   value <- ..count.. <- ..density.. <- NULL
 
   if (grepl("draws", class(draws)[1])) {
     if (!grepl("df", class(draws)[1])) {
-      if (grepl("draws_list", class(draws)[1])) draws <- posterior::as_draws_array(draws)
+      if (grepl("draws_list", class(draws)[1])) {
+        draws <- posterior::as_draws_array(draws)
+      }
       mu_pars <- draws[,,grepl("mu_alpha|mu_beta", dimnames(draws)$variable)]
       draws_df <- FALSE
     }
@@ -34,7 +45,11 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
         )
       mu_pars_df <- mu_pars
       draws_df <- TRUE
-      warning("Data given as 'draws_df', so chain-by-chain diagnostics will not be possible.")
+      warning(
+        strwrap(
+          "Data given as 'draws_df': chain-by-chain diagnostics won't be
+          possible.", prefix = " ", initial = "")
+        )
     }
   }
   else if (grepl(".csv", draws[1])) {
@@ -45,7 +60,9 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
         ),
         error = function(e) {
           return(
-            cmdstanr::read_cmdstan_csv(draws, variables = c("mu_alpha", "mu_beta"))
+            cmdstanr::read_cmdstan_csv(
+              draws, variables = c("mu_alpha", "mu_beta")
+              )
           )
         }
       )[["post_warmup_draws"]]
@@ -53,7 +70,9 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
   }
   else stop("Unrecognised data format, see help file.")
 
-  if (is.null(pal)) pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+  if (is.null(pal)) pal <- c(
+    "#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80"
+    )
 
   ret <- list()
 
@@ -77,8 +96,9 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
         dplyr::rename(value = 1) %>%
         ggplot2::ggplot(ggplot2::aes(x = value)) +
         ggplot2::geom_histogram(
-          ggplot2::aes(y = ..count.., fill = "value"), colour = "black", alpha = 0.65,
-                       binwidth = bin_wdth, position = "identity"
+          ggplot2::aes(y = ..count.., fill = "value"),
+          colour = "black", alpha = 0.65, binwidth = bin_wdth,
+          position = "identity"
           )  +
         ggplot2::geom_line(
           ggplot2::aes(
@@ -91,7 +111,8 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
           name = bquote(
             .(rlang::parse_expr(
                 paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
-                       ifelse(!alpha, "", paste0("[", strsplit(par, "_")[[1]][3], "]")
+                       ifelse(!alpha, "",
+                              paste0("[", strsplit(par, "_")[[1]][3], "]")
                               )
                        )
                 )
@@ -106,14 +127,17 @@ check_learning_models <- function(draws, test = FALSE, mean_pars = TRUE, diagnos
     }
 
     for (p in seq_along(pars)) {
-      dens_plts[[p]] <- dens_plot(mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
-                                  font_size = font_size)
+      dens_plts[[p]] <- dens_plot(
+        mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
+        font_size = font_size)
     }
 
     ret$mu_par_dens <- cowplot::plot_grid(plotlist = dens_plts, nrow = 1)
   }
   if (diagnostic_plots) {
-    if (length(pal) != 6) pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+    if (length(pal) != 6) {
+      pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+    }
     bayesplot::bayesplot_theme_set(
       cowplot::theme_half_open(
         font_family = font, font_size = font_size

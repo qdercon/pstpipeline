@@ -45,7 +45,8 @@ quantile_hdi <- function(var, quantile, transform = FALSE) {
   if (transform) {
     ret <- (exp(ret) - 1) *100
   }
-  names(ret) <- sapply(1:length(quantile), FUN = function (x) paste0(quantile[x] * 100, "%"))
+  names(ret) <- sapply(1:length(quantile),
+                       FUN = function (x) paste0(quantile[x] * 100, "%"))
 
   return(ret)
 }
@@ -66,8 +67,12 @@ make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
     dplyr::select(variable, mean, rhat, tidyselect::contains("ess")) %>%
-    dplyr::mutate(id_no = as.numeric(sub("\\].*$", "",
-                                         sub(".*\\[", "", .[["variable"]])))) %>%
+    dplyr::mutate(
+      id_no = as.numeric(
+        sub("\\].*$", "",
+        sub(".*\\[", "", .[["variable"]]))
+        )
+      ) %>%
     dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
     dplyr::rename(parameter = variable) %>%
     dplyr::rename(posterior_mean = mean) %>%
@@ -77,12 +82,15 @@ make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
       tidyselect::any_of("rhat"), ~!any(.x > rhat_upper))
     ) %>%
     dplyr::filter(dplyr::across(
-      tidyselect::any_of(tidyselect::starts_with("ess_bulk")), ~!any(.x < ess_lower)
+      tidyselect::any_of(
+        tidyselect::starts_with("ess_bulk")), ~!any(.x < ess_lower)
     )) %>%
     dplyr::ungroup()
 
   lost_ids <- n_id - length(unique(summ$subjID))
-  if (lost_ids > 0) message(lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS.")
+  if (lost_ids > 0) message(
+    lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS."
+    )
 
   par_df <- ppt_info %>%
     dplyr::inner_join(summ, by = "subjID")

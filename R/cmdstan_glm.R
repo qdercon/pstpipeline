@@ -1,40 +1,42 @@
 # Adapted from the rstanarm package for estimating model parameters
-# Copyright (C) 2013, 2014, 2015, 2016, 2017 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
-# of the License, or (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Bayesian generalized linear models via CmdStan
 #'
-#' Generalized linear modeling for Gaussian and gamma responses, with optional prior
-#' distributions for the coefficients, intercept, and auxiliary parameters.
+#' Generalized linear modeling for Gaussian and gamma responses, with optional
+#' prior distributions for the coefficients, intercept, and auxiliary
+#' parameters.
 #'
 #' @param formula,data,subset Same as \code{\link[stats]{glm}},
 #' but \emph{we strongly advise against omitting the \code{data}
 #' argument}.
-#' @param family Same as \code{\link[stats]{glm}}. Accepted families for this function
-#' are \code{gaussian()} or \code{Gamma()}, and any link function.
+#' @param family Same as \code{\link[stats]{glm}}. Accepted families for this
+#' function are \code{gaussian()} or \code{Gamma()}, and any link function.
 #' @param model,offset,weights Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but
 #' rarely specified.
 #' @param y Logical scalar indicating whether to return the response vector.
 #' @param x Logical scalar indicating whether to return the design matrix.
 #' @param algorithm Argument "sampling" is for MCMC (default), while "meanfield"
-#' and "fullrank" are variational algorithms ("meanfield" is the CmdStan default).
+#' and "fullrank" are variational algorithms ("meanfield" is the CmdStan
+#' default).
 #' @param out_dir Output directory for model fit environment.
-#' @param ... Further arguments passed to [cmdstanr::sample] (i.e., \code{refresh},
-#'   \code{iter_warmup}, \code{iter_sampling}, \code{chains} etc.)
+#' @param ... Further arguments passed to [cmdstanr::sample] (i.e.,
+#' \code{refresh}, \code{iter_warmup}, \code{iter_sampling}, \code{chains} etc.)
 #' @param prior The prior distribution for the (non-hierarchical) regression
 #'   coefficients.
 #'
@@ -82,7 +84,8 @@
 #'   \code{FALSE}--- then the prior distribution for the intercept is set so it
 #'   applies to the value \emph{when all predictors are centered} (you don't
 #'   need to manually center them). This is explained further in
-#'   [Prior Distributions for rstanarm Models](https://mc-stan.org/rstanarm/articles/priors.html)
+#'   [Prior Distributions for rstanarm Models]
+#'   (https://mc-stan.org/rstanarm/articles/priors.html)
 #'   If you prefer to specify a prior on the intercept without the predictors
 #'   being auto-centered, then you have to omit the intercept from the
 #'   \code{\link[stats]{formula}} and include a column of ones as a predictor,
@@ -102,10 +105,10 @@
 #'   smaller values of \code{"reciprocal_dispersion"} correspond to
 #'   greater dispersion. For gamma models \code{prior_aux} sets the prior on
 #'   to the \code{"shape"} parameter (see e.g.,
-#'   \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it is the
-#'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
-#'   a scale parameter). Binomial and Poisson models do not have auxiliary
-#'   parameters.
+#'   \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it
+#'   is the so-called \code{"lambda"} parameter (which is essentially the
+#'   reciprocal of a scale parameter). Binomial and Poisson models do not have
+#'   auxiliary parameters.
 #'
 #'   The default prior is described in the vignette
 #'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
@@ -217,7 +220,7 @@ cmdstan_glm <-
 }
 
 
-# rstanarm::stan_glm internal fns ---------------------------------------------------------
+# rstanarm::stan_glm internal fns ----------------------------------------------
 
 validate_weights <- function(w) {
   if (missing(w) || is.null(w)) {
@@ -239,8 +242,10 @@ validate_offset <- function(o, y) {
     o <- double(0)
   } else {
     if (length(o) != NROW(y))
-      stop(gettextf("Number of offsets is %d but should be %d (number of observations)",
-                    length(o), NROW(y)), domain = NA, call. = FALSE)
+      stop(gettextf(
+        "Number of offsets is %d but should be %d (number of observations)",
+        length(o), NROW(y)), domain = NA, call. = FALSE
+        )
   }
   return(o)
 }

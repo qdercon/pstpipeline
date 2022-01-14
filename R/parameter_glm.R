@@ -1,31 +1,34 @@
-#' Quantify and plot associations between learning parameters and variables of interest
+#' Quantify and plot associations between learning parameters and variables of
+#' interest
 #'
 #' \code{parameter_glm} is a wrapper around [cmdstan_glm()], taking as inputs
 #' summary tables and raw data from [fit_learning_model()], and outputting
-#' the results of GLMs quantifying the association between the individual-level posterior
-#' means of each parameter and the independent variable(s) of interest. Gamma GLMs with
-#' log link functions are used for learning rate models, while standard Gaussian models with
-#' identity link are used for models with inverse temperature as the response variable.
+#' the results of GLMs quantifying the association between the individual-level
+#' posterior means of each parameter and the independent variable(s) of
+#' interest. Gamma GLMs with log link functions are used for learning rate
+#' models, while standard Gaussian models with identity link functions are used
+#' for models with inverse temperature as the response variable.
 #'
-#' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of interest.
-#' @param raw_df List of raw data inputs to the above fits (in the same order). Used to
-#' correctly link subject IDs to independent variables.
+#' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of
+#' interest.
+#' @param raw_df List of raw data inputs to the above fits (in the same order).
+#' Used to correctly link subject IDs to independent variables.
 #' @param var_of_interest Variable of interest.
 #' @param covariates Vector of covariates to control for in the GLMs.
-#' @param interaction Optional variable to interact with the variable of interest. The
-#' GLMs will then be run twice with this variable reverse coded the second time to obtain
-#' posterior samples for the variable of interest in both groups. This variable must be binary
-#' and only 1 interaction is allowed.
-#' @param recode_na Some demographic questions were conditional, and so there exist NAs. This
-#' argument allows these terms to be recoded as appropriate (in all binary cases, this should
-#' be set to 0).
-#' @param factor_scores Given the factor scores were derived separately, this argument allows the
-#' \code{data.frame} containing the factor scores to be supplied, so that these factors can
-#' be included in models.
+#' @param interaction Optional variable to interact with the variable of
+#' interest. The GLMs will then be run twice with this variable reverse coded
+#' the second time to obtain posterior samples for the variable of interest in
+#' both groups. This variable must be binary and only 1 interaction is allowed.
+#' @param recode_na Some demographic questions were conditional, and so there
+#' exist NAs. This argument allows these terms to be recoded as appropriate
+#' (in all binary cases, this should be set to 0).
+#' @param factor_scores Given the factor scores were derived separately, this
+#' argument allows the \code{data.frame} containing the factor scores to be
+#' supplied, so that these factors can be included in models.
 #' @param rhat_upper,ess_lower Same as [plot_raincloud()].
 #' @param ... Other arguments to pass to [cmdstan_glm()] (e.g., to control
-#' number of warm-up and sampling iterations). In addition, use \code{cores} to chnage the
-#' number of parallel chains to sample from.
+#' number of warm-up and sampling iterations). In addition, use \code{cores} to
+#' change the number of parallel chains to sample from.
 #'
 #' @return A [posterior::draws_df()].
 #'
@@ -60,7 +63,8 @@ parameter_glm <- function(summary_df = list(),
   all_data <- list()
   for (s in seq_along(summary_df)) {
     all_data[[s]] <- make_par_df(
-      raw_df[[s]], summary_df[[s]], rhat_upper = rhat_upper, ess_lower = ess_lower
+      raw_df[[s]], summary_df[[s]], rhat_upper = rhat_upper,
+      ess_lower = ess_lower
     )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
@@ -77,20 +81,29 @@ parameter_glm <- function(summary_df = list(),
     formula <- paste0(formula, "+", var_of_interest, "*", interaction)
     if (!is.null(recode_na)) {
       all_data <- all_data %>%
-        dplyr::mutate(!!int_term := ifelse(is.na(!!int_term), recode_na, !!int_term))
+        dplyr::mutate(
+          !!int_term := ifelse(
+            is.na(!!int_term), recode_na, !!int_term
+            )
+          )
     }
     vals <- unique(all_data[[interaction]])
     if (length(vals) > 2) {
       stop("Interaction term is non-binary. Perhaps NAs need to be recoded?")
     }
     all_data_recode <- all_data %>%
-      dplyr::mutate(!!int_term := ifelse(!!int_term == vals[1], vals[2], vals[1]))
+      dplyr::mutate(
+        !!int_term := ifelse(
+          !!int_term == vals[1], vals[2], vals[1]
+          )
+        )
     par_ls_recode <- list()
   }
   par_ls <- list()
 
   mod <- lm(rlang::parse_expr(formula), data = all_data)
-    # used to get the correct names for betas (as ordering may change e.g., with interactions)
+    # used to get the correct names for betas (as ordering may change e.g.,
+    # with interactions)
   beta_names <- attr(mod$terms , "term.labels")
 
   for (par in unique(all_data$parameter)) {
@@ -103,8 +116,10 @@ parameter_glm <- function(summary_df = list(),
       refresh = l$refresh
     )
     par_ls[[par]] <- cmdstan_fit$draws(format = "df") %>%
-      dplyr::rename_with(.fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
-                         .cols = tidyselect::starts_with("beta"))
+      dplyr::rename_with(
+        .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
+        .cols = tidyselect::starts_with("beta")
+        )
   }
   if (!is.null(interaction)) {
     for (par in unique(all_data_recode$parameter)) {
@@ -117,8 +132,10 @@ parameter_glm <- function(summary_df = list(),
         refresh = l$refresh
       )
       par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") %>%
-        dplyr::rename_with(.fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
-                           .cols = tidyselect::starts_with("beta")) %>%
+        dplyr::rename_with(
+          .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
+          .cols = tidyselect::starts_with("beta")
+          ) %>%
         dplyr::mutate(recode = TRUE)
     }
   }

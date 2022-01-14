@@ -1,19 +1,21 @@
 #' Various plots for factor prediction and derivation
 #'
-#' \code{plot_factors} plots various aspects of the transdiagnostic factor derivation,
-#' including histograms and heatmaps of the questions themselves.
+#' \code{plot_factors} plots various aspects of the transdiagnostic factor
+#' derivation, including histograms and heatmaps of the questions themselves.
 #'
-#' @param df Data frame with factor scores or questions to plot. For \code{predictive} and
-#' \code{factor_htmp} plots, this should be a named list of \code{data.frames} (including "preds"
-#' & "scores" or "qns" & "coefs" respectively). If a \code{factor_hist} plot with \code{grouped = TRUE}
-#' is desired, it should be a list of \code{data.frames} (one per group).
-#' @param plot_type Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
-#' \code{predictive}, and \code{factor_htmp}.
+#' @param df Data frame with factor scores or questions to plot. For
+#' \code{predictive} and \code{factor_htmp} plots, this should be a named list
+#' of \code{data.frames} (including "preds" & "scores" or "qns" & "coefs"
+#' respectively). If a \code{factor_hist} plot with \code{grouped = TRUE} is
+#' desired, it should be a list of \code{data.frames} (one per group).
+#' @param plot_type Plot(s) to output: \code{factor_hist} (which can be
+#' grouped), \code{r2_plot},\code{predictive}, and \code{factor_htmp}.
 #' @param colnames Column names to get data from.
 #' @param titles Title(s) for the plot(s) or pretty names more generally.
 #' @param r2 Array of \eqn{R^{2}}{R^2} values.
 #' @param qn Number of questions - used to find correct \eqn{R^{2}}{R^2} values.
-#' @param hyp_alph Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).
+#' @param hyp_alph Chosen alpha value (used to draw a dotted line on an
+#' \code{r2_plot}).
 #' @param grouped .
 #' @param pal,font,font_size Same as [plot_import].
 #'
@@ -22,8 +24,16 @@
 #' @importFrom magrittr %>%
 #' @export
 
-plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn = NA,
-                         hyp_alph = 0.1, grouped = FALSE, pal = NULL, font = "",
+plot_factors <- function(df,
+                         plot_type,
+                         colnames = NA,
+                         titles = NA,
+                         r2 = NA,
+                         qn = NA,
+                         hyp_alph = 0.1,
+                         grouped = FALSE,
+                         pal = NULL,
+                         font = "",
                          font_size = 11) {
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -31,15 +41,16 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
   ret <- list()
 
   ## to appease R CMD check
-  Factor <- Score <- Weight <- ..count.. <- ..density.. <- alpha <- n_items <- id <-
-    value <- obs <- predicted <- question <- size <- NULL
+  Factor <- Score <- Weight <- ..count.. <- ..density.. <- alpha <- n_items <-
+    id <- value <- obs <- predicted <- question <- size <- NULL
 
   if (any(plot_type == "factor_hist")) {
 
     if (grouped) {
       all_datasets <- list()
       for (d in seq_along(df)) {
-        all_datasets[[d]] <- df[[d]] %>% dplyr::mutate(dataset = paste0("group_", d))
+        all_datasets[[d]] <- df[[d]] %>%
+          dplyr::mutate(dataset = paste0("group_", d))
       }
       df <- data.table::rbindlist(all_datasets, use.names = TRUE)
       pal <- split(pal, ceiling(seq_along(pal)/length(unique(df[["dataset"]]))))
@@ -51,15 +62,18 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
     hist_factors <- list()
     for (f in seq_along(colnames)) {
       hist_plot <- df %>%
-        tidyr::pivot_longer(cols = colnames, names_to = "Factor", values_to = "Score") %>%
+        tidyr::pivot_longer(
+          cols = colnames, names_to = "Factor", values_to = "Score"
+          ) %>%
         dplyr::filter(Factor == colnames[f]) %>%
         ggplot2::ggplot(ggplot2::aes(x = Score)) +
         ggplot2::geom_histogram(
-          ggplot2::aes(y = ..count.., fill = !!group), colour = "black", alpha = 0.65,
-                       binwidth = 0.2, position = "identity"
+          ggplot2::aes(y = ..count.., fill = !!group),
+          colour = "black", alpha = 0.65, binwidth = 0.2, position = "identity"
           )  +
         ggplot2::geom_line(
-          ggplot2::aes(y = ..count.., colour = !!group), binwidth = 0.2, stat = 'bin'
+          ggplot2::aes(y = ..count.., colour = !!group),
+          binwidth = 0.2, stat = 'bin'
         ) +
         ggplot2::scale_colour_manual(values = unlist(pal[[f]])) +
         ggplot2::scale_fill_manual(values = unlist(pal[[f]])) +
@@ -73,7 +87,9 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
 
       hist_factors[[f]] <- hist_plot
     }
-    ret$hist_factors_all <- cowplot::plot_grid(plotlist = hist_factors, nrow = 1)
+    ret$hist_factors_all <- cowplot::plot_grid(
+      plotlist = hist_factors, nrow = 1
+      )
   }
   if (any(plot_type == "r2_plot")) {
     df <- as.data.frame(df) %>%
@@ -91,12 +107,22 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
       ggplot2::ggplot(ggplot2::aes(x = n_items, y = R2, colour = Factor)) +
       ggplot2::geom_line(size = 0.8) +
       ggplot2::scale_colour_manual(values = unlist(pal)) +
-      ggplot2::scale_x_continuous(name = "No. questions", breaks = n_item_vec,
-                                  sec.axis = ggplot2::dup_axis(labels = alphas, name = expression(alpha))) +
+      ggplot2::scale_x_continuous(
+        name = "No. questions", breaks = n_item_vec,
+        sec.axis = ggplot2::dup_axis(
+          labels = alphas, name = expression(alpha)
+          )
+        ) +
       ggplot2::scale_y_continuous(name = expression(R^2)) +
-      ggplot2::geom_vline(ggplot2::aes(xintercept = n_item_vec[index_alph]), linetype = "dashed") +
+      ggplot2::geom_vline(
+        ggplot2::aes(xintercept = n_item_vec[index_alph]),
+        linetype = "dashed"
+        ) +
       cowplot::theme_half_open(font_size = font_size, font_family = font) +
-      ggplot2::theme(legend.position = c(0.75, 0.25), axis.text.x.top = ggplot2::element_text(angle = 90))
+      ggplot2::theme(
+        legend.position = c(0.75, 0.25),
+        axis.text.x.top = ggplot2::element_text(angle = 90)
+        )
 
     ret$r2_plot <- r2_plot
   }
@@ -110,15 +136,18 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
       setNames(nm = c("id", colnames)) %>%
       dplyr::mutate(value = "predicted") %>%
       dplyr::bind_rows(scores) %>%
-      tidyr::pivot_longer(cols = c(-id, -value), values_to = "Score", names_to = "Factor") %>%
+      tidyr::pivot_longer(cols = c(-id, -value),
+                          values_to = "Score", names_to = "Factor") %>%
       tidyr::pivot_wider(names_from = value, values_from = Score)
 
     for (f in seq_along(colnames)) {
       pred_plots[[f]] <- df_all %>%
         dplyr::filter(Factor == colnames[f]) %>%
         ggplot2::ggplot(ggplot2::aes(x = obs, y = predicted)) +
-        ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[f]], colour = pal[[f]]) +
-        ggplot2::geom_smooth(method = "lm", formula = "y~x", se = FALSE, fill = pal[[f]], colour = pal[[f]]) +
+        ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[f]],
+                            colour = pal[[f]]) +
+        ggplot2::geom_smooth(method = "lm", formula = "y~x", se = FALSE,
+                             fill = pal[[f]], colour = pal[[f]]) +
         ggplot2::guides(colour = "none", fill = "none") +
         cowplot::theme_half_open(font_size = font_size, font_family = font) +
         ggplot2::xlab("True score") +
@@ -134,7 +163,8 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
       setNames(nm = colnames) %>%
       dplyr::mutate(question = names) %>%
       dplyr::filter(!dplyr::if_all(.cols = 1:3, ~ . == 0)) %>%
-      tidyr::pivot_longer(cols = 1:3, names_to = "Factor", values_to = "Weight") %>%
+      tidyr::pivot_longer(cols = 1:3, names_to = "Factor",
+                          values_to = "Weight") %>%
       ggplot2::ggplot(ggplot2::aes(x = factor(question, levels = names),
                                    y = factor(Factor, levels = rev(colnames)),
                                    fill = Weight)) +
@@ -142,8 +172,10 @@ plot_factors <- function(df, plot_type, colnames = NA, titles = NA, r2 = NA, qn 
       ggplot2::scale_fill_distiller(palette = "Blues", direction = 1) +
       ggplot2::scale_y_discrete(name = NULL, labels = rev(titles)) +
       cowplot::theme_half_open(font_size = font_size, font_family = font) +
-      ggplot2::theme(axis.title.x = ggplot2::element_blank(),
-                     axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust = 1))
+      ggplot2::theme(
+        axis.title.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust = 1)
+        )
     ret$heatmap <- heatmap
   }
 

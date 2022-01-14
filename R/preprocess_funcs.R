@@ -1,7 +1,10 @@
 #' @noRd
 #' @keywords internal
 
-preprocess_func_train <- function(raw_data, general_info) {
+# adapted from hBayesDM
+
+preprocess_func_train <- function(raw_data,
+                                  general_info) {
   # Currently class(raw_data) == "data.table"
 
   # Use general_info of raw_data
@@ -42,7 +45,9 @@ preprocess_func_train <- function(raw_data, general_info) {
   return(data_list)
 }
 
-preprocess_func_test <- function(raw_data_train, raw_data_test, general_info) {
+preprocess_func_test <- function(raw_data_train,
+                                 raw_data_test,
+                                 general_info) {
   # Use general_info of raw_data
   subjs     <- general_info$subjs
   n_subj    <- general_info$n_subj
@@ -99,4 +104,3 @@ preprocess_func_test <- function(raw_data_train, raw_data_test, general_info) {
   # Returned data_list will directly be passed to Stan
   return(data_list)
 }
-    # adapted from hBayesDM

@@ -1,25 +1,25 @@
 #' @noRd
 #' @keywords internal
 
-## Adapted from:
-# https://github.com/RainCloudPlots/RainCloudPlots/blob/master/tutorial_R/R_rainclouds.R
-## Citation: https://wellcomeopenresearch.org/articles/4-63
-
-### This script creates an R function to generate raincloud plots, then simulates
-### data for plots. If using for your own data, you only need lines 1-80.
-### It relies largely on code previously written by David Robinson
-### (https://gist.github.com/dgrtwo/eb7750e74997891d7c20)
-### and the package ggplot2 by Hadley Wickham
-
-# Defining the geom_flat_violin function -----------------------------------------------
+# Adapted from https://github.com/RainCloudPlots/RainCloudPlots (R_rainclouds.R)
+# Citation: https://wellcomeopenresearch.org/articles/4-63
+# Defining the geom_flat_violin function ---------------------------------------
 
 "%||%" <- function(a, b) {
   if (!is.null(a)) a else b
 }
 
-geom_flat_violin <- function(mapping = NULL, data = NULL, stat = "ydensity",
-                             position = "dodge", trim = TRUE, scale = "area",
-                             show.legend = NA, inherit.aes = TRUE, ...) {
+geom_flat_violin <-
+  function(mapping = NULL,
+           data = NULL,
+           stat = "ydensity",
+           position = "dodge",
+           trim = TRUE,
+           scale = "area",
+           show.legend = NA,
+           inherit.aes = TRUE,
+           ...) {
+
   ggplot2::layer(
     data = data,
     mapping = mapping,
@@ -35,6 +35,7 @@ geom_flat_violin <- function(mapping = NULL, data = NULL, stat = "ydensity",
     )
   )
 }
+
 GeomFlatViolin <-
   ggplot2::ggproto("GeomFlatViolin", ggplot2::Geom,
     setup_data = function(data, params) {
@@ -69,7 +70,10 @@ GeomFlatViolin <-
       # Needed for coord_polar and such
       newdata <- rbind(newdata, newdata[1, ])
 
-      ggplot2:::ggname("geom_flat_violin", ggplot2::GeomPolygon$draw_panel(newdata, panel_scales, coord))
+      ggplot2:::ggname(
+        "geom_flat_violin",
+        ggplot2::GeomPolygon$draw_panel(newdata, panel_scales, coord)
+        )
     },
 
     draw_key = ggplot2::draw_key_polygon,

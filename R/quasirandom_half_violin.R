@@ -23,7 +23,7 @@
 crop_half <- function(df, right, nudge) {
   x <- NULL # to appease R CMD check
   if (right) {
-    df <- dplyr::filter(df, x >= mean(df$x)) # right by default (as this --> top)
+    df <- dplyr::filter(df, x >= mean(df$x)) # right by default (as this -> top)
     if (!is.null(nudge)) df$x <- df$x + nudge
   }
   else {
@@ -34,8 +34,8 @@ crop_half <- function(df, right, nudge) {
 }
 
 #### Main plotting functions ---------------------------------------------------
-# Adapted from https://github.com/eclarke/ggbeeswarm (change is to combine a quasirandom
-# and halfviolin plot)
+# Adapted from https://github.com/eclarke/ggbeeswarm (change is to combine a
+# quasirandom and halfviolin plot)
 
 position_quasirandom <- function(method = "quasirandom",
                                  width = NULL, varwidth = FALSE,

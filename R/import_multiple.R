@@ -1,12 +1,15 @@
 #' JATOS text file parsing function (multiple results)
 #'
-#' \code{import_multiple()} parses a JATOS .txt file containing multiple participant's results
-#' to a (list of) R object(s)
+#' \code{import_multiple()} parses a JATOS .txt file containing multiple
+#' participant's results to a (list of) R object(s).
 #'
 #' @param jatos_txt_file JATOS .txt file path.
-#' @param separate Returns separate lists for non-distanced and distanced groups?
-#' @param exclusion Exclude those meeting exclusion criteria from questionnaire / hBayesDM outputs?
-#' @param indiv Return individual-level data? This can then be passed to the plot_single function
+#' @param separate Returns separate lists for non-distanced and distanced
+#' groups?
+#' @param exclusion Exclude those meeting exclusion criteria from questionnaire
+#' / hBayesDM outputs?
+#' @param indiv Return individual-level data? This can then be passed to
+#' [plot_single()].
 #' and plotted for one individual at a time.
 #' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
 #' @param ... Other arguments passed to [import_single()].
@@ -17,8 +20,12 @@
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 
-import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, indiv = FALSE,
-                            ret_incomplete = FALSE, ...) {
+import_multiple <- function(jatos_txt_file,
+                            separate = TRUE,
+                            exclusion = TRUE,
+                            indiv = FALSE,
+                            ret_incomplete = FALSE,
+                            ...) {
 
   l <- list(...)
   if (is.null(l$hbayesDM)) l$hbayesDM <- FALSE
@@ -44,7 +51,10 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
   res_splits <-
     which(
       lapply(1:length(all_comp),
-             function (i) any(grepl("Welcome to the experiment.", all_comp[[i]], fixed = T)))
+             function (i) any(
+               grepl("Welcome to the experiment.", all_comp[[i]], fixed = T)
+               )
+             )
       %in% TRUE
     )
     # look along the list of individual component results, note down the list numbers where
@@ -70,8 +80,11 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
   if (length(indiv_res_incomplete)>0 & !ret_incomplete) {
     message(
-      strwrap("One or more incomplete datasets have been omitted. Set incomplete=T to retrieve
-              these data (will require manual parsing).", prefix = " ", initial = "")
+      strwrap(
+        "One or more incomplete datasets have been omitted. Set
+        incomplete=T to retrieve these data (will require manual parsing).",
+        prefix = " ", initial = ""
+      )
     )
   }
 
@@ -98,7 +111,8 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
   message("Parsing results...")
 
-  pb = txtProgressBar(min = 0, max = length(indiv_res_complete), initial = 0, style = 3)
+  pb = txtProgressBar(min = 0, max = length(indiv_res_complete),
+                      initial = 0, style = 3)
 
   for (i in seq_along(indiv_res_complete)) {
     setTxtProgressBar(pb, i)
@@ -119,26 +133,32 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
       if (res$ppt_info$distanced) {
         parsed_results_d[[i]] <- res
-        names(parsed_results_d)[i] <- paste0("ID",parsed_results_d[[i]]$ppt_info$subjID)
+        names(parsed_results_d)[i] <- paste0(
+          "ID",parsed_results_d[[i]]$ppt_info$subjID)
         if (exclusion) {
           if (parsed_results_d[[i]]$ppt_info$exclusion) {
             excluded_d[[i]] <- parsed_results_d[[i]]
-            names(excluded_d)[i] <- paste0("ID", parsed_results_d[[i]]$ppt_info$subjID)
+            names(excluded_d)[i] <- paste0(
+              "ID", parsed_results_d[[i]]$ppt_info$subjID)
           } else {
             included_d[[i]] <- parsed_results_d[[i]]
-            names(included_d)[i] <- paste0("ID",parsed_results_d[[i]]$ppt_info$subjID)
+            names(included_d)[i] <- paste0(
+              "ID",parsed_results_d[[i]]$ppt_info$subjID)
           }
         }
       } else {
         parsed_results_nd[[i]] <- res
-        names(parsed_results_nd)[i] <- paste0("ID",parsed_results_nd[[i]]$ppt_info$subjID)
+        names(parsed_results_nd)[i] <- paste0(
+          "ID",parsed_results_nd[[i]]$ppt_info$subjID)
         if (exclusion) {
           if (parsed_results_nd[[i]]$ppt_info$exclusion) {
             excluded_nd[[i]] <- parsed_results_nd[[i]]
-            names(excluded_nd)[i] <- paste0("ID", parsed_results_nd[[i]]$ppt_info$subjID)
+            names(excluded_nd)[i] <- paste0(
+              "ID", parsed_results_nd[[i]]$ppt_info$subjID)
           } else {
             included_nd[[i]] <- parsed_results_nd[[i]]
-            names(included_nd)[i] <- paste0("ID",parsed_results_nd[[i]]$ppt_info$subjID)
+            names(included_nd)[i] <- paste0(
+              "ID",parsed_results_nd[[i]]$ppt_info$subjID)
           }
         }
       }
@@ -155,15 +175,18 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
         issues = l$issues,
         add_sex = l$add_sex
       )
-      names(parsed_results)[i] <- paste0("ID",parsed_results[[i]]$ppt_info$subjID)
+      names(parsed_results)[i] <- paste0(
+        "ID",parsed_results[[i]]$ppt_info$subjID)
 
       if (exclusion) {
         if (parsed_results[[i]]$ppt_info$exclusion) {
           excluded[[i]] <- parsed_results[[i]]
-          names(excluded)[i] <- paste0("ID", parsed_results[[i]]$ppt_info$subjID)
+          names(excluded)[i] <- paste0(
+            "ID", parsed_results[[i]]$ppt_info$subjID)
         } else {
           included[[i]] <- parsed_results[[i]]
-          names(included)[i] <- paste0("ID",parsed_results[[i]]$ppt_info$subjID)
+          names(included)[i] <- paste0(
+            "ID",parsed_results[[i]]$ppt_info$subjID)
         }
       }
     }
@@ -183,16 +206,21 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
     ret <- list()
 
-    demographics_nd <- lapply(seq_along(parsed_results_nd),
-                              function(i) demographics_nd[[i]] <- parsed_results_nd[[i]]$ppt_info)
-    questionnaires_nd <- lapply(seq_along(parsed_results_nd),
-                                function(i)
-                                  questionnaire_totals_nd[[i]] <- parsed_results_nd[[i]]$questionnaires)
+    demographics_nd <- lapply(
+      seq_along(parsed_results_nd),
+      function(i) demographics_nd[[i]] <- parsed_results_nd[[i]]$ppt_info)
+    questionnaires_nd <- lapply(
+      seq_along(parsed_results_nd),
+      function(i)
+        questionnaire_totals_nd[[i]] <- parsed_results_nd[[i]]$questionnaires)
 
-    demographics_d <- lapply(seq_along(parsed_results_d),
-                             function(i) demographics_d[[i]] <- parsed_results_d[[i]]$ppt_info)
-    questionnaires_d <- lapply(seq_along(parsed_results_d),
-                               function(i) questionnaire_totals_d[[i]] <- parsed_results_d[[i]]$questionnaires)
+    demographics_d <- lapply(
+      seq_along(parsed_results_d),
+      function(i) demographics_d[[i]] <- parsed_results_d[[i]]$ppt_info)
+    questionnaires_d <- lapply(
+      seq_along(parsed_results_d),
+      function(i)
+        questionnaire_totals_d[[i]] <- parsed_results_d[[i]]$questionnaires)
 
     ret$non_distanced$ppt_info <- dplyr::left_join(
       tibble::as_tibble(
@@ -208,14 +236,20 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
     )
 
     if (exclusion) {
-      exclusion_list_nd <- ret$non_distanced$ppt_info %>% dplyr::select(subjID, exclusion)
-      exclusion_list_d <- ret$distanced$ppt_info %>% dplyr::select(subjID, exclusion)
+      exclusion_list_nd <- ret$non_distanced$ppt_info %>%
+        dplyr::select(subjID, exclusion)
+      exclusion_list_d <- ret$distanced$ppt_info %>%
+        dplyr::select(subjID, exclusion)
     }
 
-    training_nd <- lapply(seq_along(parsed_results_nd),
-                          function(i) training_nd[[i]] <- parsed_results_nd[[i]]$training)
-    training_d <- lapply(seq_along(parsed_results_d),
-                         function(i) training_d[[i]] <- parsed_results_d[[i]]$training)
+    training_nd <- lapply(
+      seq_along(parsed_results_nd),
+      function(i) training_nd[[i]] <- parsed_results_nd[[i]]$training
+      )
+    training_d <- lapply(
+      seq_along(parsed_results_d),
+      function(i) training_d[[i]] <- parsed_results_d[[i]]$training
+      )
 
     ret$non_distanced$training <- dplyr::bind_rows(training_nd)
     ret$distanced$training <- dplyr::bind_rows(training_d)
@@ -233,11 +267,17 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       qlearning_data_d <- list()
 
       qlearning_data_nd <-
-        lapply(seq_along(parsed_results_nd),
-               function(i) qlearning_data_nd[[i]] <- parsed_results_nd[[i]]$qlearning_data)
+        lapply(
+          seq_along(parsed_results_nd),
+          function(i)
+            qlearning_data_nd[[i]] <- parsed_results_nd[[i]]$qlearning_data
+          )
       qlearning_data_d <-
-        lapply(seq_along(parsed_results_d),
-        function(i) qlearning_data_d[[i]] <- parsed_results_d[[i]]$qlearning_data)
+        lapply(
+          seq_along(parsed_results_d),
+          function(i)
+            qlearning_data_d[[i]] <- parsed_results_d[[i]]$qlearning_data
+          )
 
       if (exclusion) {
         qlearning_data_nd <- dplyr::left_join(
@@ -264,19 +304,28 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       gillan_questions_d <- list()
 
       gillan_questions_nd <-
-        lapply(seq_along(parsed_results_nd),
-               function(i) gillan_questions_nd[[i]] <- parsed_results_nd[[i]]$gillan_questions
-               )
+        lapply(
+          seq_along(parsed_results_nd),
+          function(i)
+            gillan_questions_nd[[i]] <- parsed_results_nd[[i]]$gillan_questions
+          )
       gillan_questions_d <-
-        lapply(seq_along(parsed_results_d),
-               function(i) gillan_questions_d[[i]] <- parsed_results_d[[i]]$gillan_questions
-              )
+        lapply(
+          seq_along(parsed_results_d),
+          function(i)
+            gillan_questions_d[[i]] <- parsed_results_d[[i]]$gillan_questions
+          )
 
       if (exclusion) {
         gillan_questions_nd <-
-          dplyr::left_join(dplyr::bind_rows(gillan_questions_nd), exclusion_list_nd, by="subjID")
+          dplyr::left_join(
+            dplyr::bind_rows(
+              gillan_questions_nd), exclusion_list_nd, by="subjID"
+            )
         gillan_questions_d <-
-          dplyr::left_join(dplyr::bind_rows(gillan_questions_d), exclusion_list_d, by="subjID")
+          dplyr::left_join(
+            dplyr::bind_rows(gillan_questions_d), exclusion_list_d, by="subjID"
+            )
 
         gillan_questions_nd <- gillan_questions_nd %>%
           dplyr::filter(exclusion==0) %>%
@@ -305,10 +354,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       combined_nd <- list()
       combined_d <- list()
 
-      combined_nd <- lapply(seq_along(parsed_results_nd),
-                            function(i) combined_nd[[i]] <- parsed_results_nd[[i]]$full_data)
-      combined_d <- lapply(seq_along(parsed_results_d),
-                           function(i) combined_d[[i]] <- parsed_results_d[[i]]$full_data)
+      combined_nd <- lapply(
+        seq_along(parsed_results_nd),
+        function(i) combined_nd[[i]] <- parsed_results_nd[[i]]$full_data
+        )
+      combined_d <- lapply(
+        seq_along(parsed_results_d),
+        function(i) combined_d[[i]] <- parsed_results_d[[i]]$full_data
+        )
 
       ret$non_distanced$full_data <- dplyr::bind_rows(combined_nd)
       ret$distanced$full_data <- dplyr::bind_rows(combined_d)
@@ -318,10 +371,14 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       issues_nd <- list()
       issues_d <- list()
 
-      issues_nd <- lapply(seq_along(parsed_results_nd),
-                          function(i) issues_nd[[i]] <- parsed_results_nd[[i]]$issues_comments)
-      issues_d <- lapply(seq_along(parsed_results_d),
-                         function(i) issues_d[[i]] <- parsed_results_d[[i]]$issues_comments)
+      issues_nd <- lapply(
+        seq_along(parsed_results_nd),
+        function(i) issues_nd[[i]] <- parsed_results_nd[[i]]$issues_comments
+        )
+      issues_d <- lapply(
+        seq_along(parsed_results_d),
+        function(i) issues_d[[i]] <- parsed_results_d[[i]]$issues_comments
+        )
 
       ret$non_distanced$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues_nd))
       ret$distanced$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues_d))
@@ -332,14 +389,22 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       ret$distanced$individual_results <- parsed_results_d
 
       if (exclusion) {
-        ret$non_distanced$individual_results$included <- included_nd[-which(sapply(included_nd, is.null))]
+        ret$non_distanced$individual_results$included <-
+          included_nd[-which(sapply(included_nd, is.null))]
         ret$non_distanced$individual_results$excluded <-
-          tryCatch(excluded_nd[-which(sapply(excluded_nd, is.null))],
-                   error=function(e) message("\nNo excluded non-distanced participants, set exclusion=F."))
-        ret$distanced$individual_results$included <- included_d[-which(sapply(included_d, is.null))]
+          tryCatch(
+            excluded_nd[-which(sapply(excluded_nd, is.null))],
+            error = function(e) message(
+              "\nNo excluded non-distanced participants, set exclusion=F.")
+            )
+        ret$distanced$individual_results$included <-
+          included_d[-which(sapply(included_d, is.null))]
         ret$distanced$individual_results$excluded <-
-          tryCatch(excluded_d[-which(sapply(excluded_d, is.null))],
-                   error=function(e) message("\nNo excluded distanced participants, set exclusion=F."))
+          tryCatch(
+            excluded_d[-which(sapply(excluded_d, is.null))],
+            error=function(e) message(
+              "\nNo excluded distanced participants, set exclusion=F.")
+            )
       }
     }
 
@@ -356,10 +421,15 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
     ret <- list()
 
-    demographics <- lapply(seq_along(parsed_results),
-                           function(i) demographics[[i]] <- parsed_results[[i]]$ppt_info)
-    questionnaires <- lapply(seq_along(parsed_results),
-                             function(i) questionnaire_totals[[i]] <- parsed_results[[i]]$questionnaires)
+    demographics <- lapply(
+      seq_along(parsed_results),
+      function(i) demographics[[i]] <- parsed_results[[i]]$ppt_info
+      )
+    questionnaires <- lapply(
+      seq_along(parsed_results),
+      function(i)
+        questionnaire_totals[[i]] <- parsed_results[[i]]$questionnaires
+      )
     ret$ppt_info <- dplyr::left_join(
       tibble::as_tibble(dplyr::bind_rows(demographics)),
       dplyr::bind_rows(questionnaires),
@@ -370,8 +440,10 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
       exclusion_list <- ret$ppt_info %>% dplyr::select(subjID, exclusion)
     }
 
-    training <- lapply(seq_along(parsed_results),
-                       function(i) training[[i]] <- parsed_results[[i]]$training)
+    training <- lapply(
+      seq_along(parsed_results),
+      function(i) training[[i]] <- parsed_results[[i]]$training
+      )
     ret$training <- dplyr::bind_rows(training)
 
     test <- lapply(seq_along(parsed_results),
@@ -380,10 +452,13 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
     if (l$hbayesDM) {
       qlearning_data <- list()
-      qlearning_data <- lapply(seq_along(parsed_results),
-                               function(i) qlearning_data[[i]] <- parsed_results[[i]]$qlearning_data)
+      qlearning_data <- lapply(
+        seq_along(parsed_results),
+        function(i) qlearning_data[[i]] <- parsed_results[[i]]$qlearning_data
+        )
       if (exclusion) {
-        qlearning_data <- dplyr::left_join(dplyr::bind_rows(qlearning_data), exclusion_list, by="subjID")
+        qlearning_data <- dplyr::left_join(
+          dplyr::bind_rows(qlearning_data), exclusion_list, by="subjID")
         ret$qlearning_data <- qlearning_data %>%
           dplyr::filter(exclusion==0) %>%
           dplyr::select(-exclusion)
@@ -394,8 +469,11 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
     if (l$qstns_gillan) {
       gillan_questions <- list()
-      gillan_questions <- lapply(seq_along(parsed_results),
-                                 function(i) gillan_questions[[i]] <- parsed_results[[i]]$gillan_questions)
+      gillan_questions <- lapply(
+        seq_along(parsed_results),
+        function(i)
+          gillan_questions[[i]] <- parsed_results[[i]]$gillan_questions
+        )
       if (exclusion) {
         gillan_questions <- dplyr::left_join(
           dplyr::bind_rows(gillan_questions), exclusion_list, by="subjID"
@@ -416,25 +494,33 @@ import_multiple <- function(jatos_txt_file, separate = TRUE, exclusion = TRUE, i
 
     if (l$combine) {
       combined <- list()
-      combined <- lapply(seq_along(parsed_results),
-                         function(i) combined[[i]] <- parsed_results[[i]]$full_data)
+      combined <- lapply(
+        seq_along(parsed_results),
+        function(i) combined[[i]] <- parsed_results[[i]]$full_data
+        )
       ret$full_data <- dplyr::bind_rows(combined)
     }
 
     if (l$issues) {
       issues <- list()
-      issues <- lapply(seq_along(parsed_results),
-                       function(i) issues[[i]] <- parsed_results[[i]]$issues_comments)
+      issues <- lapply(
+        seq_along(parsed_results),
+        function(i) issues[[i]] <- parsed_results[[i]]$issues_comments
+        )
       ret$issues_comments <- tibble::as_tibble(dplyr::bind_rows(issues))
     }
 
     if (indiv) {
       ret$individual_results <- parsed_results
       if (exclusion) {
-        ret$individual_results$included <- included[-which(sapply(included, is.null))]
+        ret$individual_results$included <-
+          included[-which(sapply(included, is.null))]
         ret$individual_results$excluded <-
-          tryCatch(excluded[-which(sapply(excluded, is.null))],
-                   error = function(e) message("\nNo excluded participants, set exclusion=F."))
+          tryCatch(
+            excluded[-which(sapply(excluded, is.null))],
+            error = function(e) message(
+              "\nNo excluded participants, set exclusion=F.")
+            )
       }
     }
 

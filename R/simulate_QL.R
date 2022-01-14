@@ -1,31 +1,39 @@
 #' Simulate data from 1-alpha and 2-alpha Q-learning models
 #'
-#' \code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha Q-learning models,
-#' with an experiment structure identical to that run online. The parameter values can be from (a
-#' sample of) those fitted previously to the real data, or can be randomly sampled.
+#' \code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha
+#' Q-learning models, with an experiment structure identical to that run online.
+#' The parameter values can be from (a sample of) those fitted previously to the
+#' real data, or can be randomly sampled.
 #'
-#' @param summary_df [cmdstanr::summary()] output containing posterior mean parameter values for a group
-#' of individuals. If left as NULL, a random sample of size \code{sample_size} will be taken from specified
-#' distributions.
-#' @param sample_size How may sets of parameters to sample; defaults to 100 or the number of individuals in
+#' @param summary_df [cmdstanr::summary()] output containing posterior mean
+#' parameter values for a group of individuals. If left as NULL, a random sample
+#' of size \code{sample_size} will be taken from specified distributions.
+#' @param sample_size How may sets of parameters to sample; defaults to 100 or
+#' the number of individuals in
 #' the \code{summary_df}.
 #' @param gain_loss Fit the 2-learning-rate or 1-learning-rate model?
 #' @param test Simulate test choices in addition to training choices?
-#' @param prev_sample An optional previous sample of id numbers (if you wish to simulate data for the same
-#' subset of individual parameters across a number of models).
-#' @param raw_df Provide the raw data used to fit the data originally, so that subject IDs can be
-#' labelled appropriately.
-#' @param ... Other arguments which can be used to control the parameters of the gamma/Gaussian distributions
-#' from which parameter values are sampled.
+#' @param prev_sample An optional previous sample of id numbers (if you wish to
+#' simulate data for the same subset of individual parameters across a number
+#' of models).
+#' @param raw_df Provide the raw data used to fit the data originally, so that
+#' subject IDs can be labelled appropriately.
+#' @param ... Other arguments which can be used to control the parameters of the
+#' gamma/Gaussian distributions from which parameter values are sampled.
 #'
-#' @return Simulated training data (and test data relevant) for a random or previously fitted sample of
-#' parameter values.
+#' @return Simulated training data (and test data relevant) for a random or
+#' previously fitted sample of parameter values.
 #'
 #' @importFrom magrittr %>%
 #' @export
 
-simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
-                        test = FALSE, prev_sample = NULL, raw_df = NULL, ...) {
+simulate_QL <- function(summary_df = NULL,
+                        sample_size = NULL,
+                        gain_loss = TRUE,
+                        test = FALSE,
+                        prev_sample = NULL,
+                        raw_df = NULL,
+                        ...) {
 
   # to appease R CMD check
   variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
@@ -42,17 +50,23 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
 
     if (gain_loss) {
       pars_df <- tibble::tibble(
-        id_no     = ids_sample,
-        alpha_pos = rgamma(sample_size, shape = l$alpha_pos_dens[1], scale = l$alpha_pos_dens[2]),
-        alpha_neg = rgamma(sample_size, shape = l$alpha_neg_dens[1], scale = l$alpha_neg_dens[2]),
-        beta      = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
+        id_no = ids_sample,
+        alpha_pos = rgamma(
+          sample_size, shape = l$alpha_pos_dens[1], scale = l$alpha_pos_dens[2]
+          ),
+        alpha_neg = rgamma(
+          sample_size, shape = l$alpha_neg_dens[1], scale = l$alpha_neg_dens[2]
+          ),
+        beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
     else {
       pars_df <- tibble::tibble(
         id_no = ids_sample,
-        alpha  = rgamma(sample_size, shape = l$alpha_dens[1], scale = l$alpha_dens[2]),
-        beta   = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
+        alpha = rgamma(
+          sample_size, shape = l$alpha_dens[1], scale = l$alpha_dens[2]
+          ),
+        beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
   }
@@ -62,7 +76,9 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
       dplyr::filter(!grepl("_pr", variable)) %>%
       dplyr::filter(!grepl("mu_", variable)) %>%
       dplyr::select(variable, mean) %>%
-      dplyr::mutate(id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))) %>%
+      dplyr::mutate(
+        id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
+        ) %>%
       dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
       tidyr::pivot_wider(names_from = variable, values_from = mean)
 
@@ -82,18 +98,24 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
         dplyr::select(subjID) %>%
         dplyr::distinct() %>%
         dplyr::mutate(id_no = dplyr::row_number()) %>%
-        dplyr::inner_join(tibble::as_tibble(ids_sample), by = c("id_no" = "value"))
+        dplyr::inner_join(
+          tibble::as_tibble(ids_sample), by = c("id_no" = "value")
+          )
     }
   }
 
   rewards <- function(i) return (
-    rbind(data.frame("block" = i, "type" = rep(12, 20), "hidden_reward" = sample(c(rep(0, 4), rep(1, 16)))),
-          data.frame("block" = i, "type" = rep(34, 20), "hidden_reward" = sample(c(rep(0, 6), rep(1, 14)))),
-          data.frame("block" = i, "type" = rep(56, 20), "hidden_reward" = sample(c(rep(0, 8), rep(1, 12))))
+    rbind(data.frame("block" = i, "type" = rep(12, 20),
+                     "hidden_reward" = sample(c(rep(0, 4), rep(1, 16)))),
+          data.frame("block" = i, "type" = rep(34, 20),
+                     "hidden_reward" = sample(c(rep(0, 6), rep(1, 14)))),
+          data.frame("block" = i, "type" = rep(56, 20),
+                     "hidden_reward" = sample(c(rep(0, 8), rep(1, 12))))
           )
   )
-    # function that returns a random series of hidden rewards the same way as in the task
-      # i.e. in each block, there are exactly 16 rewarded "A", 14 rewarded "B", and 12 rewarded "C" symbols
+    # function that returns a random series of hidden rewards the same way as in
+    # the task (i.e., in each block, there are exactly 16 rewarded "A", 14
+    # rewarded "B", and 12 rewarded "C" symbols
 
   all_res <- data.frame()
   pb = txtProgressBar(min = 0, max = length(ids_sample), initial = 0, style = 3)
@@ -102,7 +124,7 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
 
     setTxtProgressBar(pb, id)
 
-    # make random sequence of trials, number of each condition balanced within blocks
+    # make random sequence of trials, each condition balanced within blocks
     choice1 <- NULL
     for (i in 1:6) {
       choice1 <- c(choice1, sample(rep(c("A", "C", "E"), each = 20), 60))
@@ -111,7 +133,9 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
     conds <- data.frame(choice1, choice2)
 
     if (test) {
-      choice1_test <- tibble::as_tibble(sample(rep(c("A", "C", "D", "E", "F"), times = c(20, 16, 4, 12, 8)))) %>%
+      choice1_test <- tibble::as_tibble(sample(rep(c("A", "C", "D", "E", "F"),
+                                                   times = c(20, 16, 4, 12, 8)))
+                                        ) %>%
         dplyr::rename(choice1_test = value) %>%
         dplyr::mutate(trial_no = dplyr::row_number()) %>%
         dplyr::arrange(choice1_test)
@@ -142,7 +166,8 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
       beta <- indiv_pars$beta
     }
 
-    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) %>% # 6 blocks
+    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) %>%
+        # 6 blocks
       dplyr::group_by(type) %>%
       dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
       dplyr::ungroup() %>%
@@ -186,7 +211,8 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
 
       # rewarded?
       reward <- ifelse(choice == training_results$hidden_reward[i], 1, 0)
-        # i.e. if they choose "correctly" and hidden reward == 1 or incorrectly but hidden reward == 0
+        # i.e. if they choose "correctly" and hidden reward == 1 or
+        # incorrectly but hidden reward == 0
 
       # update Q values
       if (gain_loss) {
@@ -223,8 +249,8 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
       )
 
       for (j in 1:60) {
-        p_t_test <- (exp(Q[conds_test[j,1]] * beta)) / (exp(Q[conds_test[j,1]] * beta) +
-                                                          (exp(Q[conds_test[j,2]] * beta)))
+        p_t_test <- (exp(Q[conds_test[j,1]] * beta)) /
+          (exp(Q[conds_test[j,1]] * beta) + (exp(Q[conds_test[j,2]] * beta)))
           # probability to choose "correct" stimulus
         choice_test <- sample(c(1, 0), 1, prob = c(p_t_test, 1-p_t_test))
           # make choice
@@ -277,7 +303,9 @@ simulate_QL <- function(summary_df = NULL, sample_size = NULL, gain_loss = TRUE,
     all_res <- all_res %>%
       dplyr::mutate(subjID = id_no)
     pars_df <- pars_df %>%
-      dplyr::inner_join(tibble::as_tibble(ids_sample), by = c("id_no" = "value")) %>%
+      dplyr::inner_join(
+        tibble::as_tibble(ids_sample), by = c("id_no" = "value")
+        ) %>%
       dplyr::mutate(subjID = id_no)
   }
 
