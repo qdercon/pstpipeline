@@ -9,7 +9,7 @@
 #' @param exclusion Exclude those meeting exclusion criteria from questionnaire
 #' / hBayesDM outputs?
 #' @param indiv Return individual-level data? This can then be passed to
-#' [plot_single()].
+#' [plot_import()].
 #' and plotted for one individual at a time.
 #' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
 #' @param ... Other arguments passed to [import_single()].

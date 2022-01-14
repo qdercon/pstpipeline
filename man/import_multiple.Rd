@@ -23,7 +23,7 @@ groups?}
 / hBayesDM outputs?}
 
 \item{indiv}{Return individual-level data? This can then be passed to
-\code{\link[=plot_single]{plot_single()}}.
+\code{\link[=plot_import]{plot_import()}}.
 and plotted for one individual at a time.}
 
 \item{ret_incomplete}{Return incomplete datasets? They may require manual parsing.}

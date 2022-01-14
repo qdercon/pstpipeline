@@ -83,9 +83,9 @@
 #'   ---i.e., if the \code{sparse} argument is left at its default value of
 #'   \code{FALSE}--- then the prior distribution for the intercept is set so it
 #'   applies to the value \emph{when all predictors are centered} (you don't
-#'   need to manually center them). This is explained further in
-#'   [Prior Distributions for rstanarm Models]
-#'   (https://mc-stan.org/rstanarm/articles/priors.html)
+#'   need to manually center them). This is explained further in the vignette
+#'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
+#'   Distributions for rstanarm Models}}.
 #'   If you prefer to specify a prior on the intercept without the predictors
 #'   being auto-centered, then you have to omit the intercept from the
 #'   \code{\link[stats]{formula}} and include a column of ones as a predictor,
