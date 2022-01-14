@@ -1,7 +1,8 @@
 #' @noRd
 #' @keywords internal
 
-single_hdi <- function(vars, cred) {
+single_hdi <- function(vars,
+                       cred) {
   # adapted from hBayesDM::HDIofMCMC
   sampleVec <- as.vector(t(vars))
   sortedPts = sort(sampleVec)
@@ -16,7 +17,9 @@ single_hdi <- function(vars, cred) {
   HDIlim = c(HDImin , HDImax)
   return(as.vector(t(HDIlim)))
 }
-quantile_hdi <- function(var, quantile, transform = FALSE) {
+quantile_hdi <- function(var,
+                         quantile,
+                         transform = FALSE) {
 
   if (transform) {
    var <- log(var/100 + 1)
@@ -54,7 +57,10 @@ family_ch <- function(param) {
   if (grepl("alpha", param)) return(Gamma(link = "log"))
   else return(gaussian())
 }
-make_par_df <- function(raw, summary, rhat_upper, ess_lower) {
+make_par_df <- function(raw,
+                        summary,
+                        rhat_upper,
+                        ess_lower) {
   subjID <- variable <- . <- ess_bulk <- ess_tail <-
     rhat <- NULL # appease R CMD check
   ids <- raw %>%
