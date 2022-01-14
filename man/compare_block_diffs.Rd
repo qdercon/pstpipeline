@@ -2,7 +2,8 @@
 % Please edit documentation in R/compare_block_diffs.R
 \name{compare_block_diffs}
 \alias{compare_block_diffs}
-\title{Compare learning parameters between groups over different numbers of training blocks}
+\title{Compare learning parameters between groups over different numbers of training
+blocks}
 \usage{
 compare_block_diffs(
   all_res,
@@ -20,24 +21,29 @@ compare_block_diffs(
 )
 }
 \arguments{
-\item{all_res}{List output from \code{\link[=import_multiple]{import_multiple()}}, split by variable of interest.}
+\item{all_res}{List output from \code{\link[=import_multiple]{import_multiple()}}, split by variable of
+interest.}
 
 \item{var_of_interest, covariates}{Same as \code{\link[=parameter_glm]{parameter_glm()}}.}
 
 \item{model, vb, out_dir}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
-\item{fit_together}{Whether or not to fit all participant data to the model at the
-same time, or by group (if \code{FALSE}). Recommended for variational fits.}
+\item{fit_together}{Whether or not to fit all participant data to the model
+at the same time, or by group (if \code{FALSE}). Recommended for variational
+fits.}
 
-\item{iter_warmup_glm, iter_sampling_glm}{Number of warm-up and sampling iterations
-to fit Bayesian GLMs with (passed to \code{\link[=parameter_glm]{parameter_glm()}}).}
+\item{iter_warmup_glm, iter_sampling_glm}{Number of warm-up and sampling
+iterations to fit Bayesian GLMs with (passed to \code{\link[=parameter_glm]{parameter_glm()}}).}
 
-\item{min_blocks, max_blocks}{Minimum and maximum number of blocks to fit models on.
-For example, if \code{min_blocks} is set to 3 and \code{max_blocks} is set to 4, then
-only fits to blocks 1 to 3 and 1 to 4 will be outputted.}
+\item{min_blocks, max_blocks}{Minimum and maximum number of blocks to fit
+models on. For example, if \code{min_blocks} is set to 3 and
+\code{max_blocks} is set to 4, then fits to blocks 1 to 3 and 1 to 4 will be
+outputted.}
 
-\item{...}{Other arguments to pass to \code{\link[=fit_learning_model]{fit_learning_model()}} and/or \code{\link[=parameter_glm]{parameter_glm()}}.}
+\item{...}{Other arguments to pass to \code{\link[=fit_learning_model]{fit_learning_model()}} and/or
+\code{\link[=parameter_glm]{parameter_glm()}}.}
 }
 \description{
-Compare learning parameters between groups over different numbers of training blocks
+Compare learning parameters between groups over different numbers of training
+blocks
 }

@@ -28,57 +28,69 @@ fit_learning_model(
 
 \item{exp_part}{Fit to \code{training} or \code{test}?}
 
-\item{vb}{Use variational inference to get the approximate posterior? Default is \code{TRUE}
-for computational efficiency.}
+\item{vb}{Use variational inference to get the approximate posterior? Default
+is \code{TRUE} for computational efficiency.}
 
-\item{ppc}{Generate quantities including mean parameters, log likelihood, and posterior predictions?
-Intended for use with variational algorithm; for MCMC it is recommended to run the separate generate
-quantities function as this is far less memory intensive.}
+\item{ppc}{Generate quantities including mean parameters, log likelihood, and
+posterior predictions? Intended for use with variational algorithm; for MCMC
+it is recommended to run the separate \code{\link[=generate_posterior_quantities]{generate_posterior_quantities()}}
+function, as this is far less memory intensive.}
 
-\item{task_excl}{Apply task-related exclusion criteria (catch questions, digit span = 0)?}
+\item{task_excl}{Apply task-related exclusion criteria (catch questions,
+digit span = 0)?}
 
-\item{accuracy_excl}{Apply accuracy-based exclusion criteria (final block AB accuracy >= 0.6)?}
+\item{accuracy_excl}{Apply accuracy-based exclusion criteria (final block AB
+accuracy >= 0.6)?}
 
-\item{model_checks}{Runs \code{\link[=check_learning_models]{check_learning_models()}}, returning plots of the group-level posterior
-densities for the free parameters, and some visual model checks (traceplots of the chains, and rank histograms).
-Note the visual checks will only be returned if \code{!vb}, as they are only relevant for MCMC fits, and require
-the \pkg{bayesplot} package.}
+\item{model_checks}{Runs \code{\link[=check_learning_models]{check_learning_models()}}, returning plots of the
+group-level posterior densities for the free parameters, and some visual
+model checks (traceplots of the chains, and rank histograms). Note the visual
+checks will only be returned if \code{!vb}, as they are only relevant for
+MCMC fits, and require the \pkg{bayesplot} package.}
 
-\item{save_model_as}{Name to give to saved model and used to name the .csv files and outputs. Defaults
-to the Stan model name.}
+\item{save_model_as}{Name to give to saved model and used to name the .csv
+files and outputs. Defaults to the Stan model name.}
 
-\item{out_dir}{Output directory for model fit environment, plus all specified \code{outputs} if
-\code{save_outputs = TRUE}.}
+\item{out_dir}{Output directory for model fit environment, plus all specified
+\code{outputs} if \code{save_outputs = TRUE}.}
 
-\item{outputs}{Specific outputs to return (and save, if \code{save_outputs}). In addition to the defaults,
-other options are "model_env" (note this is saved automatically, regardless of \code{save_outputs}),
-and "loo_obj". The latter includes the theoretical expected log-predictive density (ELPD) for a new dataset,
-plus the leave-one-out information criterion (LOOIC), a fully Bayesian metric for model comparison; this
-requires the \pkg{loo} package.}
+\item{outputs}{Specific outputs to return (and save, if \code{save_outputs}).
+In addition to the defaults, other options are "model_env" (note this is
+saved automatically, regardless of \code{save_outputs}), and "loo_obj". The
+latter includes the theoretical expected log-predictive density (ELPD) for a
+new dataset, plus the leave-one-out information criterion (LOOIC), a fully
+Bayesian metric for model comparison; this requires the \pkg{loo} package.}
 
-\item{save_outputs}{Save the specified outputs to the disk? Will save to \code{out_dir}.}
+\item{save_outputs}{Save the specified outputs to the disk? Will save to
+\code{out_dir}.}
 
-\item{cores}{Maximum number of chains to run in parallel. Defaults to \code{options(mc.cores = cores)}
-or 4 if this is not set (this option will then apply for the rest of the session).}
+\item{cores}{Maximum number of chains to run in parallel. Defaults to
+\code{options(mc.cores = cores)}
+or 4 if this is not set (this option will then apply for the rest of the
+session).}
 
-\item{...}{Other arguments passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} and/or \link{check_learning_models}. See the
-\href{https://mc-stan.org/docs/2_28/cmdstan-guide/index.html}{CmdStan user guide} for full details and defaults.}
+\item{...}{Other arguments passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} and/or
+\link{check_learning_models}. See the
+\href{https://mc-stan.org/docs/2_28/cmdstan-guide/index.html}{CmdStan user guide}
+for full details and defaults.}
 }
 \value{
-List containing a \link[cmdstanr:CmdStanVB]{cmdstanr::CmdStanVB} or \link[cmdstanr:CmdStanMCMC]{cmdstanr::CmdStanMCMC} fit object, plus any other
-outputs passed to \code{outputs}.
+List containing a \link[cmdstanr:CmdStanVB]{cmdstanr::CmdStanVB} or \link[cmdstanr:CmdStanMCMC]{cmdstanr::CmdStanMCMC}
+fit object, plus any other outputs passed to \code{outputs}.
 }
 \description{
-\code{fit_learning_model} uses the package \pkg{cmdstanr}, which is a lightweight R
-interface to CmdStan. Please note that while it checks if the C++ toolchain is correctly
-configured, running this function will not install CmdStan itself. This may be as simple as
-running \code{\link[cmdstanr:install_cmdstan]{cmdstanr::install_cmdstan()}}, but may require some extra effort (e.g., pointing
-R to the install location via \code{\link[cmdstanr:set_cmdstan_path]{cmdstanr::set_cmdstan_path()}}) - see
-\href{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}{this vignette} for more detail.
+\code{fit_learning_model} uses the package \pkg{cmdstanr}, which is a
+lightweight R interface to CmdStan. Please note that while it checks if the
+C++ toolchain is correctly configured, running this function will not install
+CmdStan itself. This may be as simple as running
+\code{\link[cmdstanr:install_cmdstan]{cmdstanr::install_cmdstan()}}, but may require some extra effort (e.g.,
+pointing R to the install location via \code{\link[cmdstanr:set_cmdstan_path]{cmdstanr::set_cmdstan_path()}}) - see
+the \href{https://mc-stan.org/cmdstanr/articles/cmdstanr.html}{cmdstanr vignette}
+for more detail.
 }
 \details{
 \code{fit_learning_model} heavily leans on various helper functions from the
-\href{https://ccs-lab.github.io/hBayesDM/}{\pkg{hBayesDM}} package, and is not as flexible; instead it is
-designed primarily to be less memory-intensive for our specific use-case and provide only
-relevant output.
+\href{https://ccs-lab.github.io/hBayesDM/}{\pkg{hBayesDM}} package, and is not as
+flexible; instead it is designed primarily to be less memory-intensive for
+our specific use-case and provide only relevant output.
 }

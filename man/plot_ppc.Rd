@@ -18,23 +18,29 @@ plot_ppc(
 )
 }
 \arguments{
-\item{train_indiv}{List, maximum length 3. The first element should be an individual-level \code{tibble}
-containing summed predictions for each trial and individual (outputted from \link{get_preds_by_chain}).
-The second and third elements should be integers or numeric vectors containing the number of trials to lag for
-the training plots; and the last n trials to calculate differences in mean observed/predicted densities for.}
+\item{train_indiv}{List, maximum length 3. The first element should be an
+individual-level \code{tibble} containing summed predictions for each trial
+and individual (outputted from \link{get_preds_by_chain}). The second and third
+elements should be integers or numeric vectors containing the number of
+trials to lag for the training plots; and the last n trials to calculate
+differences in mean observed/predicted densities for.}
 
-\item{train_trials}{List, maximum length 3. The first element should be a trial-level \code{tibble} containing
-summed posterior draws and their HDIs, both overall and for each block and block group of interest (outputted
+\item{train_trials}{List, maximum length 3. The first element should be a
+trial-level \code{tibble} containing summed posterior draws and their HDIs,
+both overall and for each block and block group of interest (outputted
 from \link{get_preds_by_chain}).}
 
-\item{test_perf}{List, maximum length 3. The first element should be a individual-level \code{tibble} containing
-summed predictions for each trial and individual (outputted from \link{get_preds_by_chain}). The second
-and third lists are optional, and are passed to the \code{plt.test} argumment of \link{plot_import} to
-plot observed grouped and individual pair accuracy respectively against their posterior predictions (a grouped
-plot including all pairs is plotted by default).}
+\item{test_perf}{List, maximum length 3. The first element should be a
+individual-level \code{tibble} containing summed predictions for each trial
+and individual (outputted from \link{get_preds_by_chain}). The second and third
+lists are optional, and are passed to the \code{plt.test} argument of
+\link{plot_import} to plot observed grouped and individual pair accuracy
+respectively against their posterior predictions (a grouped plot including
+all pairs is plotted by default).}
 
-\item{id}{subjID to select if only plots for a single participant are desired. Will also accept a single
-numeric value i, which will select the ith participant in the output.}
+\item{id}{subjID to select if only plots for a single participant are
+desired. Will also accept a single numeric value i, which will select the
+ith participant in the output.}
 
 \item{group_title}{Sets consistent titles for all plots.}
 
@@ -42,7 +48,8 @@ numeric value i, which will select the ith participant in the output.}
 
 \item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 
-\item{...}{Other rarely used arguments which set the number of trials/blocks or the name of the predicted variable.}
+\item{...}{Other rarely used arguments which set the number of trials/blocks
+or the name of the predicted variable.}
 }
 \value{
 Either a single or named \code{list} of \code{ggplot} objects

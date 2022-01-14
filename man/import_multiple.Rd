@@ -16,11 +16,14 @@ import_multiple(
 \arguments{
 \item{jatos_txt_file}{JATOS .txt file path.}
 
-\item{separate}{Returns separate lists for non-distanced and distanced groups?}
+\item{separate}{Returns separate lists for non-distanced and distanced
+groups?}
 
-\item{exclusion}{Exclude those meeting exclusion criteria from questionnaire / hBayesDM outputs?}
+\item{exclusion}{Exclude those meeting exclusion criteria from questionnaire
+/ hBayesDM outputs?}
 
-\item{indiv}{Return individual-level data? This can then be passed to the plot_single function
+\item{indiv}{Return individual-level data? This can then be passed to
+\code{\link[=plot_single]{plot_single()}}.
 and plotted for one individual at a time.}
 
 \item{ret_incomplete}{Return incomplete datasets? They may require manual parsing.}
@@ -31,6 +34,6 @@ and plotted for one individual at a time.}
 \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
 }
 \description{
-\code{import_multiple()} parses a JATOS .txt file containing multiple participant's results
-to a (list of) R object(s)
+\code{import_multiple()} parses a JATOS .txt file containing multiple
+participant's results to a (list of) R object(s).
 }

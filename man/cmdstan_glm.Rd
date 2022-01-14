@@ -32,8 +32,8 @@ cmdstan_glm(
 but \emph{we strongly advise against omitting the \code{data}
 argument}.}
 
-\item{family}{Same as \code{\link[stats]{glm}}. Accepted families for this function
-are \code{gaussian()} or \code{Gamma()}, and any link function.}
+\item{family}{Same as \code{\link[stats]{glm}}. Accepted families for this
+function are \code{gaussian()} or \code{Gamma()}, and any link function.}
 
 \item{na.action, contrasts}{Same as \code{\link[stats]{glm}}, but
 rarely specified.}
@@ -41,7 +41,8 @@ rarely specified.}
 \item{model, offset, weights}{Same as \code{\link[stats]{glm}}.}
 
 \item{algorithm}{Argument "sampling" is for MCMC (default), while "meanfield"
-and "fullrank" are variational algorithms ("meanfield" is the CmdStan default).}
+and "fullrank" are variational algorithms ("meanfield" is the CmdStan
+default).}
 
 \item{x}{Logical scalar indicating whether to return the design matrix.}
 
@@ -49,8 +50,8 @@ and "fullrank" are variational algorithms ("meanfield" is the CmdStan default).}
 
 \item{out_dir}{Output directory for model fit environment.}
 
-\item{...}{Further arguments passed to \link[cmdstanr:model-method-sample]{cmdstanr::sample} (i.e., \code{refresh},
-\code{iter_warmup}, \code{iter_sampling}, \code{chains} etc.)}
+\item{...}{Further arguments passed to \link[cmdstanr:model-method-sample]{cmdstanr::sample} (i.e.,
+\code{refresh}, \code{iter_warmup}, \code{iter_sampling}, \code{chains} etc.)}
 
 \item{prior}{The prior distribution for the (non-hierarchical) regression
 coefficients.
@@ -99,7 +100,8 @@ prior on the intercept ---i.e., to use a flat (improper) uniform prior---
 \code{FALSE}--- then the prior distribution for the intercept is set so it
 applies to the value \emph{when all predictors are centered} (you don't
 need to manually center them). This is explained further in
-\href{https://mc-stan.org/rstanarm/articles/priors.html}{Prior Distributions for rstanarm Models}
+\link{Prior Distributions for rstanarm Models}
+(https://mc-stan.org/rstanarm/articles/priors.html)
 If you prefer to specify a prior on the intercept without the predictors
 being auto-centered, then you have to omit the intercept from the
 \code{\link[stats]{formula}} and include a column of ones as a predictor,
@@ -119,10 +121,10 @@ standard deviation. For negative binomial models \code{prior_aux} controls
 smaller values of \code{"reciprocal_dispersion"} correspond to
 greater dispersion. For gamma models \code{prior_aux} sets the prior on
 to the \code{"shape"} parameter (see e.g.,
-\code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it is the
-so-called \code{"lambda"} parameter (which is essentially the reciprocal of
-a scale parameter). Binomial and Poisson models do not have auxiliary
-parameters.
+\code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it
+is the so-called \code{"lambda"} parameter (which is essentially the
+reciprocal of a scale parameter). Binomial and Poisson models do not have
+auxiliary parameters.
 
 The default prior is described in the vignette
 \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
@@ -162,8 +164,9 @@ the code run faster and can consume much less RAM.}
 A \code{cmdstanr::CmdStanMCMC()} object.
 }
 \description{
-Generalized linear modeling for Gaussian and gamma responses, with optional prior
-distributions for the coefficients, intercept, and auxiliary parameters.
+Generalized linear modeling for Gaussian and gamma responses, with optional
+prior distributions for the coefficients, intercept, and auxiliary
+parameters.
 }
 \details{
 The \code{stan_glm} function is similar in syntax to

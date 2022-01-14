@@ -2,7 +2,8 @@
 % Please edit documentation in R/take_subsample.R
 \name{take_subsample}
 \alias{take_subsample}
-\title{Helper function to take a subsample of our parsed list (for demonstration purposes)}
+\title{Helper function to take a subsample of our parsed list (for demonstration
+purposes)}
 \usage{
 take_subsample(parsed_list, n_ppts)
 }
@@ -15,5 +16,6 @@ take_subsample(parsed_list, n_ppts)
 A named \code{list}.
 }
 \description{
-\code{take_subsample} takes a sample of size n to enable model fitting on a smaller sample.
+\code{take_subsample} takes a sample of size n to enable model fitting on a
+smaller sample.
 }

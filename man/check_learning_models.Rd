@@ -15,19 +15,22 @@ check_learning_models(
 )
 }
 \arguments{
-\item{draws}{Post-warmup draws - either a \code{\link[posterior:draws_array]{posterior::draws_array()}}, a \code{\link[posterior:draws_list]{posterior::draws_list()}}, or a vector
-of file paths to the .csv output files. May also be a \code{\link[posterior:draws_df]{posterior::draws_df()}} but chain-by-chain diagnostics
+\item{draws}{Post-warmup draws - either a \code{\link[posterior:draws_array]{posterior::draws_array()}}, a
+\code{\link[posterior:draws_list]{posterior::draws_list()}}, or a vector of file paths to the .csv output
+files. May also be a \code{\link[posterior:draws_df]{posterior::draws_df()}} but chain-by-chain diagnostics
 will not be possible.}
 
-\item{test}{Boolean indicating whether recovered parameters are from the test phase.}
+\item{test}{Boolean indicating whether recovered parameters are from the test
+phase.}
 
 \item{mean_pars}{Output a plot of the mean parameters?}
 
-\item{diagnostic_plots}{Output diagnostic traces and histograms? Requires the \pkg{bayesplot} package.}
+\item{diagnostic_plots}{Output diagnostic traces and histograms? Requires the
+\pkg{bayesplot} package.}
 
 \item{pal, font, font_size}{Same as \link{plot_import}.}
 }
 \description{
-This function is called automatically by \code{\link[=fit_learning_model]{fit_learning_model()}} when \code{model_checks = TRUE},
-but can also be run separately if desired.
+This function is called automatically by \code{\link[=fit_learning_model]{fit_learning_model()}} when
+\code{model_checks = TRUE}, but can also be run separately if desired.
 }

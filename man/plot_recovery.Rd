@@ -16,9 +16,11 @@ plot_recovery(
 \arguments{
 \item{raw_pars}{Data frame with factor scores or questions to plot.}
 
-\item{sim_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values for the relevant model.}
+\item{sim_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values
+for the relevant model.}
 
-\item{test}{Boolean indicating whether recovered parameters are from the test phase.}
+\item{test}{Boolean indicating whether recovered parameters are from the test
+phase.}
 
 \item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
@@ -26,6 +28,6 @@ plot_recovery(
 A named \code{list} of \code{ggplot} objects.
 }
 \description{
-\code{plot_recovery} produces correlation plots between input and output parameter values,
-plus a confusability matrix.
+\code{plot_recovery} produces correlation plots between input and output
+parameter values, plus a confusability matrix.
 }

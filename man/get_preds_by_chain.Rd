@@ -19,39 +19,50 @@ get_preds_by_chain(
 )
 }
 \arguments{
-\item{out_files}{Vector of .csv file names which contain posterior predictions (e.g., outputted from
-\code{\link[=generate_posterior_quantities]{generate_posterior_quantities()}}).}
+\item{out_files}{Vector of .csv file names which contain posterior
+predictions (e.g., outputted from \code{\link[=generate_posterior_quantities]{generate_posterior_quantities()}}).}
 
-\item{out_dir}{Path to output directory (defaults to current working directory).}
+\item{out_dir}{Path to output directory (defaults to current working
+directory).}
 
-\item{obs_df}{Raw training data, e.g., outputted from \code{\link[=fit_learning_model]{fit_learning_model()}} (this is best
-as it ensures individuals are matched with the correct predictions.)}
+\item{obs_df}{Raw training data, e.g., outputted from \code{\link[=fit_learning_model]{fit_learning_model()}}
+(this is best as it ensures individuals are matched with the correct
+predictions.)}
 
 \item{n_draws_chain}{Number of MCMC sampling iterations per chain.}
 
-\item{save_dir}{Directory to save items to, will be created if it does not exist. Defaults to the
-directory of the output files.}
+\item{save_dir}{Directory to save items to, will be created if it does not
+exist. Defaults to the directory of the output files.}
 
-\item{test}{Boolean indicating whether the posterior samples are from the test phase.}
+\item{test}{Boolean indicating whether the posterior samples are from the
+test phase.}
 
 \item{prefix}{Optional prefix to add to the saved objects.}
 
-\item{splits}{A list specifying which individual and summed blocks to average draws over; may be interesting
+\item{splits}{A list specifying which individual and summed blocks to average
+draws over; may be interesting
 e.g., to see whether predictions become more accurate later in the task.}
 
-\item{exclude}{ID numbers to exclude from output (e.g., if there was insufficient mixing for their parameters).}
+\item{exclude}{ID numbers to exclude from output (e.g., if there was
+insufficient mixing for their parameters).}
 
-\item{memory_save}{An alternative method to obtain predictions, which loads the predictions for each
-individual (across all chains) one-by-one, as opposed to importing all the draws for all individuals.
-This will be significantly slower but enables the function to run with very limited RAM.}
+\item{memory_save}{An alternative method to obtain predictions, which loads
+the predictions for each individual (across all chains) one-by-one, as
+opposed to importing all the draws for all individuals. This will be
+significantly slower but enables the function to run on systems with limited
+RAM.}
 
-\item{...}{Other arguments which are unlikely to be necessary to change: \code{n_trials} (default = 360);
-\code{vars} (default = "y_pred"), and \code{pred_types} (default = \code{c("AB", "CD", "EF")}).}
+\item{...}{Other arguments which are unlikely to be necessary to change:
+\code{n_trials} (default = 360);
+\code{vars} (default = "y_pred"), and \code{pred_types} (default =
+\code{c("AB", "CD", "EF")}).}
 }
 \value{
-An updated \code{tibble} with summed choices per chain and their overall proportion.
+An updated \code{tibble} with summed choices per chain and their
+overall proportion.
 }
 \description{
-\code{get_preds_by_chain} is a helper function which aims to automate the loading of posterior predictions,
-with an optional method to help avoid memory overload (and crashes).
+\code{get_preds_by_chain} is a helper function which aims to automate the
+loading of posterior predictions, with an optional method to help avoid
+memory overload (and crashes).
 }

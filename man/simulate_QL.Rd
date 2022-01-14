@@ -15,32 +15,35 @@ simulate_QL(
 )
 }
 \arguments{
-\item{summary_df}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} output containing posterior mean parameter values for a group
-of individuals. If left as NULL, a random sample of size \code{sample_size} will be taken from specified
-distributions.}
+\item{summary_df}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} output containing posterior mean
+parameter values for a group of individuals. If left as NULL, a random sample
+of size \code{sample_size} will be taken from specified distributions.}
 
-\item{sample_size}{How may sets of parameters to sample; defaults to 100 or the number of individuals in
+\item{sample_size}{How may sets of parameters to sample; defaults to 100 or
+the number of individuals in
 the \code{summary_df}.}
 
 \item{gain_loss}{Fit the 2-learning-rate or 1-learning-rate model?}
 
 \item{test}{Simulate test choices in addition to training choices?}
 
-\item{prev_sample}{An optional previous sample of id numbers (if you wish to simulate data for the same
-subset of individual parameters across a number of models).}
+\item{prev_sample}{An optional previous sample of id numbers (if you wish to
+simulate data for the same subset of individual parameters across a number
+of models).}
 
-\item{raw_df}{Provide the raw data used to fit the data originally, so that subject IDs can be
-labelled appropriately.}
+\item{raw_df}{Provide the raw data used to fit the data originally, so that
+subject IDs can be labelled appropriately.}
 
-\item{...}{Other arguments which can be used to control the parameters of the gamma/Gaussian distributions
-from which parameter values are sampled.}
+\item{...}{Other arguments which can be used to control the parameters of the
+gamma/Gaussian distributions from which parameter values are sampled.}
 }
 \value{
-Simulated training data (and test data relevant) for a random or previously fitted sample of
-parameter values.
+Simulated training data (and test data relevant) for a random or
+previously fitted sample of parameter values.
 }
 \description{
-\code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha Q-learning models,
-with an experiment structure identical to that run online. The parameter values can be from (a
-sample of) those fitted previously to the real data, or can be randomly sampled.
+\code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha
+Q-learning models, with an experiment structure identical to that run online.
+The parameter values can be from (a sample of) those fitted previously to the
+real data, or can be randomly sampled.
 }

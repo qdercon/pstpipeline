@@ -21,11 +21,14 @@ import_single(
 \arguments{
 \item{jatos_txt_file}{JATOS text file path}
 
-\item{accuracy}{Include final block AB accuracy < 0.6 as part of exclusion criteria?}
+\item{accuracy}{Include final block AB accuracy < 0.6 as part of exclusion
+criteria?}
 
-\item{task_excl}{Use digit span of 0 or > 95\% preference for one button as exclusion criteria?}
+\item{task_excl}{Use digit span of 0 or > 95\% preference for one button as
+exclusion criteria?}
 
-\item{hbayesDM}{Return additional df with training data formatted for hBayesDM?}
+\item{hbayesDM}{Return additional df with training data formatted for
+hBayesDM?}
 
 \item{qstns_gillan}{Return formatted subset of questionnaire questions?}
 
@@ -37,15 +40,18 @@ import_single(
 
 \item{incomplete}{Is the text file of interest incomplete?}
 
-\item{add_sex}{Add sex to participant info? Imputes (assumed) birth-assigned sex for non-binary
-individuals from Prolific export - workaround to enable it to be more reasonably controlled for
-in models (given very low numbers of non-binary individuals).}
+\item{add_sex}{Add sex to participant info? Imputes (assumed) birth-assigned
+sex for non-binary individuals from Prolific export - workaround to enable it
+to be more reasonably controlled for in models (given very low numbers of
+non-binary individuals).}
 
 \item{...}{Other arguments (used by \code{\link[=import_multiple]{import_multiple()}}).}
 }
 \value{
-\code{list} of \code{tbl_df}, or a single \code{tbl_df} if combine = TRUE
+\code{list} of \code{tbl_df}, or a single \code{tbl_df} if
+\code{combine = TRUE}.
 }
 \description{
-\code{import_single()} parses a single JATOS .txt file to a (list of) R object(s)
+\code{import_single()} parses a single JATOS .txt file to a (list of) R
+object(s).
 }

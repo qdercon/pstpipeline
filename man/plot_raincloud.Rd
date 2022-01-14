@@ -24,38 +24,40 @@ plot_raincloud(
 )
 }
 \arguments{
-\item{summary_df}{List of \code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} outputs for the fit(s) of interest.}
+\item{summary_df}{List of \code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} outputs for the fit(s) of
+interest.}
 
-\item{raw_df}{List of raw data inputs to the above fits (in the same order). Used to
-correctly link subject IDs to independent variables.}
+\item{raw_df}{List of raw data inputs to the above fits (in the same order).
+Used to correctly link subject IDs to independent variables.}
 
-\item{type}{Type of plot to retunn - either separate plots for each \code{parameter},
-or each transdiagnostic rlang::symptom \code{factor}.}
+\item{type}{Type of plot to retunn - either separate plots for each
+\code{parameter}, or each transdiagnostic rlang::symptom \code{factor}.}
 
 \item{test}{Boolean indicating whether summaries are from the test phase.}
 
 \item{by}{Separately plot distributions by a certain demographic variable?}
 
-\item{rhat_upper, ess_lower}{Upper and lower bounds for individuals' rhat and effective
-sample size (ESS) for the parameters of interest. For consistency, if one of an
-individual's parameters do not meet these criteria, all their parameters are removed from
-the plot. Set to \code{Inf} and \code{0} to avoid excluding any individuals.}
+\item{rhat_upper, ess_lower}{Upper and lower bounds for individuals' rhat and
+effective sample size (ESS) for the parameters of interest. For consistency,
+if one of an individual's parameters do not meet these criteria, all their
+parameters are removed from the plot. Set to \code{Inf} and \code{0} to avoid
+excluding any individuals.}
 
-\item{legend_title, legend_labels, legend_pos}{Controls to name and label the items
-in the legend (as these may be formatted poorly if \code{by != NULL}), plus to set its
-position.}
+\item{legend_title, legend_labels, legend_pos}{Controls to name and label the
+items in the legend (as these may be formatted poorly if \code{by != NULL}),
+plus to set its position.}
 
-\item{factor_scores}{\code{data.frame} with the derived transdiagnostic factor scores,
-required if \code{type = "factor"}.}
+\item{factor_scores}{\code{data.frame} with the derived transdiagnostic
+factor scores, required if \code{type = "factor"}.}
 
 \item{flip}{Boolean indicating if the axes should be flipped.}
 
-\item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot boxes and
-lines respectively.}
+\item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot
+boxes and lines respectively.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
 \description{
-\code{plot_raincloud} plots simple "raincloud" plots of posterior densities, most likely
-for model parameters (by group).
+\code{plot_raincloud} plots simple "raincloud" plots of posterior densities,
+most likely for model parameters (by group).
 }

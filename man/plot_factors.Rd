@@ -19,13 +19,14 @@ plot_factors(
 )
 }
 \arguments{
-\item{df}{Data frame with factor scores or questions to plot. For \code{predictive} and
-\code{factor_htmp} plots, this should be a named list of \code{data.frames} (including "preds"
-& "scores" or "qns" & "coefs" respectively). If a \code{factor_hist} plot with \code{grouped = TRUE}
-is desired, it should be a list of \code{data.frames} (one per group).}
+\item{df}{Data frame with factor scores or questions to plot. For
+\code{predictive} and \code{factor_htmp} plots, this should be a named list
+of \code{data.frames} (including "preds" & "scores" or "qns" & "coefs"
+respectively). If a \code{factor_hist} plot with \code{grouped = TRUE} is
+desired, it should be a list of \code{data.frames} (one per group).}
 
-\item{plot_type}{Plot(s) to output: \code{factor_hist} (which can be grouped), \code{r2_plot},
-\code{predictive}, and \code{factor_htmp}.}
+\item{plot_type}{Plot(s) to output: \code{factor_hist} (which can be
+grouped), \code{r2_plot},\code{predictive}, and \code{factor_htmp}.}
 
 \item{colnames}{Column names to get data from.}
 
@@ -35,7 +36,8 @@ is desired, it should be a list of \code{data.frames} (one per group).}
 
 \item{qn}{Number of questions - used to find correct \eqn{R^{2}}{R^2} values.}
 
-\item{hyp_alph}{Chosen alpha value (used to draw a dotted line on an \code{r2_plot}).}
+\item{hyp_alph}{Chosen alpha value (used to draw a dotted line on an
+\code{r2_plot}).}
 
 \item{grouped}{.}
 
@@ -45,6 +47,6 @@ is desired, it should be a list of \code{data.frames} (one per group).}
 A single or \code{list} of \code{ggplot} object(s).
 }
 \description{
-\code{plot_factors} plots various aspects of the transdiagnostic factor derivation,
-including histograms and heatmaps of the questions themselves.
+\code{plot_factors} plots various aspects of the transdiagnostic factor
+derivation, including histograms and heatmaps of the questions themselves.
 }

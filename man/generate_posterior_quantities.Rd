@@ -14,25 +14,31 @@ generate_posterior_quantities(
 )
 }
 \arguments{
-\item{fit_mcmc}{CmdStanR model environment or a full path to a saved CmdStanR fit (as an .RDS file).}
+\item{fit_mcmc}{CmdStanR model environment or a full path to a saved CmdStanR
+fit (as an .RDS file).}
 
-\item{data_list}{Raw data that \code{fit} was fit to; either an R object or full path to an .RDS file.}
+\item{data_list}{Raw data that \code{fit} was fit to; either an R object or
+full path to an .RDS file.}
 
 \item{out_dir}{Path to output directory (relative to working directory).}
 
-\item{save_model_as}{Name to give model; defaults to model name from the fit metadata.}
+\item{save_model_as}{Name to give model; defaults to model name from the fit
+metadata.}
 
-\item{return_type}{Return something other than the fit environment? Options are "paths" (for .csv file paths), or
-"draws_list" which returns only the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
+\item{return_type}{Return something other than the fit environment? Options
+are \code{"paths"} (for .csv file paths), or \code{"draws_list"} which
+returns the posterior predictions as a \link[posterior:draws_list]{posterior::draws_list}.}
 
-\item{par_chains}{Maximum number of chains to compute in parallel; defaults to \code{options(mc.cores)} if
-this has been set, or 4 if not.}
+\item{par_chains}{Maximum number of chains to compute in parallel; defaults
+to \code{options(mc.cores)} if this has been set, or 4 if not.}
 }
 \value{
 Either file paths or a \link[posterior:draws_list]{posterior::draws_list}.
 }
 \description{
-\code{generate_posterior_quantities} automates the CmdStanR \code{$generate_quantities} method,
-which enables the "generated quantities" block of a Stan model to be sampled from after a model is fit.
-This vastly reduces memory requirements, particularly if per-sample posterior predictions are desired.
+\code{generate_posterior_quantities} automates the CmdStanR
+\code{$generate_quantities} method, which enables the "generated quantities"
+block of a Stan model to be sampled from after a model is fit. This vastly
+reduces memory requirements, particularly if per-sample posterior predictions
+are desired.
 }
