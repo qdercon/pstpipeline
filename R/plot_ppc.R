@@ -48,12 +48,12 @@ plot_ppc <- function(
 
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80",
-             "#94FBAB", "#B1740F")
+             "#C4F7A1", "#B1740F")
   }
   else if (!is.null(pal) & length(pal) < 8) {
     message("Need at least 8 colours, reverting to defaults.")
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80",
-             "#94FBAB", "#B1740F")
+             "#C4F7A1", "#B1740F")
   }
 
   ## useless assignments to appease R CMD check

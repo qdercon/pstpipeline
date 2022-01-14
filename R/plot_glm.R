@@ -22,6 +22,8 @@
 #' @param title_font_size,title_rel_ht Font size, and relative height of the
 #' title compared to the main plot, given as a 2 element vector. Defaults to
 #' \code{16}pt and \code{c(0.15, 1)} respectively.
+#' @param plt_rel_widths Relative widths for the plotted grid (passed to
+#' [cowplot::plot_grid()]). Defaults to \code{1} (i.e. all equal).
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot
 #' boxes and lines respectively.
 #' @param top_right,coord_flip Booleans; if \code{TRUE} the densities will be
@@ -47,6 +49,7 @@ plot_glm <- function(
   ovrll_title = NULL,
   title_font_size = 16,
   title_rel_ht = NULL,
+  plt_rel_widths = 1,
   cred = c(0.95, 0.99),
   top_right = TRUE,
   coord_flip = TRUE,
