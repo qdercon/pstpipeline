@@ -95,7 +95,7 @@ plot_glm <- function(
     voi <- rlang::sym(plot_var)
 
     par_df_tr <- par_df %>% dplyr::filter(parameter == par)
-    if (alpha) {
+    if (alpha_par) {
       title <- "Estimated mean % difference in"
       plot <- par_df_tr %>%
         ggplot2::ggplot(
