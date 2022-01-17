@@ -91,7 +91,7 @@ plot_glm <- function(
 
   for (p in seq_along(pars)) {
     par <- pars[[p]]
-    alpha <- grepl("alpha", par)
+    alpha_par <- grepl("alpha", par)
     voi <- rlang::sym(plot_var)
 
     par_df_tr <- par_df %>% dplyr::filter(parameter == par)
@@ -124,7 +124,7 @@ plot_glm <- function(
           setNames(
             quantile_hdi(
               x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1),
-              transform = alpha), c("ymin", "lower", "middle", "upper", "ymax")
+              transform = alpha_par), c("ymin", "lower", "middle", "upper", "ymax")
             )
         },
         position = ggplot2::position_nudge(x = -box_nudge),

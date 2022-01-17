@@ -147,7 +147,7 @@
 #'   performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
 #'   model adds priors (independent by default) on the coefficients of the GLM.
 #'
-#' @return A \code{cmdstanr::CmdStanMCMC()} object.
+#' @return A [cmdstanr::CmdStanMCMC()] object.
 #' @export
 
 cmdstan_glm <-
