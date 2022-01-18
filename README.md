@@ -8,9 +8,9 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
-The idea of this package is not to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)], which inspired both the approach and execution of the analysis itself, and [```rstanarm```](https://mc-stan.org/rstanarm/).
+This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
-This package is not meant to supercede or replace this work; instead its main aims are as follows:
+This package is does not supercede or replace this work. Instead, its main aims are as follows:
 
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
@@ -62,7 +62,7 @@ To install the R package and all dependencies directly, run the following:
 remotes::install_github("qdercon/pstpipeline")
 ```
 
-The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` function in R/RStudio. Though written primarily for our specific data/analyses, the functions are written to be relatively flexible, and hopefully can be easily modified (e.g., to add new models).
+The majority of the code in the notebooks is in R, so if you wish to run things this way I would recommend taking a look at the notebooks, and then copy/paste or write your own function calls as appropriate. All user functions (listed below) are fully documented; this documentation can be easily accessed via the ```?``` prefix in R/RStudio. Though written primarily for our specific data/analyses, the functions are written to be relatively flexible, and aspects can be easily modified (e.g., to add new models).
 
 
 ### Key functions
