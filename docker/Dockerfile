@@ -21,7 +21,6 @@ RUN cd cmdstan-2.28.1; make build
 
 COPY notebooks /root/notebooks
 COPY data-raw /root/data-raw
-COPY outputs /root/outputs
 
 EXPOSE 8888
 
