@@ -77,7 +77,7 @@ plot_glm <- function(
   parameter <- value <- NULL ## appease R CMD check
 
   par_df <- par_df %>%
-    dplyr::rename(value = plot_var)
+    dplyr::rename(value = tidyselect::all_of(plot_var))
 
   plots <- list()
   pars <- unique(par_df[[id.col]])
@@ -91,70 +91,74 @@ plot_glm <- function(
 
   for (p in seq_along(pars)) {
     par <- pars[[p]]
-    alpha_par <- grepl("alpha", par)
-    voi <- rlang::sym(plot_var)
+    plots[[par]] <- local({ # inelegant way of making sure plots don't overwrite
+      par <- pars[[p]]
+      alpha_par <- grepl("alpha", par)
+      voi <- rlang::sym(plot_var)
 
-    par_df_tr <- par_df %>% dplyr::filter(parameter == par)
-    if (alpha_par) {
-      title <- "Estimated mean % difference in"
-      plot <- par_df_tr %>%
-        ggplot2::ggplot(
-          ggplot2::aes(x = !!grp, y = (exp(value) - 1)*100, fill = id.col,
-                       colour = id.col)
+      par_df_tr <- par_df %>% dplyr::filter(parameter == par)
+      if (alpha_par) {
+        title <- "Estimated mean % difference in"
+        plot <- par_df_tr %>%
+          ggplot2::ggplot(
+            ggplot2::aes(x = !!grp, y = (exp(value) - 1)*100, fill = id.col,
+                         colour = id.col)
           )
-    }
-    else {
-      title <- "Estimated mean difference in"
-      plot <- par_df_tr %>%
-        ggplot2::ggplot(
-          ggplot2::aes(x = !!grp, y = value, fill = id.col, colour = id.col)
-        )
-    }
-    if (p==1 | !coord_flip) y_labels <- grp_labs
-    else y_labels <- NULL
+      }
+      else {
+        title <- "Estimated mean difference in"
+        plot <- par_df_tr %>%
+          ggplot2::ggplot(
+            ggplot2::aes(x = !!grp, y = value, fill = id.col, colour = id.col)
+          )
+      }
+      if (p==1 | !coord_flip) y_labels <- grp_labs
+      else y_labels <- NULL
 
-    plots[[par]] <- plot +
-      geom_quasirandom(
-        alpha = point_alpha, size = point_size, width = max_dist_width,
-        half = TRUE, right = top_right, nudge = dist_nudge
-      ) +
-      ggplot2::stat_summary(
-        geom = "boxplot",
-        fun.data = function(x) {
-          setNames(
-            quantile_hdi(
-              x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1),
-              transform = alpha_par), c("ymin", "lower", "middle", "upper", "ymax")
+      plot <- plot +
+        geom_quasirandom(
+          alpha = point_alpha, size = point_size, width = max_dist_width,
+          half = TRUE, right = top_right, nudge = dist_nudge
+        ) +
+        ggplot2::stat_summary(
+          geom = "boxplot",
+          fun.data = function(x) {
+            setNames(
+              quantile_hdi(
+                x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1),
+                transform = alpha_par), c("ymin", "lower", "middle", "upper", "ymax")
             )
-        },
-        position = ggplot2::position_nudge(x = -box_nudge),
-        alpha = box_alpha,
-        width = box_width
-      ) +
-      ggplot2::geom_hline(ggplot2::aes(yintercept = 0), alpha = 0.5,
-                          linetype = "dashed") +
-      ggplot2::guides(colour = "none", fill = "none") +
-      ggplot2::scale_colour_manual(values = pal[p]) +
-      ggplot2::scale_fill_manual(values = pal[p]) +
-      ggplot2::scale_x_discrete(name = NULL, labels = y_labels) +
-      ggplot2::scale_y_continuous(
-        name = bquote(
-          .(title) ~ .(
-            rlang::parse_expr(
-              paste0(
-                strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                ifelse(!alpha_par, "", paste0("[", strsplit(par, "_")[[1]][2], "]"))
+          },
+          position = ggplot2::position_nudge(x = -box_nudge),
+          alpha = box_alpha,
+          width = box_width
+        ) +
+        ggplot2::geom_hline(ggplot2::aes(yintercept = 0), alpha = 0.5,
+                            linetype = "dashed") +
+        ggplot2::guides(colour = "none", fill = "none") +
+        ggplot2::scale_colour_manual(values = pal[p]) +
+        ggplot2::scale_fill_manual(values = pal[p]) +
+        ggplot2::scale_x_discrete(name = NULL, labels = y_labels) +
+        ggplot2::scale_y_continuous(
+          name = bquote(
+            .(title) ~ .(
+              rlang::parse_expr(
+                paste0(
+                  strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
+                  ifelse(!alpha_par, "", paste0("[", strsplit(par, "_")[[1]][2], "]"))
+                )
               )
             )
           )
+        ) +
+        cowplot::theme_half_open(
+          font_size = font_size,
+          font_family = font
         )
-      ) +
-      cowplot::theme_half_open(
-        font_size = font_size,
-        font_family = font
-      )
 
-    if (coord_flip) plots[[par]] <- plots[[par]] + ggplot2::coord_flip()
+      if (coord_flip) plot <- plot + ggplot2::coord_flip()
+      return(plot)
+    })
   }
 
   plot_together <- cowplot::plot_grid(
