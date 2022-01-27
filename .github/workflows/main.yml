@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           install.packages(c("remotes", "rcmdcheck"))
+          remotes::install_github("r-lib/pillar") # issues with 1.6.5
           remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
       - name: Check
