@@ -1,5 +1,5 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/master/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Currently installs "pillar" package from GitHub due to conflicts with 1.6.5 on CRAN
 name: R-CMD-check
 
 on:
@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           install.packages(c("remotes", "rcmdcheck"))
-          remotes::install_github("r-lib/pillar") # issues with 1.6.5
+          remotes::install_github("r-lib/pillar")
           remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
       - name: Check
