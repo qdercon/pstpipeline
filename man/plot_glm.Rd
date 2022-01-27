@@ -12,6 +12,7 @@ plot_glm(
   test = FALSE,
   grp = id.col,
   grp_labs = NULL,
+  alpha_par_nms = NULL,
   ovrll_title = NULL,
   title_font_size = 16,
   title_rel_ht = NULL,
@@ -48,6 +49,9 @@ the interaction variable specified in \code{\link[=parameter_glm]{parameter_glm(
 \item{grp_labs}{Optional labels for the groups defined by \code{grp}. It is
 recommended to first run the function with this kept as \code{NULL} to make
 sure you label the correct densities.}
+
+\item{alpha_par_nms}{Option to rename learning rate parameters, defaults to
+the names from \code{par_df}.}
 
 \item{ovrll_title}{Title to set for the whole plot.}
 

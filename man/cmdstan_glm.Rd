@@ -161,7 +161,7 @@ there are in the design matrix, setting \code{sparse = TRUE} may make
 the code run faster and can consume much less RAM.}
 }
 \value{
-A \code{cmdstanr::CmdStanMCMC()} object.
+A \code{\link[cmdstanr:CmdStanMCMC]{cmdstanr::CmdStanMCMC()}} object.
 }
 \description{
 Generalized linear modeling for Gaussian and gamma responses, with optional
