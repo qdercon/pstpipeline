@@ -1,4 +1,4 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/master/examples
+# Workflow derived from https://github.com/r-lib/actions/tree/master/examples and https://github.com/ecmerkle/blavaan/blob/master/.github/workflows/R-CMD-check.yaml
 # Currently installs "pillar" package from GitHub due to conflicts with 1.6.5 on CRAN
 name: R-CMD-check
 
@@ -19,16 +19,34 @@ jobs:
           - {os: windows-latest, R: '4.1.2'}
     steps:
       - uses: actions/checkout@v2
+      
       - name: Set up R ${{ matrix.config.R }}
         uses: r-lib/actions/setup-r@v1
         with:
           r-version: ${{ matrix.config.R }}
+          
+      - name: Query dependencies
+        run: |
+          install.packages('remotes')
+          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
+          writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+        shell: Rscript {0}
+
+      - name: Restore R package cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
+          restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
+          
       - name: Install dependencies
         run: |
-          install.packages(c("remotes", "rcmdcheck"))
-          remotes::install_github("r-lib/pillar")
+          install.packages("rcmdcheck")
           remotes::install_deps(dependencies = TRUE)
+          remotes::install_github("r-lib/pillar")
         shell: Rscript {0}
       - name: Check
-        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        run: 
+          options(crayon.enabled = TRUE)
+          rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
         shell: Rscript {0}
