@@ -18,6 +18,8 @@
 #' @param grp_labs Optional labels for the groups defined by \code{grp}. It is
 #' recommended to first run the function with this kept as \code{NULL} to make
 #' sure you label the correct densities.
+#' @param alpha_par_nms Option to rename learning rate parameters, defaults to
+#' the names from \code{par_df}.
 #' @param ovrll_title Title to set for the whole plot.
 #' @param title_font_size,title_rel_ht Font size, and relative height of the
 #' title compared to the main plot, given as a 2 element vector. Defaults to
@@ -46,6 +48,7 @@ plot_glm <- function(
   test = FALSE,
   grp = id.col,
   grp_labs = NULL,
+  alpha_par_nms = NULL,
   ovrll_title = NULL,
   title_font_size = 16,
   title_rel_ht = NULL,
@@ -126,7 +129,9 @@ plot_glm <- function(
             setNames(
               quantile_hdi(
                 x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1),
-                transform = alpha_par), c("ymin", "lower", "middle", "upper", "ymax")
+                transform = alpha_par
+                ),
+              c("ymin", "lower", "middle", "upper", "ymax")
             )
           },
           position = ggplot2::position_nudge(x = -box_nudge),
@@ -145,7 +150,9 @@ plot_glm <- function(
               rlang::parse_expr(
                 paste0(
                   strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                  ifelse(!alpha_par, "", paste0("[", strsplit(par, "_")[[1]][2], "]"))
+                  ifelse(!alpha_par, "",
+                         ifelse(!is.null(alpha_par_nms), alpha_par_nms[p],
+                                paste0("[", strsplit(par, "_")[[1]][2], "]")))
                 )
               )
             )
