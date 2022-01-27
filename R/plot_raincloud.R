@@ -10,6 +10,8 @@
 #' @param type Type of plot to retunn - either separate plots for each
 #' \code{parameter}, or each transdiagnostic rlang::symptom \code{factor}.
 #' @param test Boolean indicating whether summaries are from the test phase.
+#' @param alpha_par_nms Vector of learning rate parameter names for dual
+#' learning rate model. Defaults to "pos" and "neg" if not specified.
 #' @param by Separately plot distributions by a certain demographic variable?
 #' @param rhat_upper,ess_lower Upper and lower bounds for individuals' rhat and
 #' effective sample size (ESS) for the parameters of interest. For consistency,
@@ -35,6 +37,7 @@ plot_raincloud <- function(summary_df,
                            raw_df,
                            type = "parameter",
                            test = FALSE,
+                           alpha_par_nms = NULL,
                            by = NULL,
                            rhat_upper = 1.1,
                            ess_lower = 100,
@@ -157,14 +160,18 @@ plot_raincloud <- function(summary_df,
       else labs <- c(expression(alpha), expression(beta))
     }
     else {
+      if (is.null(alpha_par_nms)) alpha_par_nms <- c("pos", "neg")
       if (test) {
         labs <-
-          c(expression(alpha*minute[pos]), expression(alpha*minute[neg]),
+          c(str2expression(paste0("alpha*minute[", alpha_par_nms[1], "]")),
+            str2expression(paste0("alpha*minute[", alpha_par_nms[2], "]")),
             expression(beta*minute))
       }
       else {
         labs <-
-          c(expression(alpha[pos]), expression(alpha[neg]), expression(beta))
+          c(str2expression(paste0("alpha*minute[", alpha_par_nms[1], "]")),
+            str2expression(paste0("alpha*minute[", alpha_par_nms[2], "]")),
+            expression(beta))
       }
     }
     rain_plot <- rain_plot +

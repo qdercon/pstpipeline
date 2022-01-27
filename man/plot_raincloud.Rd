@@ -9,6 +9,7 @@ plot_raincloud(
   raw_df,
   type = "parameter",
   test = FALSE,
+  alpha_par_nms = NULL,
   by = NULL,
   rhat_upper = 1.1,
   ess_lower = 100,
@@ -34,6 +35,9 @@ Used to correctly link subject IDs to independent variables.}
 \code{parameter}, or each transdiagnostic rlang::symptom \code{factor}.}
 
 \item{test}{Boolean indicating whether summaries are from the test phase.}
+
+\item{alpha_par_nms}{Vector of learning rate parameter names for dual
+learning rate model. Defaults to "pos" and "neg" if not specified.}
 
 \item{by}{Separately plot distributions by a certain demographic variable?}
 
