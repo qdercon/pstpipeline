@@ -169,8 +169,8 @@ plot_raincloud <- function(summary_df,
       }
       else {
         labs <-
-          c(str2expression(paste0("alpha*minute[", alpha_par_nms[1], "]")),
-            str2expression(paste0("alpha*minute[", alpha_par_nms[2], "]")),
+          c(str2expression(paste0("alpha[", alpha_par_nms[1], "]")),
+            str2expression(paste0("alpha[", alpha_par_nms[2], "]")),
             expression(beta))
       }
     }
