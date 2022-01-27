@@ -9,6 +9,7 @@ check_learning_models(
   test = FALSE,
   mean_pars = TRUE,
   diagnostic_plots = TRUE,
+  alpha_par_nms = NULL,
   pal = NULL,
   font = "",
   font_size = 11
@@ -27,6 +28,10 @@ phase.}
 
 \item{diagnostic_plots}{Output diagnostic traces and histograms? Requires the
 \pkg{bayesplot} package.}
+
+\item{alpha_par_nms}{Option to rename learning rate parameters for models
+with more than one.
+the names from \code{draws}.}
 
 \item{pal, font, font_size}{Same as \link{plot_import}.}
 }

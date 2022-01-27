@@ -8,6 +8,7 @@ plot_recovery(
   raw_pars,
   sim_pars,
   test = FALSE,
+  alpha_par_nms = NULL,
   pal = NULL,
   font = "",
   font_size = 11
@@ -21,6 +22,9 @@ for the relevant model.}
 
 \item{test}{Boolean indicating whether recovered parameters are from the test
 phase.}
+
+\item{alpha_par_nms}{Option to rename learning rate parameters, defaults to
+the names from \code{par_df}.}
 
 \item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }

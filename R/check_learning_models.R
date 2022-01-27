@@ -12,6 +12,9 @@
 #' @param mean_pars Output a plot of the mean parameters?
 #' @param diagnostic_plots Output diagnostic traces and histograms? Requires the
 #' \pkg{bayesplot} package.
+#' @param alpha_par_nms Option to rename learning rate parameters for models
+#' with more than one.
+#' the names from \code{draws}.
 #' @param pal,font,font_size Same as [plot_import].
 #'
 #' @importFrom magrittr %>%
@@ -22,6 +25,7 @@ check_learning_models <-
            test = FALSE,
            mean_pars = TRUE,
            diagnostic_plots = TRUE,
+           alpha_par_nms = NULL,
            pal = NULL,
            font = "",
            font_size = 11) {
@@ -112,7 +116,11 @@ check_learning_models <-
             .(rlang::parse_expr(
                 paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
                        ifelse(!alpha, "",
-                              paste0("[", strsplit(par, "_")[[1]][3], "]")
+                              ifelse(!is.null(alpha_par_nms),
+                                     paste0("[", alpha_par_nms[p], "]"),
+                                     paste0("[", strsplit(par, "_")[[1]][2], "]"
+                                            )
+                                     )
                               )
                        )
                 )

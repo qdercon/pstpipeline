@@ -151,8 +151,11 @@ plot_glm <- function(
                 paste0(
                   strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
                   ifelse(!alpha_par, "",
-                         ifelse(!is.null(alpha_par_nms), alpha_par_nms[p],
-                                paste0("[", strsplit(par, "_")[[1]][2], "]")))
+                         ifelse(!is.null(alpha_par_nms),
+                                paste0("[", alpha_par_nms[p], "]"),
+                                paste0("[", strsplit(par, "_")[[1]][2], "]")
+                                )
+                         )
                 )
               )
             )

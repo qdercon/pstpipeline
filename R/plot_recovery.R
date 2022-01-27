@@ -8,6 +8,8 @@
 #' for the relevant model.
 #' @param test Boolean indicating whether recovered parameters are from the test
 #' phase.
+#' @param alpha_par_nms Option to rename learning rate parameters, defaults to
+#' the names from \code{par_df}.
 #' @param pal,font,font_size Same as [plot_import()].
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
@@ -19,6 +21,7 @@
 plot_recovery <- function(raw_pars,
                           sim_pars,
                           test = FALSE,
+                          alpha_par_nms = NULL,
                           pal = NULL,
                           font = "",
                           font_size = 11) {
@@ -53,6 +56,8 @@ plot_recovery <- function(raw_pars,
 
   pred_plots <- list()
 
+  alpha_par_nms <- unique(pars_df$parameter)
+
   for (p in seq_along(unique(pars_df$parameter))) {
     par <- unique(pars_df$parameter)[p]
     alpha <- grepl("alpha", par)
@@ -73,9 +78,12 @@ plot_recovery <- function(raw_pars,
         bquote(
           .(rlang::parse_expr(
               paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                     ifelse(!alpha, "", paste0(
-                       "[", strsplit(par, "_")[[1]][2], "]"
-                       ))
+                     ifelse(!alpha, "",
+                            ifelse(!is.null(alpha_par_nms),
+                                   paste0("[", alpha_par_nms[p], "]"),
+                                   paste0("[", strsplit(par, "_")[[1]][2], "]")
+                                   )
+                            )
                      )
               )
             )
@@ -102,8 +110,19 @@ plot_recovery <- function(raw_pars,
   n_pars <- dim(cor_mat)[1]/2
   if (n_pars == 3) {
     order <- c("alpha_pos", "alpha_neg", "beta")
-    if (test) labs <- c("alpha*minute[pos]", "alpha*minute[neg]", "beta*minute")
-    else labs <- c("alpha[pos]", "alpha[neg]", "beta")
+    if (is.null(alpha_par_nms)) alpha_par_nms <- c("pos", "neg")
+    if (test) {
+      labs <- c(
+        paste0("alpha*minute[", alpha_par_nms[1], "]"),
+        paste0("alpha*minute[", alpha_par_nms[2], "]"),
+        "beta*minute")
+    }
+    else {
+      labs <- c(
+        paste0("alpha*minute[", alpha_par_nms[1], "]"),
+        paste0("alpha*minute[", alpha_par_nms[2], "]"),
+        "beta*minute")
+    }
   }
   else {
     order <- labs <- c("alpha", "beta")
