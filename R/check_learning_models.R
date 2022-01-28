@@ -90,7 +90,7 @@ check_learning_models <-
     }
     pars <- names(mu_pars_df)
     dens_plts <- list()
-    dens_plot <- function(df, par, nbins, p, alpha_par_nms, col, font,
+    dens_plot <- function(df, par, nbins, p, alpha_par_nm, col, font,
                           font_size) {
       rnge <- range(df[par])
       bin_wdth <- diff(rnge) / nbins
@@ -138,7 +138,7 @@ check_learning_models <-
     for (p in seq_along(pars)) {
       dens_plts[[p]] <- dens_plot(
         mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
-        font_size = font_size, alpha_par_nm = alpha_par_nm[p])
+        font_size = font_size, alpha_par_nm = alpha_par_nms[p])
     }
 
     ret$mu_par_dens <- cowplot::plot_grid(plotlist = dens_plts, nrow = 1)
