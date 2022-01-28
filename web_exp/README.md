@@ -6,7 +6,7 @@ The web experiment can be run in [JATOS](https://www.jatos.org/)
 simply by importing the compressed folder. Running outside of
 JATOS will require some modification to the scripts, as will running locally outside of Prolific due to automatic recording and redirects for Prolific IDs (these changes are minor and are commented out in the scripts).
 
-In addition, using the allocation script will require some extra info to be added in JATOS. It is adapted from the 'randomize_tasks_between_workers.jzip' study found here: https://github.com/JATOS/JATOS_examples/raw/master/examples
+In addition, using the allocation script will require some extra info to be added in JATOS. It is adapted from this example study: https://github.com/JATOS/JATOS_examples/raw/master/examples/randomize_tasks_between_workers.jzip
 
 First, create a new study batch under 'Worker & Batch Manager' in the JATOS GUI (or just use the 'Default' batch). Then, click on 'Properties', and add an array like the following to the 'JSON input': 
 
