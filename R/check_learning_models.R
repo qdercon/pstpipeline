@@ -119,7 +119,7 @@ check_learning_models <-
                        ifelse(!alpha, "",
                               ifelse(!is.na(alpha_par_nm),
                                      paste0("[", alpha_par_nm, "]"),
-                                     paste0("[", strsplit(par, "_")[[1]][2], "]"
+                                     paste0("[", strsplit(par, "_")[[1]][3], "]"
                                             )
                                      )
                               )
@@ -137,7 +137,7 @@ check_learning_models <-
 
     for (p in seq_along(pars)) {
       dens_plts[[p]] <- dens_plot(
-        mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
+        mu_pars_df, par = pars[p], nbins = 30, col = pal[(p*2)-1], font = font,
         font_size = font_size, alpha_par_nm = alpha_par_nms[p])
     }
 
