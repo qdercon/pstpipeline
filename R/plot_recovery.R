@@ -56,8 +56,6 @@ plot_recovery <- function(raw_pars,
 
   pred_plots <- list()
 
-  alpha_par_nms <- unique(pars_df$parameter)
-
   for (p in seq_along(unique(pars_df$parameter))) {
     par <- unique(pars_df$parameter)[p]
     alpha <- grepl("alpha", par)
@@ -119,9 +117,9 @@ plot_recovery <- function(raw_pars,
     }
     else {
       labs <- c(
-        paste0("alpha*minute[", alpha_par_nms[1], "]"),
-        paste0("alpha*minute[", alpha_par_nms[2], "]"),
-        "beta*minute")
+        paste0("alpha[", alpha_par_nms[1], "]"),
+        paste0("alpha[", alpha_par_nms[2], "]"),
+        "beta")
     }
   }
   else {
