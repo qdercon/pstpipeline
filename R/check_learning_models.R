@@ -25,7 +25,7 @@ check_learning_models <-
            test = FALSE,
            mean_pars = TRUE,
            diagnostic_plots = TRUE,
-           alpha_par_nms = NULL,
+           alpha_par_nms = NA,
            pal = NULL,
            font = "",
            font_size = 11) {
@@ -90,7 +90,8 @@ check_learning_models <-
     }
     pars <- names(mu_pars_df)
     dens_plts <- list()
-    dens_plot <- function(df, par, nbins, p, col, font, font_size) {
+    dens_plot <- function(df, par, nbins, p, alpha_par_nms, col, font,
+                          font_size) {
       rnge <- range(df[par])
       bin_wdth <- diff(rnge) / nbins
       alpha <- grepl("alpha", par)
@@ -116,7 +117,7 @@ check_learning_models <-
             .(rlang::parse_expr(
                 paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
                        ifelse(!alpha, "",
-                              ifelse(!is.null(alpha_par_nms),
+                              ifelse(!is.na(alpha_par_nms),
                                      paste0("[", alpha_par_nms[p], "]"),
                                      paste0("[", strsplit(par, "_")[[1]][2], "]"
                                             )
@@ -137,7 +138,7 @@ check_learning_models <-
     for (p in seq_along(pars)) {
       dens_plts[[p]] <- dens_plot(
         mu_pars_df, nbins = 30, pars[p], col = pal[(p*2)-1], font = font,
-        font_size = font_size)
+        font_size = font_size, alpha_par_nms = alpha_par_nms)
     }
 
     ret$mu_par_dens <- cowplot::plot_grid(plotlist = dens_plts, nrow = 1)
