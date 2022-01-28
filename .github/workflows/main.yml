@@ -1,5 +1,5 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/master/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Currently installs "pillar" package from GitHub due to conflicts with 1.6.5 on CRAN
 name: R-CMD-check
 
 on:
@@ -17,17 +17,25 @@ jobs:
         config:
           - {os: macOS-latest,   R: '4.1.2'}
           - {os: windows-latest, R: '4.1.2'}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      
     steps:
       - uses: actions/checkout@v2
+      
       - name: Set up R ${{ matrix.config.R }}
         uses: r-lib/actions/setup-r@v1
         with:
           r-version: ${{ matrix.config.R }}
+          
       - name: Install dependencies
         run: |
           install.packages(c("remotes", "rcmdcheck"))
+          remotes::install_github("r-lib/pillar")
           remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
       - name: Check
-        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        run: |
+          options(crayon.enabled = TRUE)
+          rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "warning")
         shell: Rscript {0}
