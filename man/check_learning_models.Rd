@@ -9,7 +9,7 @@ check_learning_models(
   test = FALSE,
   mean_pars = TRUE,
   diagnostic_plots = TRUE,
-  alpha_par_nms = NULL,
+  alpha_par_nms = NA,
   pal = NULL,
   font = "",
   font_size = 11
