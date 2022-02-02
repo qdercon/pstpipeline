@@ -63,7 +63,8 @@ plot_factors <- function(df,
     for (f in seq_along(colnames)) {
       hist_plot <- df %>%
         tidyr::pivot_longer(
-          cols = colnames, names_to = "Factor", values_to = "Score"
+          cols = tidyselect::all_of(colnames), names_to = "Factor",
+          values_to = "Score"
           ) %>%
         dplyr::filter(Factor == colnames[f]) %>%
         ggplot2::ggplot(ggplot2::aes(x = Score)) +
@@ -132,8 +133,11 @@ plot_factors <- function(df,
     pred_plots <- list()
     scores <- tibble::as_tibble(df[["scores"]]) %>%
       dplyr::mutate(value = "obs")
-    df_all <- cbind(scores$id, tibble::as_tibble(df[["preds"]])) %>%
-      setNames(nm = c("id", colnames)) %>%
+    df_all <-
+      dplyr::bind_cols(
+        scores$id, as.data.frame(df[["preds"]]),
+        .name_repair = ~make.names(c("id", colnames), unique = TRUE)
+      ) %>%
       dplyr::mutate(value = "predicted") %>%
       dplyr::bind_rows(scores) %>%
       tidyr::pivot_longer(cols = c(-id, -value),
@@ -159,8 +163,10 @@ plot_factors <- function(df,
   if (any(plot_type == "factor_htmp")) {
     if (!is.list(df)) stop("Need 'qns' and 'coefs' in a named list.")
     names = names(df[["qns"]][-1])
-    heatmap <- tibble::as_tibble(df[["coefs"]]) %>%
-      setNames(nm = colnames) %>%
+    heatmap <-
+      tibble::as_tibble(
+        df[["coefs"]], .name_repair = ~make.names(colnames, unique = TRUE)
+        ) %>%
       dplyr::mutate(question = names) %>%
       dplyr::filter(!dplyr::if_all(.cols = 1:3, ~ . == 0)) %>%
       tidyr::pivot_longer(cols = 1:3, names_to = "Factor",
