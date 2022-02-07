@@ -72,15 +72,15 @@ make_par_df <- function(raw,
     dplyr::filter(grepl("alpha|beta", variable)) %>%
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
-    dplyr::select(variable, mean, rhat, tidyselect::contains("ess")) %>%
-    dplyr::mutate(
-      id_no = as.numeric(
-        sub("\\].*$", "",
-        sub(".*\\[", "", .[["variable"]]))
-        )
+    dplyr::select(
+      variable, mean, tidyselect::contains("rhat"), tidyselect::contains("ess")
       ) %>%
-    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
-    dplyr::rename(parameter = variable) %>%
+    dplyr::mutate(
+      id_no =
+        as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\["))[[2]]),
+      parameter = unlist(strsplit(gsub("\\].*", "", variable), "\\["))[[1]]
+      ) %>%
+    dplyr::select(-variable) %>%
     dplyr::rename(posterior_mean = mean) %>%
     dplyr::right_join(ids, by = "id_no") %>%
     dplyr::group_by(subjID) %>%
