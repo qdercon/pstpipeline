@@ -72,8 +72,8 @@ make_par_df <- function(raw,
     dplyr::filter(!grepl("_pr", variable)) %>%
     dplyr::filter(!grepl("mu_", variable)) %>%
     dplyr::select(
-      variable, mean, tidyselect::contains("rhat"), tidyselect::contains("ess")
-      ) %>%
+      variable, mean, tidyselect::any_of(matches("ess|rhat"))
+    ) %>%
     dplyr::mutate(
       id_no = as.numeric(
         sub("\\].*$", "",
@@ -90,7 +90,7 @@ make_par_df <- function(raw,
     ) %>%
     dplyr::filter(dplyr::across(
       tidyselect::any_of(
-        tidyselect::starts_with("ess_bulk")), ~!any(.x < ess_lower)
+        tidyselect::starts_with("ess_b")), ~!any(.x < ess_lower)
     )) %>%
     dplyr::ungroup()
 
