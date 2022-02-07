@@ -61,8 +61,7 @@ make_par_df <- function(raw,
                         summary,
                         rhat_upper,
                         ess_lower) {
-  subjID <- variable <- . <- ess_bulk <- ess_tail <-
-    rhat <- NULL # appease R CMD check
+  subjID <- variable <- . <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID) %>%
     dplyr::mutate(id_no = dplyr::row_number())
@@ -76,11 +75,13 @@ make_par_df <- function(raw,
       variable, mean, tidyselect::contains("rhat"), tidyselect::contains("ess")
       ) %>%
     dplyr::mutate(
-      id_no =
-        as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\["))[[2]]),
-      parameter = unlist(strsplit(gsub("\\].*", "", variable), "\\["))[[1]]
+      id_no = as.numeric(
+        sub("\\].*$", "",
+        sub(".*\\[", "", .[["variable"]]))
+        )
       ) %>%
-    dplyr::select(-variable) %>%
+    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
+    dplyr::rename(parameter = variable) %>%
     dplyr::rename(posterior_mean = mean) %>%
     dplyr::right_join(ids, by = "id_no") %>%
     dplyr::group_by(subjID) %>%
