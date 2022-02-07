@@ -61,7 +61,7 @@ make_par_df <- function(raw,
                         summary,
                         rhat_upper,
                         ess_lower) {
-  subjID <- variable <- . <- NULL # appease R CMD check
+  subjID <- variable <- . <- matches <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID) %>%
     dplyr::mutate(id_no = dplyr::row_number())
