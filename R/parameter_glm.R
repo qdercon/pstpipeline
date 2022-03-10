@@ -104,7 +104,15 @@ parameter_glm <- function(summary_df = list(),
   mod <- lm(rlang::parse_expr(formula), data = all_data)
     # used to get the correct names for betas (as ordering may change e.g.,
     # with interactions)
-  beta_names <- attr(mod$terms , "term.labels")
+  if (is.factor(all_data[[var_of_interest]])) {
+    cov_names <- setdiff(attr(mod$terms , "term.labels"), var_of_interest)
+    beta_names <-
+      c(names(mod$coefficients)[grep(var_of_interest, names(mod$coefficients))],
+        cov_names)
+
+  } else {
+    beta_names <- attr(mod$terms , "term.labels")
+  }
 
   for (par in unique(all_data$parameter)) {
     cmdstan_fit <- cmdstan_glm(
