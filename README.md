@@ -16,7 +16,7 @@ This package is does not supercede or replace this work. Instead, its main aims 
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
 
-Full methods and results from this study can be found in the pre-print on [*PsyArXiv*](https://psyarxiv.com/jmnek) [[2](#References)]
+Full methods and results from this study can be found in the pre-print on *PsyArXiv* (https://psyarxiv.com/jmnek) [[2](#References)]. 
 
 ### Using the package
 
