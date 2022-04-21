@@ -16,6 +16,8 @@ This package is does not supercede or replace this work. Instead, its main aims 
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
 
+Full methods and results from this study can be found in the pre-print on [*PsyArXiv*](https://psyarxiv.com/jmnek) [[2](#References)]
+
 ### Using the package
 
 #### Docker container
@@ -73,7 +75,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 
 - **analysis and model checking**:
-    - ```fit_learning_model``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC. Its functionality is comparable to [```hBayesDM::hBayesDM_model()```](https://rdrr.io/cran/hBayesDM/src/R/hBayesDM_model.R), but with a [CmdStan](https://github.com/stan-dev/cmdstan) backend.
+    - ```fit_learning_model``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[3](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC. Its functionality is comparable to [```hBayesDM::hBayesDM_model()```](https://rdrr.io/cran/hBayesDM/src/R/hBayesDM_model.R), but with a [CmdStan](https://github.com/stan-dev/cmdstan) backend.
     - ```generate_posterior_quantities``` enables posterior predictions for each MCMC sample to be generated in a separate session from a previously fitted model, via CmdStanR's [```$generate_quantities()```](https://mc-stan.org/cmdstanr/reference/model-method-generate-quantities.html) method.
     - ```parameter_glm``` is a wrapper for```cmdstan_glm```, a version of [```stan_glm```](https://mc-stan.org/rstanarm/reference/stan_glm.html) from the [```rstanarm```](https://github.com/stan-dev/rstanarm) package which has been modified to use [```cmdstanr```](https://mc-stan.org/cmdstanr/) rather than [```rstan```](https://cran.r-project.org/web/packages/rstan/index.html) as its backend (which greatly reduces the number of dependencies required). It is used to run adjusted Bayesian GLMs relating the individual-level posterior means of the learning parameters to outcome variable(s) of interest.
     - ```simulate_QL``` can be used to simulate data from the various QL models, either using random samples from chosen distributions or the observed individual-level parameter estimates. The output can then be fit to the models, to check whether the parameters can be adequately recovered.
@@ -86,7 +88,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
     - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants.
     - ```plot_glm``` plots the results of Bayesian GLMs with both a boxplot (depicting HDIs), and a posterior density made up of the posterior draws themselves, using a modified version of [```geom_quasirandom```](https://www.rdocumentation.org/packages/ggbeeswarm/versions/0.5.3/topics/geom_quasirandom) from the [```ggbeeswarm```](https://github.com/eclarke/ggbeeswarm) package (```quasirandom_half_violin```).
     - ```plot_recovery``` produces correlation plots for the observed and recovered QL parameters (after running of ```fit_learning_model``` on simulated data from ```simulate_QL```), as well as confusion matrices.
-    - ```plot_raincloud``` produces plots of the posterior mean parameter values or transdiagnostic factors, optionally by group. This function includes code adapted from the [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) repository [[3](#References)].
+    - ```plot_raincloud``` produces plots of the posterior mean parameter values or transdiagnostic factors, optionally by group. This function includes code adapted from the [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) repository [[4](#References)].
 
 
 - **other helper functions**
@@ -99,6 +101,8 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
-2.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
+2. Q. Dercon, S. Z. Mehrhof, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). doi:10.31234/osf.io/jmnek.
 
-3.   M. Allen, D. Poggiali, K. Whitaker et al. Raincloud plots: a multi-platform tool for robust data visualization [version 2; peer review: 2 approved]. *Wellcome Open Res.* **4**, 63 (2021).
+3.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
+
+4.   M. Allen, D. Poggiali, K. Whitaker et al. Raincloud plots: a multi-platform tool for robust data visualization [version 2; peer review: 2 approved]. *Wellcome Open Res.* **4**, 63 (2021).
