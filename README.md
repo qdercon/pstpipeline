@@ -16,7 +16,7 @@ This package is does not supercede or replace this work. Instead, its main aims 
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
 
-Full methods and results from this study can be found in the pre-print on *PsyArXiv* (https://psyarxiv.com/jmnek) [[2](#References)]. 
+**Full methods and results from this study can be found in the *PsyArXiv* preprint [[2](#References)].**
 
 ### Using the package
 
@@ -101,7 +101,7 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
-2. Q. Dercon, S. Z. Mehrhof, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). doi:10.31234/osf.io/jmnek.
+2. Q. Dercon, S. Z. Mehrhof, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
 
 3.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
 
