@@ -1,6 +1,6 @@
 #' Plot posterior predictions against observed data
 #'
-#' \code{plot_ppc} plots
+#' \code{plot_ppc} plots posterior predictions in a variety of ways.
 #'
 #' @param train_indiv List, maximum length 3. The first element should be an
 #' individual-level \code{tibble} containing summed predictions for each trial

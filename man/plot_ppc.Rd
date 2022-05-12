@@ -55,5 +55,5 @@ or the name of the predicted variable.}
 Either a single or named \code{list} of \code{ggplot} objects
 }
 \description{
-\code{plot_ppc} plots
+\code{plot_ppc} plots posterior predictions in a variety of ways.
 }

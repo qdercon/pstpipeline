@@ -18,12 +18,7 @@ plot_glm(
   title_rel_ht = NULL,
   plt_rel_widths = 1,
   cred = c(0.95, 0.99),
-  top_right = TRUE,
   coord_flip = TRUE,
-  dist_nudge = 0,
-  max_dist_width = 0.5,
-  point_alpha = 0.25,
-  point_size = 0.75,
   box_alpha = 0.6,
   box_width = 0.125,
   box_nudge = 0.1,
@@ -65,13 +60,8 @@ title compared to the main plot, given as a 2 element vector. Defaults to
 \item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot
 boxes and lines respectively.}
 
-\item{top_right, coord_flip}{Booleans; if \code{TRUE} the densities will be
-on the top or the right depending on whether \code{coord_flip} is \code{TRUE}
-or \code{FALSE} respectively.}
-
-\item{dist_nudge, max_dist_width, point_alpha, point_size}{Control the position
-and size of the density, or the transparency and size of the points that make
-it up respectively.}
+\item{coord_flip}{Plot horizontal (\code{TRUE}) or vertical (\code{FALSE})
+densities.}
 
 \item{box_alpha, box_width, box_nudge}{Control the transparency, size, and
 position of the summary boxplot.}
