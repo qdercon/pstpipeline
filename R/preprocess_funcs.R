@@ -123,11 +123,8 @@ preprocess_func_affect <- function(raw_data, general_info) {
   choice  <- array(-1, c(n_subj, t_max))
   reward  <- array(-1, c(n_subj, t_max))
 
-  pb = txtProgressBar(min = 0, max = n_subj, initial = 0, style = 3)
-
   # Write from raw_data to the data arrays
   for (i in 1:n_subj) {
-    setTxtProgressBar(pb, i)
     subj <- subjs[i]
     t <- t_subjs[i]
     DT_subj <- raw_data[raw_data$subjID == subj]
