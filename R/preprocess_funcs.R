@@ -111,9 +111,7 @@ preprocess_func_affect <- function(raw_data, general_info) {
   subjs   <- general_info$subjs
   n_subj  <- general_info$n_subj
   t_subjs <- general_info$t_subjs
-  if (aff_trials) t_subjs_aff <- general_info$t_subjs_aff
   t_max   <- general_info$t_max
-  if (aff_trials) t_max_aff   <- general_info$t_max_aff
 
   # Initialize (model-specific) data arrays
   affect <- array(0, c(n_subj, t_max))
@@ -132,7 +130,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
     setTxtProgressBar(pb, i)
     subj <- subjs[i]
     t <- t_subjs[i]
-    if (aff_trials) t_aff <- t_subjs_aff[i]
     DT_subj <- raw_data[raw_data$subjID == subj]
     option1[i, 1:t] <- DT_subj$type %/% 10
     option2[i, 1:t] <- DT_subj$type %% 10
