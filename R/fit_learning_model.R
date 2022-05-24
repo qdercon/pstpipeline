@@ -17,6 +17,9 @@
 #' @param df_all Raw data outputted from [import_multiple()].
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param exp_part Fit to \code{training} or \code{test}?
+#' @param affect Fit extended Q-learning model with affect ratings?
+#' @param adj_order Numerical order of affect adjectives, defaults to 1 =
+#' "happy", 2 = "confident", and 3 = "engaged".
 #' @param vb Use variational inference to get the approximate posterior? Default
 #' is \code{TRUE} for computational efficiency.
 #' @param ppc Generate quantities including mean parameters, log likelihood, and
@@ -65,6 +68,8 @@ fit_learning_model <-
   function(df_all,
            model,
            exp_part,
+           affect = FALSE,
+           adj_order = c("happy", "confident", "engaged"),
            vb = TRUE,
            ppc = vb,
            task_excl = TRUE,
@@ -79,6 +84,12 @@ fit_learning_model <-
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
+  if (exp_part == "test" & affect) {
+    stop("Affect models will not work for test data.")
+  }
+  if (model == "1a" & affect) {
+    stop("Affect data model is dual learning rate only.")
+  }
   if (ppc & !vb) {
     warning(
       strwrap(
@@ -139,7 +150,24 @@ fit_learning_model <-
       raw_df$test <- data.table::as.data.table(test_df)
     }
     else {
-      raw_df <- data.table::as.data.table(training_df)
+      if (!affect) raw_df <- data.table::as.data.table(training_df)
+      else {
+        training_df <- training_df %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) %>%
+          dplyr::mutate(
+            question =
+              ifelse(question_type == adj_order[1], 1,
+                     ifelse(question_type == adj_order[2], 2, 3)
+              )
+          ) %>%
+          dplyr::group_by(subjID, question_type) %>%
+          dplyr::arrange(trial_no) %>%
+          dplyr::mutate(trial_no_q = dplyr::row_number()) %>%
+          dplyr::ungroup()
+
+          raw_df <- data.table::as.data.table(training_df)
+      }
     }
   }
   else {
@@ -188,17 +216,19 @@ fit_learning_model <-
       )
   }
   else {
-    data_cmdstan <- preprocess_func_train(raw_df, general_info)
+    if (affect) data_cmdstan <- preprocess_func_affect(raw_df, general_info)
+    else data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
+  label <- ifelse(!affect, exp_part, "plus_affect")
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
       paste0(
         paste("extdata/stan_files/pst",
-              ifelse(model == "2a", "gainloss_Q", "Q"), exp_part, sep = "_"),
+              ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"),
         ifelse(ppc, "_ppc.stan", ".stan")
       ),
       package = "pstpipeline"
@@ -218,25 +248,47 @@ fit_learning_model <-
   }
   else if (is.null(l$init)) {
     message("Getting initial values from variational inference...")
-    gen_init_vb <- function(model, data_list, parameters) {
+    gen_init_vb <- function(model, data_list, parameters, affect) {
       fit_vb <- model$variational(
         data = data_list,
         refresh = l$refresh
       )
       m_vb <- colMeans(posterior::as_draws_df(fit_vb$draws()))
 
-      function() {
-        ret <- list(
-          mu_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_pr")]),
-          sigma = as.vector(m_vb[startsWith(names(m_vb), "sigma")])
-        )
+      if (!affect) {
+        function() {
+          ret <- list(
+            mu_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_pr")]),
+            sigma = as.vector(m_vb[startsWith(names(m_vb), "sigma")])
+          )
 
-        for (p in names(parameters)) {
-          ret[[paste0(p, "_pr")]] <-
-            as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
+          for (p in names(parameters)) {
+            ret[[paste0(p, "_pr")]] <-
+              as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
+          }
+
+          return(ret)
         }
+      } else {
+        function() {
+          ret <- list(
+            mu_ql_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_ql_pr")]),
+            sigma_ql = as.vector(m_vb[startsWith(names(m_vb), "sigma_ql")]),
+            nu = as.vector(m_vb[startsWith(names(m_vb), "nu")]),
+            mu_wt = as.vector(m_vb[startsWith(names(m_vb), "mu_wt")]),
+            sigma_wt = as.vector(m_vb[startsWith(names(m_vb), "sigma_wt")]),
+            alpha_s = as.vector(m_vb[startsWith(names(m_vb), "alpha_s")]),
+            beta_s = as.vector(m_vb[startsWith(names(m_vb), "beta_s")]),
+            sigma_t = as.vector(m_vb[startsWith(names(m_vb), "sigma_t")])
+          )
 
-        return(ret)
+          for (p in names(parameters)) {
+            ret[[paste0(p)]] <-
+              as.vector(m_vb[startsWith(names(m_vb), p)])
+          }
+
+          return(ret)
+        }
       }
     }
     if (model == "1a") {
@@ -245,17 +297,30 @@ fit_learning_model <-
         "beta" = c(0, 1, 10)
       )
     }
-    else {
+    else if (!affect) {
       pars <- list(
         "alpha_pos" = c(0, 0.5, 1),
         "alpha_neg" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
     }
+    else {
+      pars <- list(
+        "alpha_pos" = c(0, 0.5, 1),
+        "alpha_neg" = c(0, 0.5, 1),
+        "beta" = c(0, 1, 10),
+        "w0" = c(-1, 0, 1),
+        "w1" = c(-5, 0, 5),
+        "w2" = c(-1, 0, 1),
+        "w3" = c(-1, 0, 1),
+        "gamma" = c(0, 0.5, 1),
+      )
+    }
     inits <- gen_init_vb(
       model = stan_model,
       data_list = data_cmdstan,
-      parameters = pars
+      parameters = pars,
+      affect = affect
     )
   }
 
