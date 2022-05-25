@@ -253,7 +253,7 @@ fit_learning_model <-
         data = data_list,
         refresh = l$refresh
       )
-      m_vb <- colMeans(posterior::as_draws_df(fit_vb$draws()))
+      m_vb <- colMeans(fit_vb$draws(format = "df"))
 
       if (!affect) {
         function() {
@@ -313,7 +313,7 @@ fit_learning_model <-
         "w1" = c(-5, 0, 5),
         "w2" = c(-1, 0, 1),
         "w3" = c(-1, 0, 1),
-        "gamma" = c(0, 0.5, 1),
+        "gamma" = c(0, 0.5, 1)
       )
     }
     inits <- gen_init_vb(
