@@ -8,7 +8,7 @@ data {
   int<lower=-1,upper=6> option2[N, T];
   int<lower=-1,upper=1> choice[N, T];
   real reward[N, T];
-  
+
   real<lower=0, upper=1> affect[N, T];
   int<lower=0, upper=3> question[N, T];
   int<lower=0> blocks[N, T];
@@ -24,9 +24,9 @@ parameters {
   // Group-level parameters
   vector[3] mu_ql_pr;
   vector<lower=0>[3] sigma_ql;
-  
+
   real<lower=2> nu; // minimum 2 df
-  
+
   // weights
   real mu_wt[4, 3];
   real<lower=0> sigma_wt[4, 3];
@@ -39,7 +39,7 @@ parameters {
   vector[N] alpha_pos_pr;
   vector[N] alpha_neg_pr;
   vector[N] beta_pr;
-  
+
   // individual-level weights
   real w0[N, 3];
   real w1[N, 3];
@@ -48,7 +48,7 @@ parameters {
 
   real<lower=0, upper=1> gamma[N, 3]; // forgetting factor
   vector<lower=0>[N] sigma_t; // scale of t distribution
-  
+
   // decay factor (gamma)
   // real<lower=0> alpha_g[3];
   // real<lower=0> beta_g[3];
@@ -68,7 +68,7 @@ model {
   // hyperpriors on QL parameters
   mu_ql_pr ~ normal(0, 1);
   sigma_ql ~ normal(0, 0.2);
-  
+
   // priors on QL parameters
   alpha_pos_pr ~ normal(0, 1);
   alpha_neg_pr ~ normal(0, 1);
@@ -85,12 +85,12 @@ model {
   // priors on the t distribution
   sigma_t  ~ gamma(alpha_s, beta_s);
   nu       ~ exponential(0.1);
-  
+
   // priors on gamma
   /*for (p in 1:3) {
     gamma[:, p] ~ beta(alpha_g[p], beta_g[p]);
   }*/
-  
+
   for (p in 1:3) {
     gamma[:, p] ~ beta(1, 1);
   }
@@ -104,7 +104,7 @@ model {
   // hyperpriors on the t distribution
   alpha_s  ~ uniform(0.001, 1000);
   beta_s   ~ uniform(0.001, 1000);
-  
+
   //hyperpriors on gamma
   // alpha_g  ~ gamma(1, 0.1);
   // beta_g   ~ gamma(1, 0.1);
@@ -139,7 +139,7 @@ model {
       ev_vec[t] = ev[co];
 
       decayvec[t] = pow(gamma[i, question[i, t]], t - 1);
-      
+
       affect[i, t] ~ student_t(
         nu,
         w0[i, question[i, t]] * pow(blocks[i, t], w1[i, question[i, t]]) +
