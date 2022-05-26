@@ -275,18 +275,36 @@ fit_learning_model <-
             mu_ql_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_ql_pr")]),
             sigma_ql = as.vector(m_vb[startsWith(names(m_vb), "sigma_ql")]),
             nu = as.vector(m_vb[startsWith(names(m_vb), "nu")]),
-            mu_wt = as.vector(m_vb[startsWith(names(m_vb), "mu_wt")]),
-            sigma_wt = as.vector(m_vb[startsWith(names(m_vb), "sigma_wt")]),
+            mu_wt = rbind(
+              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[1,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[2,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[3,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[4,")])
+            ),
+            sigma_wt = rbind(
+              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[1,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[2,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[3,")]),
+              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[4,")])
+            ),
             alpha_s = as.vector(m_vb[startsWith(names(m_vb), "alpha_s")]),
             beta_s = as.vector(m_vb[startsWith(names(m_vb), "beta_s")]),
             sigma_t = as.vector(m_vb[startsWith(names(m_vb), "sigma_t")])
           )
 
-          for (p in names(parameters)) {
-            ret[[paste0(p)]] <-
-              as.vector(m_vb[startsWith(names(m_vb), p)])
+          for (p in names(parameters)[1:3]) {
+            ret[[paste0(p, "_pr")]] <-
+              as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
           }
 
+          for (q in names(parameters)[-(1:3)]) {
+            m_vb_tr <- m_vb[names(m_vb[startsWith(names(m_vb), q)])]
+            ret[[q]] <- cbind(
+              as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",1]")]),
+              as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",2]")]),
+              as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",3]")])
+            )
+          }
           return(ret)
         }
       }
