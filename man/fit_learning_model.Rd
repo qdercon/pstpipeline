@@ -8,6 +8,8 @@ fit_learning_model(
   df_all,
   model,
   exp_part,
+  affect = FALSE,
+  adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
   ppc = vb,
   task_excl = TRUE,
@@ -27,6 +29,11 @@ fit_learning_model(
 \item{model}{Learning model to use, choose from \code{1a} or \code{2a}.}
 
 \item{exp_part}{Fit to \code{training} or \code{test}?}
+
+\item{affect}{Fit extended Q-learning model with affect ratings?}
+
+\item{adj_order}{Numerical order of affect adjectives, defaults to 1 =
+"happy", 2 = "confident", and 3 = "engaged".}
 
 \item{vb}{Use variational inference to get the approximate posterior? Default
 is \code{TRUE} for computational efficiency.}
