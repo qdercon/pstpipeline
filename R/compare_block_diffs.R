@@ -14,6 +14,7 @@
 #' models on. For example, if \code{min_blocks} is set to 3 and
 #' \code{max_blocks} is set to 4, then fits to blocks 1 to 3 and 1 to 4 will be
 #' outputted.
+#' @param save_mod_out Save model summaries and raw data separately?
 #' @param ... Other arguments to pass to [fit_learning_model()] and/or
 #' [parameter_glm()].
 #'
@@ -32,6 +33,7 @@ compare_block_diffs <-
            iter_sampling_glm = 4000,
            min_blocks = 1,
            max_blocks = 6,
+           save_mod_out = FALSE,
            ...) {
 
   l <- list(...)
@@ -72,7 +74,7 @@ compare_block_diffs <-
         save_model_as = paste(
           "first", i, "training_blocks", model, fit_typ, sep = "_"
           ),
-        outputs = c("raw_df", "summary"), save_outputs = FALSE, ...
+        outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
 
       par_df_ls[[i]] <- parameter_glm(
@@ -103,7 +105,7 @@ compare_block_diffs <-
         save_model_as = paste(
           "first", i, "training_blocks", model, grp_names[1], fit_typ, sep = "_"
           ),
-        outputs = c("raw_df", "summary"), save_outputs = FALSE, ...
+        outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
       first_n_blks_gr2 <- fit_learning_model(
         rel_data_gr2, model = model, exp_part = "training", vb = vb,
@@ -112,7 +114,7 @@ compare_block_diffs <-
         save_model_as = paste(
           "first", i, "training_blocks", model, grp_names[2], fit_typ, sep = "_"
           ),
-        outputs = c("raw_df", "summary"), save_outputs = FALSE, ...
+        outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
 
       par_df_ls[[i]] <- parameter_glm(

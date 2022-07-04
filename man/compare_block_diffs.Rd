@@ -17,6 +17,7 @@ compare_block_diffs(
   iter_sampling_glm = 4000,
   min_blocks = 1,
   max_blocks = 6,
+  save_mod_out = FALSE,
   ...
 )
 }
@@ -39,6 +40,8 @@ iterations to fit Bayesian GLMs with (passed to \code{\link[=parameter_glm]{para
 models on. For example, if \code{min_blocks} is set to 3 and
 \code{max_blocks} is set to 4, then fits to blocks 1 to 3 and 1 to 4 will be
 outputted.}
+
+\item{save_mod_out}{Save model summaries and raw data separately?}
 
 \item{...}{Other arguments to pass to \code{\link[=fit_learning_model]{fit_learning_model()}} and/or
 \code{\link[=parameter_glm]{parameter_glm()}}.}
