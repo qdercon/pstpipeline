@@ -322,7 +322,7 @@ import_single <- function(jatos_txt_file,
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
                   question_response = response, trial_time = time_elapsed) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
-    dplyr::mutate(trial_time = trial_time/60000) %>% # time in minutes
+    dplyr::mutate(trial_time = trial_time/60000 - min(trial_time)) %>% # minutes
     dplyr::mutate(
       question_type = ifelse(grepl("happy", stimulus), "happy",
                              ifelse(grepl("engaged", stimulus), "engaged",
@@ -486,7 +486,7 @@ import_single <- function(jatos_txt_file,
     dplyr::mutate(test_trial_no = dplyr::row_number()) %>%
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
                   question_response = response, trial_time = time_elapsed) %>%
-    dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
+    dplyr::mutate(trial_time = trial_time/60000 - min(trial_time)) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(question_type =
                     ifelse(grepl("happy", stimulus), "happy",
