@@ -85,10 +85,10 @@ make_par_df <- function(raw,
     dplyr::rename(posterior_mean = mean) %>%
     dplyr::right_join(ids, by = "id_no") %>%
     dplyr::group_by(subjID) %>%
-    dplyr::filter(dplyr::across(
+    dplyr::filter(dplyr::if_any(
       tidyselect::any_of("rhat"), ~!any(.x > rhat_upper))
     ) %>%
-    dplyr::filter(dplyr::across(
+    dplyr::filter(dplyr::if_any(
       tidyselect::any_of(
         tidyselect::starts_with("ess_b")), ~!any(.x < ess_lower)
     )) %>%
