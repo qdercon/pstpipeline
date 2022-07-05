@@ -8,15 +8,15 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
+**Full methods and results from this study can be found in the *PsyArXiv* preprint [[2](#References)].**
+
 This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
-This package is does not supercede or replace this work. Instead, its main aims are as follows:
+Instead, its main aims are as follows:
 
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
-
-**Full methods and results from this study can be found in the *PsyArXiv* preprint [[2](#References)].**
 
 ### Using the package
 
