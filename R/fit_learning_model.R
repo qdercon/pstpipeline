@@ -122,7 +122,8 @@ fit_learning_model <-
   }
 
   ## to appease R CMD check
-  subjID <- exclusion <- final_block_AB <- choice <- NULL
+  subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
+    question_type <- NULL
 
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl) {

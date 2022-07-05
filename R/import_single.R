@@ -127,7 +127,7 @@ import_single <- function(jatos_txt_file,
     BPQ_total <- SPQ_cognitive_perceptual <- SPQ_interpersonal <-
     SPQ_disorganised <- SPQ_total <- gender <- test_part <- trial_index <-
     trial_type <- correct <- timeout <- stimulus <- glyph_seq <- type <-
-    trial_no <- choice <- reward <- trial_block <- trial_no_group <-
+    trial_no <- choice <- reward <- points <- trial_block <- trial_no_group <-
     key_press <- correct_response <- cuml_accuracy_l20 <- slider_start <-
     response <- question_type <- question_slider_start <- question_rt <-
     question_response <- trial_time <- time_elapsed <- fatigue_rt <-
