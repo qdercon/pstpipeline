@@ -8,9 +8,9 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study.
 
-**Full methods and results from this study can be found in the *PsyArXiv* preprint [[2](#References)].**
+**Full methods and results from this study can be found in the *PsyArXiv* preprint [[1](#References)].**
 
-This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
+This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[2](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
 Instead, its main aims are as follows:
 
@@ -99,9 +99,9 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 ### References
 
-1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
+1. Q. Dercon*, S. Z. Mehrhof*, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
 
-2. Q. Dercon*, S. Z. Mehrhof*, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
+2.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
 3.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
 
