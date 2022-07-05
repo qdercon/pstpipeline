@@ -130,10 +130,11 @@ import_single <- function(jatos_txt_file,
     trial_no <- choice <- reward <- trial_block <- trial_no_group <-
     key_press <- correct_response <- cuml_accuracy_l20 <- slider_start <-
     response <- question_type <- question_slider_start <- question_rt <-
-    question_response <- fatigue_rt <- fatigue_slider_start <-
-    fatigue_response <- participant_id <- Sex <- sex_prolific <- test_type <-
-    test_trial_no_group <- test_trial_no <- cuml_accuracy_test <- gillan_name <-
-    score <- enjoyment <- concentration <- NULL
+    question_response <- trial_time <- time_elapsed <- fatigue_rt <-
+    fatigue_slider_start <- fatigue_response <- participant_id <- Sex <-
+    sex_prolific <- test_type <- test_trial_no_group <- test_trial_no <-
+    cuml_accuracy_test <- gillan_name <- score <- enjoyment <- concentration <-
+    NULL
 
 
   ## demographics
@@ -319,14 +320,15 @@ import_single <- function(jatos_txt_file,
     dplyr::arrange(trial_index) %>%
     dplyr::mutate(trial_no = dplyr::row_number()) %>%
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
-                  question_response = response) %>%
+                  question_response = response, trial_time = time_elapsed) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
+    dplyr::mutate(trial_time = trial_time/60000) %>% # time in minutes
     dplyr::mutate(
       question_type = ifelse(grepl("happy", stimulus), "happy",
                              ifelse(grepl("engaged", stimulus), "engaged",
                                     ifelse(grepl("confident", stimulus),
                                            "confident", "fatigue")))) %>%
-    dplyr::select(subjID, trial_block, trial_no, question_type,
+    dplyr::select(subjID, trial_block, trial_no, trial_time, question_type,
                   question_slider_start, question_rt, question_response)
 
   fatigue_questions <- training_blocks %>%
@@ -483,15 +485,16 @@ import_single <- function(jatos_txt_file,
     dplyr::arrange(trial_index) %>%
     dplyr::mutate(test_trial_no = dplyr::row_number()) %>%
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
-                  question_response = response) %>%
+                  question_response = response, trial_time = time_elapsed) %>%
+    dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) %>%
     dplyr::mutate(question_type =
                     ifelse(grepl("happy", stimulus), "happy",
                            ifelse(grepl("engaged", stimulus), "engaged",
                                   ifelse(grepl("confident", stimulus),
                                          "confident", "fatigue")))) %>%
-    dplyr::select(subjID, test_trial_no, question_type, question_slider_start,
-                  question_rt, question_response)
+    dplyr::select(subjID, test_trial_no, trial_time, question_type,
+                  question_slider_start, question_rt, question_response)
 
   test <- test_trials %>%
     dplyr::left_join(test_questions, by=c("subjID", "test_trial_no")) %>%
