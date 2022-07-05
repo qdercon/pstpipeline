@@ -6,7 +6,7 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
-### an R package to clean, analyse, and present data from a large online learning study.
+### an R package to clean, analyse, and present data from a large online learning study
 
 **Full methods and results from this study can be found in the *PsyArXiv* preprint [[1](#References)].**
 
@@ -94,8 +94,6 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 - **other helper functions**
     - ```get_subsample``` is a function to obtain a smaller subsample of individuals from the larger dataset, which may be helpful for demonstration purposes.
     - ```get_preds_by_chain``` automates the loading of posterior predictions obtained from running ```generate_posterior_quantities``` for plotting, by importing and summing the binary choice predictions chain-by-chain, and collating them into far smaller summaries. It also includes an optional method which can help prevent memory overload when loading large numbers of predictions.
-    
-
 
 ### References
 
