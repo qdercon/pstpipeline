@@ -6,17 +6,17 @@
 
 **p**robabilistic **s**election **t**ask **pipeline**
 
-### an R package to clean, analyse, and present data from a large online learning study.
+### an R package to clean, analyse, and present data from a large online learning study
 
-This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
+**Full methods and results from this study can be found in the *PsyArXiv* preprint [[1](#References)].**
 
-This package is does not supercede or replace this work. Instead, its main aims are as follows:
+This package is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[2](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
+
+Instead, its main aims are as follows:
 
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
-
-**Full methods and results from this study can be found in the *PsyArXiv* preprint [[2](#References)].**
 
 ### Using the package
 
@@ -94,14 +94,12 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 - **other helper functions**
     - ```get_subsample``` is a function to obtain a smaller subsample of individuals from the larger dataset, which may be helpful for demonstration purposes.
     - ```get_preds_by_chain``` automates the loading of posterior predictions obtained from running ```generate_posterior_quantities``` for plotting, by importing and summing the binary choice predictions chain-by-chain, and collating them into far smaller summaries. It also includes an optional method which can help prevent memory overload when loading large numbers of predictions.
-    
-
 
 ### References
 
-1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
+1. Q. Dercon*, S. Z. Mehrhof*, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
 
-2. Q. Dercon*, S. Z. Mehrhof*, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord, A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
+2.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
 
 3.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
 

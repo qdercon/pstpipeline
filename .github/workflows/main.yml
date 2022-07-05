@@ -1,5 +1,4 @@
 # Workflow derived from https://github.com/r-lib/actions/tree/master/examples
-# Currently installs "pillar" package from GitHub due to conflicts with 1.6.5 on CRAN
 name: R-CMD-check
 
 on:
@@ -15,8 +14,8 @@ jobs:
     strategy:
       matrix:
         config:
-          - {os: macOS-latest,   R: '4.1.2'}
-          - {os: windows-latest, R: '4.1.2'}
+          - {os: macOS-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
       
     steps:
       - uses: actions/checkout@v2
