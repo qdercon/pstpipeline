@@ -20,7 +20,7 @@ plot_raincloud(
   flip = TRUE,
   cred = c(0.95, 0.99),
   dist_nudge = 0.1,
-  box_width = 0.6,
+  box_width = 0.1,
   points = c(size = 0.25, width = 0.15, nudge = 0.225),
   pal = NULL,
   font_size = 11,
