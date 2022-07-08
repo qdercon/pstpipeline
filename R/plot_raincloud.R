@@ -29,8 +29,8 @@
 #' @param dist_nudge Controls the position of the distribution plots in the
 #' x-direction.
 #' @param box_width Control the total width of the boxplot(s).
-#' @param points Either a named list of point size, width, and nudge, or
-#' \code{NULL} to points from the plot entirely.
+#' @param points Either a named list of point size, width, and alpha, or
+#' \code{NULL} to omit points from the plot entirely.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
 #' @importFrom magrittr %>%
@@ -54,8 +54,8 @@ plot_raincloud <- function(summary_df,
                            cred = c(0.95, 0.99),
                            dist_nudge = 0.1,
                            box_width = 0.1,
-                           points = list(
-                             "size" = 0.25, "width" = 0.15, "nudge" = 0.225),
+                           points =
+                             list("size" = 0.25, "width" = 0.15, "alpha" = 1),
                            pal = NULL,
                            font_size = 11,
                            font = "") {
@@ -141,7 +141,8 @@ plot_raincloud <- function(summary_df,
     ggplot2::geom_point(
       ggplot2::aes(x = as.numeric(!!type) - 0.225),
       position = ggplot2::position_jitter(width = points[[2]], height = 0),
-      size = points[[1]]
+      size = points[[1]],
+      alpha = points[[3]]
     ) +
     ggplot2::stat_summary(
       geom = "boxplot",
