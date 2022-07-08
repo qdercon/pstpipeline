@@ -26,6 +26,7 @@
 #' @param flip Boolean indicating if the axes should be flipped.
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot
 #' boxes and lines respectively.
+#' @param box_width,point_width Control the size of the boxes and points.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
 #' @importFrom magrittr %>%
@@ -47,6 +48,8 @@ plot_raincloud <- function(summary_df,
                            factor_scores = NULL,
                            flip = TRUE,
                            cred = c(0.95, 0.99),
+                           box_width = 0.1,
+                           point_width = 0.15,
                            pal = NULL,
                            font_size = 11,
                            font = "") {
@@ -124,11 +127,10 @@ plot_raincloud <- function(summary_df,
   }
 
   rain_plot <- rain_plot +
-    geom_flat_violin(position = ggplot2::position_nudge(x = .075, y = 0),
-                     adjust = 2, trim = FALSE) +
+    geom_flat_violin() +
     ggplot2::geom_point(ggplot2::aes(x = as.numeric(!!type) - 0.225),
                         position = ggplot2::position_jitter(
-                          width = .15, height = 0
+                          width = point_width, height = 0
                           ),
                         size = .25) +
     ggplot2::stat_summary(
@@ -142,7 +144,7 @@ plot_raincloud <- function(summary_df,
       },
       position = ggplot2::position_dodge2(),
       alpha = 0.6,
-      width = 0.1
+      width = box_width
     ) +
     cowplot::theme_half_open(
       font_size = font_size,

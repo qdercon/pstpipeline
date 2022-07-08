@@ -19,6 +19,8 @@ plot_raincloud(
   factor_scores = NULL,
   flip = TRUE,
   cred = c(0.95, 0.99),
+  box_width = 0.1,
+  point_width = 0.15,
   pal = NULL,
   font_size = 11,
   font = ""
@@ -58,6 +60,8 @@ factor scores, required if \code{type = "factor"}.}
 
 \item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot
 boxes and lines respectively.}
+
+\item{box_width, point_width}{Control the size of the boxes and points.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
