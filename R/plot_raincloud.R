@@ -29,7 +29,7 @@
 #' @param dist_nudge Controls the position of the distribution plots in the
 #' x-direction.
 #' @param box_width Control the total width of the boxplot(s).
-#' @param points Either a named vector of point size, width, and nudge, or
+#' @param points Either a named list of point size, width, and nudge, or
 #' \code{NULL} to points from the plot entirely.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
@@ -54,8 +54,8 @@ plot_raincloud <- function(summary_df,
                            cred = c(0.95, 0.99),
                            dist_nudge = 0.1,
                            box_width = 0.1,
-                           points =
-                             c("size" = 0.25, "width" = 0.15, "nudge" = 0.225),
+                           points = list(
+                             "size" = 0.25, "width" = 0.15, "nudge" = 0.225),
                            pal = NULL,
                            font_size = 11,
                            font = "") {
