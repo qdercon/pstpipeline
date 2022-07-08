@@ -139,7 +139,7 @@ plot_raincloud <- function(summary_df,
       trim = FALSE
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(x = as.numeric(!!type) - points[[3]]),
+      ggplot2::aes(x = as.numeric(!!type) - 0.225),
       position = ggplot2::position_jitter(width = points[[2]], height = 0),
       size = points[[1]]
     ) +
