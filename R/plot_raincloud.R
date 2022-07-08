@@ -128,7 +128,7 @@ plot_raincloud <- function(summary_df,
 
   rain_plot <- rain_plot +
     geom_flat_violin(
-      postion = ggplot2::position_nudge(x = .075, y = 0),
+      position = ggplot2::position_nudge(x = .075, y = 0),
       adjust = 2,
       trim = FALSE
     ) +
