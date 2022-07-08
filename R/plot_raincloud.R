@@ -102,7 +102,6 @@ plot_raincloud <- function(summary_df,
       ggplot2::guides(colour = "none", fill = "none") +
       ggplot2::scale_colour_manual(values = pal) +
       ggplot2::scale_fill_manual(values = pal)
-    by_length <- 1
   }
   else {
     by <- rlang::sym(by)
@@ -111,7 +110,9 @@ plot_raincloud <- function(summary_df,
       ggplot2::ggplot(ggplot2::aes(x = !!type, y = value, fill = factor(!!by),
                                    colour = interaction(!!by, !!type))) +
       ggplot2::guides(colour = "none") +
-      ggplot2::scale_colour_manual(values = pal[c(1:2, 1:2, 1:2)])
+      ggplot2::scale_colour_manual(
+        values = pal[c(1:by_length, 1:by_length, 1:by_length)]
+      )
     if (!is.null(legend_labels)) {
       rain_plot <- rain_plot +
         ggplot2::scale_fill_manual(values = pal, name = legend_title,
