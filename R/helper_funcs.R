@@ -63,8 +63,9 @@ make_par_df <- function(raw,
                         ess_lower) {
   subjID <- variable <- . <- matches <- NULL # appease R CMD check
   ids <- raw %>%
-    dplyr::distinct(subjID) %>%
+    dplyr::distinct(subjID, .keep_all = TRUE) %>%
     dplyr::mutate(id_no = dplyr::row_number())
+
   n_id <- length(ids$subjID)
 
   summ <- summary %>%
