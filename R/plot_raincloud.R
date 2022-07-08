@@ -127,12 +127,16 @@ plot_raincloud <- function(summary_df,
   }
 
   rain_plot <- rain_plot +
-    geom_flat_violin(adjust = 2, trim = FALSE) +
-    ggplot2::geom_point(ggplot2::aes(x = as.numeric(!!type) - 0.225),
-                        position = ggplot2::position_jitter(
-                          width = point_width, height = 0
-                          ),
-                        size = .25) +
+    geom_flat_violin(
+      postion = ggplot2::position_nudge(x = .075, y = 0),
+      adjust = 2,
+      trim = FALSE
+    ) +
+    ggplot2::geom_point(
+      ggplot2::aes(x = as.numeric(!!type) - 0.225),
+      position = ggplot2::position_jitter(width = point_width, height = 0),
+      size = .25
+    ) +
     ggplot2::stat_summary(
       geom = "boxplot",
       fun.data = function(x) {
