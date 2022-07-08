@@ -26,11 +26,11 @@
 #' @param flip Boolean indicating if the axes should be flipped.
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot
 #' boxes and lines respectively.
-#' @param box_alpha,box_width,box_nudge Control the transparency, size, and
-#' position of the summary boxplot.
-#' @param points Include points on plot (can get dense)?
-#' @param point_size,point_width,point_nudge Control the size, width, and
-#' position of the points.
+#' @param dist_nudge Controls the position of the distribution plots in the
+#' x-direction.
+#' @param box_width Control the total width of the boxplot(s).
+#' @param points Either a named vector of point size, width, and nudge, or
+#' \code{NULL} to points from the plot entirely.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
 #' @importFrom magrittr %>%
@@ -52,13 +52,10 @@ plot_raincloud <- function(summary_df,
                            factor_scores = NULL,
                            flip = TRUE,
                            cred = c(0.95, 0.99),
-                           box_width = 0.1,
-                           box_nudge = 0.1,
-                           box_alpha = 0.6,
-                           points = TRUE,
-                           point_size = 0.25,
-                           point_width = 0.15,
-                           point_nudge = 0.225,
+                           dist_nudge = 0.1,
+                           box_width = 0.6,
+                           points =
+                             c("size" = 0.25, "width" = 0.15, "nudge" = 0.225),
                            pal = NULL,
                            font_size = 11,
                            font = "") {
@@ -136,12 +133,22 @@ plot_raincloud <- function(summary_df,
   }
 
   rain_plot <- rain_plot +
-    geom_flat_violin() +
-    ggplot2::geom_point(
-      ggplot2::aes(x = as.numeric(!!type) - point_nudge),
-      position = ggplot2::position_jitter(width = point_width, height = 0),
-      size = point_size
-    ) +
+    geom_flat_violin(
+      position = ggplot2::position_nudge(x = dist_nudge, y = 0),
+      adjust = 2,
+      trim = FALSE
+    )
+
+  if (!is.null(points)) {
+    rain_plot <- rain_plot +
+      ggplot2::geom_point(
+        ggplot2::aes(x = as.numeric(!!type) - points[3]),
+        position = ggplot2::position_jitter(width = points[2], height = 0),
+        size = points[1]
+      )
+  }
+
+  rain_plot <- rain_plot +
     ggplot2::stat_summary(
       geom = "boxplot",
       fun.data = function(x) {
@@ -151,8 +158,8 @@ plot_raincloud <- function(summary_df,
             transform = FALSE), c("ymin", "lower", "middle", "upper", "ymax")
           )
       },
-      position = ggplot2::position_nudge(x = -box_nudge),
-      alpha = box_alpha,
+      position = ggplot2::position_dodge2(),
+      alpha = 0.6,
       width = box_width
     ) +
     cowplot::theme_half_open(
