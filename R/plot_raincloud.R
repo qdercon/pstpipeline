@@ -127,7 +127,7 @@ plot_raincloud <- function(summary_df,
   }
 
   rain_plot <- rain_plot +
-    geom_flat_violin() +
+    geom_flat_violin(adjust = 2, trim = FALSE) +
     ggplot2::geom_point(ggplot2::aes(x = as.numeric(!!type) - 0.225),
                         position = ggplot2::position_jitter(
                           width = point_width, height = 0
