@@ -54,6 +54,8 @@ plot_raincloud <- function(summary_df,
                            cred = c(0.95, 0.99),
                            dist_nudge = 0.1,
                            box_width = 0.1,
+                           points =
+                             c("size" = 0.25, "width" = 0.15, "nudge" = 0.225),
                            pal = NULL,
                            font_size = 11,
                            font = "") {
@@ -161,7 +163,7 @@ plot_raincloud <- function(summary_df,
     ggplot2::theme(legend.position = legend_pos)
 
 
-  if (is.null(points)) {
+  if (any(is.null(points))) {
     rain_plot$layers <- rain_plot$layers[c(1,3)]
   }
 

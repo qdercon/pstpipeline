@@ -21,6 +21,7 @@ plot_raincloud(
   cred = c(0.95, 0.99),
   dist_nudge = 0.1,
   box_width = 0.1,
+  points = c(size = 0.25, width = 0.15, nudge = 0.225),
   pal = NULL,
   font_size = 11,
   font = ""
@@ -66,10 +67,10 @@ x-direction.}
 
 \item{box_width}{Control the total width of the boxplot(s).}
 
-\item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
-
 \item{points}{Either a named vector of point size, width, and nudge, or
 \code{NULL} to points from the plot entirely.}
+
+\item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
 \description{
 \code{plot_raincloud} plots simple "raincloud" plots of posterior densities,
