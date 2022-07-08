@@ -20,7 +20,12 @@ plot_raincloud(
   flip = TRUE,
   cred = c(0.95, 0.99),
   box_width = 0.1,
+  box_nudge = 0.1,
+  box_alpha = 0.6,
+  points = TRUE,
+  point_size = 0.25,
   point_width = 0.15,
+  point_nudge = 0.225,
   pal = NULL,
   font_size = 11,
   font = ""
@@ -61,7 +66,13 @@ factor scores, required if \code{type = "factor"}.}
 \item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot
 boxes and lines respectively.}
 
-\item{box_width, point_width}{Control the size of the boxes and points.}
+\item{box_alpha, box_width, box_nudge}{Control the transparency, size, and
+position of the summary boxplot.}
+
+\item{points}{Include points on plot (can get dense)?}
+
+\item{point_size, point_width, point_nudge}{Control the size, width, and
+position of the points.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
