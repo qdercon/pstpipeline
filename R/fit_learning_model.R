@@ -162,6 +162,7 @@ fit_learning_model <-
                      ifelse(question_type == adj_order[2], 2, 3)
               )
           ) %>%
+          dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) %>%
           dplyr::group_by(subjID, trial_block) %>%
           dplyr::mutate(block_time = trial_time - min(trial_time)) %>%
           dplyr::group_by(subjID, question_type) %>%
