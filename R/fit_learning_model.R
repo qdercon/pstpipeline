@@ -162,9 +162,10 @@ fit_learning_model <-
                      ifelse(question_type == adj_order[2], 2, 3)
               )
           ) %>%
+          dplyr::group_by(subjID, trial_block) %>%
+          dplyr::mutate(block_time = trial_time - min(trial_time)) %>%
           dplyr::group_by(subjID, question_type) %>%
-          dplyr::arrange(trial_no) %>%
-          dplyr::mutate(trial_no_q = dplyr::row_number()) %>%
+          dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) %>%
           dplyr::ungroup()
 
           raw_df <- data.table::as.data.table(training_df)

@@ -115,7 +115,8 @@ preprocess_func_affect <- function(raw_data, general_info) {
 
   # Initialize (model-specific) data arrays
   affect <- array(0, c(n_subj, t_max))
-  blocks <- array(0, c(n_subj, t_max))
+  ovl_time  <- array(0, c(n_subj, t_max))
+  blk_time  <- array(0, c(n_subj, t_max))
   question <- array(0, c(n_subj, t_max))
 
   option1 <- array(-1, c(n_subj, t_max))
@@ -133,22 +134,24 @@ preprocess_func_affect <- function(raw_data, general_info) {
     choice[i, 1:t]  <- DT_subj$choice
     reward[i, 1:t]  <- DT_subj$reward
     question[i, 1:t]  <- DT_subj$question
-    blocks[i, 1:t] <- DT_subj$trial_block
+    ovl_time[i, 1:t] <- DT_subj$trial_time / 60 # in hours
+    blk_time[i, 1:t] <- DT_subj$block_time / 60
     affect[i, 1:t] <- DT_subj$question_response / 100
   }
 
   # Wrap into a list for Stan
   data_list <- list(
-    N          = n_subj,
-    T          = t_max,
-    Tsubj      = t_subjs,
-    option1    = option1,
-    option2    = option2,
-    choice     = choice,
-    reward     = reward,
-    affect     = affect,
-    blocks     = blocks,
-    question   = question
+    N        = n_subj,
+    T        = t_max,
+    Tsubj    = t_subjs,
+    option1  = option1,
+    option2  = option2,
+    choice   = choice,
+    reward   = reward,
+    affect   = affect,
+    ovl_time = ovl_time,
+    blk_time = blk_time,
+    question = question
   )
   # Returned data_list will directly be passed to Stan
   return(data_list)

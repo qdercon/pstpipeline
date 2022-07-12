@@ -1,4 +1,8 @@
 // Gain-loss Q-learning model for PST training data with affect data extension
+// References: 
+// https://www.pnas.org/doi/10.1073/pnas.1407535111
+// https://osf.io/9g2zw (replication of the above with Stan code)
+// https://psyarxiv.com/bwv58 (passage-of-time-dysphoria, inspired time pars)
 data {
   int<lower=1> N;                // Number of subjects
   int<lower=1> T;               // Maximum # of trials
@@ -11,7 +15,8 @@ data {
   
   real<lower=0, upper=1> affect[N, T];
   int<lower=0, upper=3> question[N, T];
-  int<lower=0> blocks[N, T];
+  real<lower=0> ovl_time[N, T];
+  real<lower=0> blk_time[N, T];
 }
 
 transformed data {
@@ -28,8 +33,12 @@ parameters {
   real<lower=2> nu; // minimum 2 df
   
   // weights
-  real mu_wt[4, 3];
-  real<lower=0> sigma_wt[4, 3];
+  real mu_wt[5, 3];
+  real<lower=0> sigma_wt[5, 3];
+  
+  // decay factor (gamma)
+  real<lower=0> alpha_g[3];
+  real<lower=0> beta_g[3];
 
   // scale parameter (sigma_t)
   real<lower=0> alpha_s;
@@ -42,16 +51,13 @@ parameters {
   
   // individual-level weights
   real w0[N, 3];
-  real w1[N, 3];
+  real w1_o[N, 3];
+  real w1_b[N, 3];
   real w2[N, 3];
   real w3[N, 3];
 
   real<lower=0, upper=1> gamma[N, 3]; // forgetting factor
   vector<lower=0>[N] sigma_t; // scale of t distribution
-  
-  // decay factor (gamma)
-  // real<lower=0> alpha_g[3];
-  // real<lower=0> beta_g[3];
 }
 
 transformed parameters {
@@ -76,10 +82,11 @@ model {
 
   // priors on the weights
   for (p in 1:3) {
-    w0[:, p] ~ normal(mu_wt[1, p], sigma_wt[1, p]);
-    w1[:, p] ~ normal(mu_wt[2, p], sigma_wt[2, p]);
-    w2[:, p] ~ normal(mu_wt[3, p], sigma_wt[3, p]);
-    w3[:, p] ~ normal(mu_wt[4, p], sigma_wt[4, p]);
+    w0[:, p]   ~ normal(mu_wt[1, p], sigma_wt[1, p]);
+    w1_o[:, p] ~ normal(mu_wt[2, p], sigma_wt[2, p]);
+    w1_b[:, p] ~ normal(mu_wt[3, p], sigma_wt[3, p]);
+    w2[:, p]   ~ normal(mu_wt[4, p], sigma_wt[4, p]);
+    w3[:, p]   ~ normal(mu_wt[5, p], sigma_wt[5, p]);
   }
 
   // priors on the t distribution
@@ -87,12 +94,8 @@ model {
   nu       ~ exponential(0.1);
   
   // priors on gamma
-  /*for (p in 1:3) {
-    gamma[:, p] ~ beta(alpha_g[p], beta_g[p]);
-  }*/
-  
   for (p in 1:3) {
-    gamma[:, p] ~ beta(1, 1);
+    gamma[:, p] ~ beta(alpha_g[p], beta_g[p]);
   }
 
   // hyperpriors on the weights
@@ -106,8 +109,8 @@ model {
   beta_s   ~ uniform(0.001, 1000);
   
   //hyperpriors on gamma
-  // alpha_g  ~ gamma(1, 0.1);
-  // beta_g   ~ gamma(1, 0.1);
+  alpha_g  ~ gamma(1, 0.1);
+  beta_g   ~ gamma(1, 0.1);
 
   for (i in 1:N) {
     int co;                       // Chosen option
@@ -142,7 +145,9 @@ model {
       
       affect[i, t] ~ student_t(
         nu,
-        w0[i, question[i, t]] * pow(blocks[i, t], w1[i, question[i, t]]) +
+        w0[i, question[i, t]] + 
+        w1_o[i, question[i, t]] * ovl_time[i, t] +
+        w1_b[i, question[i, t]] * blk_time[i, t] +
         w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
         sigma_t[i]
@@ -157,10 +162,12 @@ generated quantities {
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
 
-  real<lower=0,upper=1>  mu_w0[3];
-  real<lower=0,upper=1>  mu_w1[3];
-  real<lower=0,upper=1>  mu_w2[3];
-  real<lower=0,upper=1>  mu_w3[3];
+  real mu_w0[3];
+  real mu_w1_o[3];
+  real mu_w1_b[3];
+  real mu_w2[3];
+  real mu_w3[3];
+  real mu_gamma[3];
 
   // For log-likelihood calculation
   real log_lik[N];
@@ -177,10 +184,12 @@ generated quantities {
   mu_beta      = Phi_approx(mu_ql_pr[3]) * 10;
   
   for (p in 1:3) {
-    mu_w0[p] = Phi_approx(mu_wt[1, p]);
-    mu_w1[p] = Phi_approx(mu_wt[2, p]);
-    mu_w2[p] = Phi_approx(mu_wt[3, p]);
-    mu_w3[p] = Phi_approx(mu_wt[4, p]);
+    mu_w0[p]    = Phi_approx(mu_wt[1, p]);
+    mu_w1_o[p]  = Phi_approx(mu_wt[2, p]);
+    mu_w1_b[p]  = Phi_approx(mu_wt[3, p]);
+    mu_w2[p]    = Phi_approx(mu_wt[4, p]);
+    mu_w3[p]    = Phi_approx(mu_wt[5, p]);
+    mu_gamma[p] = (alpha_g[p] - 1) / (alpha_g[p] + beta_g[p] - 2) // mode
   }
   
   {
@@ -219,7 +228,9 @@ generated quantities {
       
         y_pred[i, t] = student_t_rng(
           nu,
-          w0[i, question[i, t]] * pow(blocks[i, t], w1[i, question[i, t]]) +
+          w0[i, question[i, t]] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
+          w1_b[i, question[i, t]] * blk_time[i, t] +
           w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
           w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
