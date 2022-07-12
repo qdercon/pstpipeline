@@ -189,6 +189,6 @@ generated quantities {
     mu_w1_b[p]  = Phi_approx(mu_wt[3, p]);
     mu_w2[p]    = Phi_approx(mu_wt[4, p]);
     mu_w3[p]    = Phi_approx(mu_wt[5, p]);
-    mu_gamma[p] = (alpha_g[p] - 1) / (alpha_g[p] + beta_g[p] - 2) // mode
+    mu_gamma[p] = (alpha_g[p] - 1) / (alpha_g[p] + beta_g[p] - 2); // mode
   }
 }
