@@ -36,9 +36,10 @@ parameters {
   real mu_wt[5, 3];
   real<lower=0> sigma_wt[5, 3];
 
-  // decay factor (gamma)
+  /* decay factor (gamma)
   real<lower=0> alpha_g[3];
   real<lower=0> beta_g[3];
+  */
 
   // scale parameter (sigma_t)
   real<lower=0> alpha_s;
@@ -93,9 +94,14 @@ model {
   sigma_t  ~ gamma(alpha_s, beta_s);
   nu       ~ exponential(0.1);
 
-  // priors on gamma
+  /*
   for (p in 1:3) {
     gamma[:, p] ~ beta(alpha_g[p], beta_g[p]);
+  }*/
+
+  // priors on gamma - not including hyperpriors improves fit.
+  for (p in 1:3) {
+    gamma[:, p] ~ beta(1, 1);
   }
 
   // hyperpriors on the weights
@@ -108,9 +114,9 @@ model {
   alpha_s  ~ uniform(0.001, 1000);
   beta_s   ~ uniform(0.001, 1000);
 
-  //hyperpriors on gamma
+  /*// hyperpriors on gamma
   alpha_g  ~ gamma(1, 0.1);
-  beta_g   ~ gamma(1, 0.1);
+  beta_g   ~ gamma(1, 0.1);*/
 
   for (i in 1:N) {
     int co;                       // Chosen option
@@ -167,7 +173,7 @@ generated quantities {
   real mu_w1_b[3];
   real mu_w2[3];
   real mu_w3[3];
-  real mu_gamma[3];
+  // real mu_gamma[3];
 
   // For log-likelihood calculation
   real log_lik[N];
@@ -189,7 +195,7 @@ generated quantities {
     mu_w1_b[p]  = Phi_approx(mu_wt[3, p]);
     mu_w2[p]    = Phi_approx(mu_wt[4, p]);
     mu_w3[p]    = Phi_approx(mu_wt[5, p]);
-    mu_gamma[p] = (alpha_g[p] - 1) / (alpha_g[p] + beta_g[p] - 2); // mode
+    // mu_gamma[p] = (alpha_g[p] - 1) / (alpha_g[p] + beta_g[p] - 2); // mode
   }
 
   {
