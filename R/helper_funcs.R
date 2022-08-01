@@ -69,20 +69,23 @@ make_par_df <- function(raw,
   n_id <- length(ids$subjID)
 
   summ <- summary %>%
-    dplyr::filter(grepl("alpha|beta", variable)) %>%
-    dplyr::filter(!grepl("_pr", variable)) %>%
-    dplyr::filter(!grepl("mu_", variable)) %>%
+    dplyr::filter(grepl("alpha|beta|gamma|w", variable)) %>%
+    dplyr::filter(!grepl("_pr|mu_|sigma|_s", variable)) %>%
     dplyr::select(
       variable, mean, tidyselect::any_of(matches("ess|rhat"))
     ) %>%
     dplyr::mutate(
-      id_no = as.numeric(
-        sub("\\].*$", "",
-        sub(".*\\[", "", .[["variable"]]))
-        )
-      ) %>%
-    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
-    dplyr::rename(parameter = variable) %>%
+      id_all = sub("\\].*$", "", sub(".*\\[", "", .[["variable"]]))
+    ) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(
+      id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
+      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2])
+    ) %>%
+    # NA unless affect model
+    dplyr::ungroup() %>%
+    dplyr::mutate(parameter = sub("\\[.*$", "", .[["variable"]])) %>%
+    dplyr::select(-variable, -id_all) %>%
     dplyr::rename(posterior_mean = mean) %>%
     dplyr::right_join(ids, by = "id_no") %>%
     dplyr::group_by(subjID) %>%
@@ -93,6 +96,9 @@ make_par_df <- function(raw,
       tidyselect::any_of(
         tidyselect::starts_with("ess_b")), ~!any(.x < ess_lower)
     )) %>%
+    dplyr::select(
+      tidyselect::vars_select_helpers$where(~!all(is.na(.x)))
+    ) %>%
     dplyr::ungroup()
 
   lost_ids <- n_id - length(unique(summ$subjID))
