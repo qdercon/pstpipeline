@@ -54,7 +54,7 @@ quantile_hdi <- function(var,
   return(ret)
 }
 family_ch <- function(param) {
-  if (grepl("alpha", param)) return(Gamma(link = "log"))
+  if (grepl("alpha|gamma", param)) return(Gamma(link = "log"))
   else return(gaussian())
 }
 make_par_df <- function(raw,
