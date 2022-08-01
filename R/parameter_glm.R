@@ -15,6 +15,8 @@
 #' Used to correctly link subject IDs to independent variables.
 #' @param var_of_interest Variable of interest.
 #' @param covariates Vector of covariates to control for in the GLMs.
+#' @param affect_number For affect model fits, specify the number (i.e., 1, 2,
+#' or 3) of the affect noun/verb of interest.
 #' @param interaction Optional variable to interact with the variable of
 #' interest. The GLMs will then be run twice with this variable reverse coded
 #' the second time to obtain posterior samples for the variable of interest in
@@ -40,6 +42,7 @@ parameter_glm <- function(summary_df = list(),
                           raw_df = list(),
                           var_of_interest,
                           covariates,
+                          affect_number = NULL,
                           interaction = NULL,
                           recode_na = NULL,
                           factor_scores = NULL,
@@ -71,6 +74,10 @@ parameter_glm <- function(summary_df = list(),
   if (!is.null(factor_scores)) {
     all_data <- all_data %>%
       dplyr::left_join(factor_scores, by = "subjID")
+  }
+  if ("aff_num" %in% colnames(all_data)) {
+    if (is.null(affect_number)) stop("Affect number not specified.")
+    else all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
   }
 
   formula <- paste0("posterior_mean ~ ",

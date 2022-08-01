@@ -10,6 +10,7 @@ parameter_glm(
   raw_df = list(),
   var_of_interest,
   covariates,
+  affect_number = NULL,
   interaction = NULL,
   recode_na = NULL,
   factor_scores = NULL,
@@ -28,6 +29,9 @@ Used to correctly link subject IDs to independent variables.}
 \item{var_of_interest}{Variable of interest.}
 
 \item{covariates}{Vector of covariates to control for in the GLMs.}
+
+\item{affect_number}{For affect model fits, specify the number (i.e., 1, 2,
+or 3) of the affect noun/verb of interest.}
 
 \item{interaction}{Optional variable to interact with the variable of
 interest. The GLMs will then be run twice with this variable reverse coded
