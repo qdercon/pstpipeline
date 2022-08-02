@@ -76,8 +76,19 @@ parameter_glm <- function(summary_df = list(),
       dplyr::left_join(factor_scores, by = "subjID")
   }
   if ("aff_num" %in% colnames(all_data)) {
-    if (is.null(affect_number)) stop("Affect number not specified.")
-    else all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
+    if (is.null(affect_number)) {
+      warning(
+        "Affect number not specified, defaulting to Q-learning parameters."
+      )
+      all_data <- all_data %>%
+        dplyr::filter(is.na(aff_num)) %>%
+        dplyr::distinct(subjID, .keep_all = TRUE)
+      return(all_data)
+    }
+    else {
+      all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
+      return(all_data)
+    }
   }
 
   formula <- paste0("posterior_mean ~ ",
