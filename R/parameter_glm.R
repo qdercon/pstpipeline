@@ -81,8 +81,7 @@ parameter_glm <- function(summary_df = list(),
         "Affect number not specified, defaulting to Q-learning parameters."
       )
       all_data <- all_data %>%
-        dplyr::filter(is.na(aff_num)) %>%
-        dplyr::distinct(subjID, .keep_all = TRUE)
+        dplyr::filter(is.na(aff_num))
       return(all_data)
     }
     else {
