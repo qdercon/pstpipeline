@@ -75,16 +75,8 @@ plot_recovery <- function(raw_pars,
       ggplot2::ggtitle(
         bquote(
           .(rlang::parse_expr(
-              paste0(strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                     ifelse(!alpha, "",
-                            ifelse(!is.null(alpha_par_nms),
-                                   paste0("[", alpha_par_nms[p], "]"),
-                                   paste0("[", strsplit(par, "_")[[1]][2], "]")
-                                   )
-                            )
-                     )
-              )
-            )
+            axis_title(par, p, test, alpha_par, alpha_par_nms)
+            ))
         ),
         subtitle = bquote(
           r~"="~.(round(cor(pars_df[pars_df$parameter == par,]$obs_mean,

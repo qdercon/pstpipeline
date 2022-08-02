@@ -133,22 +133,12 @@ plot_glm <- function(
         ggplot2::scale_fill_manual(values = pal[p]) +
         ggplot2::scale_x_discrete(name = NULL, labels = y_labels) +
         ggplot2::scale_y_continuous(
-          name = bquote(
-            .(title) ~ .(
-              rlang::parse_expr(
-                paste0(
-                  strsplit(par, "_")[[1]][1], ifelse(test, "*minute", ""),
-                  ifelse(!alpha_par, "",
-                         ifelse(!is.null(alpha_par_nms),
-                                paste0("[", alpha_par_nms[p], "]"),
-                                paste0("[", strsplit(par, "_")[[1]][2], "]")
-                                )
-                         )
-                )
+          name = bquote(.(title) ~ .(
+            rlang::parse_expr(
+              axis_title(par, p, test, alpha_par, alpha_par_nms)
               )
-            )
-          )
-        ) +
+            ))
+          ) +
         cowplot::theme_half_open(
           font_size = font_size,
           font_family = font

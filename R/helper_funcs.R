@@ -111,3 +111,18 @@ make_par_df <- function(raw,
 
   return(par_df)
 }
+axis_title <- function(param, p, test, alpha_par, alpha_par_nms) {
+  if (grepl("w", param, fixed = TRUE)) param <- sub("w", "w_", param)
+  spl <- unlist(strsplit(param, "_"))
+  s <- ifelse(test, paste0(spl[1], "*minute"), spl[1])
+  if (length(spl) != 1) {
+    if (alpha_par & !is.null(alpha_par_nms)) {
+      a <- paste0("[", alpha_par_nms[p], "]")
+    }
+    else a <- paste0("[", spl[2], "]")
+    if (length(spl) == 3) {
+      a <- paste0(a, "^", spl[3])
+    }
+  } else a <- ""
+  return(paste0(s, a))
+}
