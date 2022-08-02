@@ -5,9 +5,10 @@
 #' summary tables and raw data from [fit_learning_model()], and outputting
 #' the results of GLMs quantifying the association between the individual-level
 #' posterior means of each parameter and the independent variable(s) of
-#' interest. Gamma GLMs with log link functions are used for learning rate
-#' models, while standard Gaussian models with identity link functions are used
-#' for models with inverse temperature as the response variable.
+#' interest. Gamma GLMs with log link functions are used for learning rate and
+#' decay factor models (i.e., positively skewed and constrained between 0 and 1)
+#' while standard Gaussian models with identity link functions are used for
+#' models with inverse temperature or weights as the response variable.
 #'
 #' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of
 #' interest.
@@ -16,7 +17,9 @@
 #' @param var_of_interest Variable of interest.
 #' @param covariates Vector of covariates to control for in the GLMs.
 #' @param affect_number For affect model fits, specify the number (i.e., 1, 2,
-#' or 3) of the affect noun/verb of interest.
+#' or 3) of the affect noun/verb of interest. If affect parameters are found in
+#' model summaries, and this is not specified, GLMs will default to standard
+#' Q-learning parameters.
 #' @param interaction Optional variable to interact with the variable of
 #' interest. The GLMs will then be run twice with this variable reverse coded
 #' the second time to obtain posterior samples for the variable of interest in
@@ -80,14 +83,9 @@ parameter_glm <- function(summary_df = list(),
       warning(
         "Affect number not specified, defaulting to Q-learning parameters."
       )
-      all_data <- all_data %>%
-        dplyr::filter(is.na(aff_num))
-      return(all_data)
+      all_data <- all_data %>% dplyr::filter(is.na(aff_num))
     }
-    else {
-      all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
-      return(all_data)
-    }
+    else all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
   }
 
   formula <- paste0("posterior_mean ~ ",

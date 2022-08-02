@@ -31,7 +31,9 @@ Used to correctly link subject IDs to independent variables.}
 \item{covariates}{Vector of covariates to control for in the GLMs.}
 
 \item{affect_number}{For affect model fits, specify the number (i.e., 1, 2,
-or 3) of the affect noun/verb of interest.}
+or 3) of the affect noun/verb of interest. If affect parameters are found in
+model summaries, and this is not specified, GLMs will default to standard
+Q-learning parameters.}
 
 \item{interaction}{Optional variable to interact with the variable of
 interest. The GLMs will then be run twice with this variable reverse coded
@@ -60,7 +62,8 @@ A \code{\link[posterior:draws_df]{posterior::draws_df()}}.
 summary tables and raw data from \code{\link[=fit_learning_model]{fit_learning_model()}}, and outputting
 the results of GLMs quantifying the association between the individual-level
 posterior means of each parameter and the independent variable(s) of
-interest. Gamma GLMs with log link functions are used for learning rate
-models, while standard Gaussian models with identity link functions are used
-for models with inverse temperature as the response variable.
+interest. Gamma GLMs with log link functions are used for learning rate and
+decay factor models (i.e., positively skewed and constrained between 0 and 1)
+while standard Gaussian models with identity link functions are used for
+models with inverse temperature or weights as the response variable.
 }
