@@ -204,7 +204,7 @@ generated quantities {
   mu_beta         = Phi_approx(mu_ql_pr[3]) * 10;
 
   for (p in 1:3) {
-    mu_q_gamma[p] = quantile(gamma, 0.5);
+    mu_q_gamma[p] = quantile(gamma[p], 0.5);
     mu_w0[p]      = Phi_approx(mu_wt[p, 1]);
     mu_w1_o[p]    = Phi_approx(mu_wt[p, 2]);
     mu_w1_b[p]    = Phi_approx(mu_wt[p, 3]);
@@ -247,7 +247,7 @@ generated quantities {
 
         decayvec[t] = pow(gamma[question[i, t], i], t - 1);
 
-        log_lik[i] += student_t_lpdf(
+        log_lik[i] += student_t_lpdf(affect[i, t] |
           nu,
           w0[question[i, t], i] +
           w1_o[question[i, t], i] * ovl_time[i, t] +
