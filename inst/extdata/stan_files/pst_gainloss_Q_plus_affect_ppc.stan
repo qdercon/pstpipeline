@@ -6,6 +6,7 @@
 //// https://osf.io/9g2zw (replication of the above with Stan code)
 //// https://psyarxiv.com/bwv58 (passage-of-time-dysphoria, inspired time pars)
 //------------------------------------------------------------------------------
+
 data {
   int<lower=1> N, T;            // # participants, max # of trials
   int<lower=1> Tsubj[N];       // # of trials for acquisition phase
@@ -251,6 +252,16 @@ generated quantities {
         ev_vec[t] = ev[co];
 
         decayvec[t] = pow(gamma[question[i, t], i], t - 1);
+
+        log_lik[i] += student_t_lpdf(
+          nu,
+          w0[question[i, t], i] +
+          w1_o[question[i, t], i] * ovl_time[i, t] +
+          w1_b[question[i, t], i] * blk_time[i, t] +
+          w2[question[i, t], i] * (reverse(ev_vec[:t]) * decayvec[:t]) +
+          w3[question[i, t], i] * (reverse(pe_vec[:t]) * decayvec[:t]),
+          sigma_t[i]
+        );
 
         y_pred[i, t] = student_t_rng(
           nu,

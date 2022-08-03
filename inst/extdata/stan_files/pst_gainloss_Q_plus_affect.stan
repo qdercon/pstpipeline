@@ -6,6 +6,7 @@
 //// https://osf.io/9g2zw (replication of the above with Stan code)
 //// https://psyarxiv.com/bwv58 (passage-of-time-dysphoria, inspired time pars)
 //------------------------------------------------------------------------------
+
 data {
   int<lower=1> N, T;            // # participants, max # of trials
   int<lower=1> Tsubj[N];       // # of trials for acquisition phase
@@ -182,7 +183,7 @@ model {
 }
 
 generated quantities {
-  // For group-level parameters
+// For group-level parameters
   real<lower=0,upper=1>  mu_alpha_pos;
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
@@ -197,13 +198,6 @@ generated quantities {
 
   // For log-likelihood calculation
   real log_lik[N];
-  real y_pred[N, T]; // will get NaNs for those not predicted
-
-  for (i in 1:N) {
-    for (t in 1:Tsubj[i]) {
-      y_pred[i, t] = -1;
-    }
-  };
 
   mu_alpha_pos    = Phi_approx(mu_ql_pr[1]);
   mu_alpha_neg    = Phi_approx(mu_ql_pr[2]);
@@ -216,5 +210,53 @@ generated quantities {
     mu_w1_b[p]    = Phi_approx(mu_wt[p, 3]);
     mu_w2[p]      = Phi_approx(mu_wt[p, 4]);
     mu_w3[p]      = Phi_approx(mu_wt[p, 5]);
+  }
+
+  {
+    for (i in 1:N) {
+      int co;                       // Chosen option
+      int aff_num;
+      real delta;                   // Difference between two options
+      real pe;                      // Prediction error
+      real alpha;
+      vector[6] ev;                 // Expected values per symbol
+      vector[Tsubj[i]] decayvec;
+      row_vector[Tsubj[i]] ev_vec;
+      row_vector[Tsubj[i]] pe_vec;
+
+      ev     = qvalue_init;
+      ev_vec = ev_vec_init[:Tsubj[i]];
+      pe_vec = pe_vec_init[:Tsubj[i]];
+
+      log_lik[i] = 0;
+
+      // Acquisition Phase
+      for (t in 1:Tsubj[i]) {
+        co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+
+        // Luce choice rule
+        delta = ev[option1[i, t]] - ev[option2[i, t]];
+        log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
+
+        pe = reward[i, t] - ev[co];
+        pe_vec[t] = pe;
+
+        alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
+        ev[co] += alpha * pe;
+        ev_vec[t] = ev[co];
+
+        decayvec[t] = pow(gamma[question[i, t], i], t - 1);
+
+        log_lik[i] += student_t_lpdf(
+          nu,
+          w0[question[i, t], i] +
+          w1_o[question[i, t], i] * ovl_time[i, t] +
+          w1_b[question[i, t], i] * blk_time[i, t] +
+          w2[question[i, t], i] * (reverse(ev_vec[:t]) * decayvec[:t]) +
+          w3[question[i, t], i] * (reverse(pe_vec[:t]) * decayvec[:t]),
+          sigma_t[i]
+        );
+      }
+    }
   }
 }
