@@ -41,7 +41,7 @@ parameters {
   real<lower=2> nu; // minimum 2 df
 
   // weights
-  array[3] vector[5] mu_wt;
+  array[3] vector[5] mu_wt_pr;
   array[3] vector<lower=0>[5] sigma_wt;
 
   // scale parameter (sigma_t)
@@ -83,11 +83,11 @@ transformed parameters {
   beta      = Phi_approx(mu_ql_pr[3] + sigma_ql[3] * beta_pr) * 10;
 
   for (p in 1:3) {
-    w0[p]   = Phi_approx(mu_wt[p, 1] + sigma_wt[p, 1] * w0_pr[p]);
-    w1_o[p] = Phi_approx(mu_wt[p, 2] + sigma_wt[p, 2] * w1_o_pr[p]);
-    w1_b[p] = Phi_approx(mu_wt[p, 3] + sigma_wt[p, 3] * w1_b_pr[p]);
-    w2[p]   = Phi_approx(mu_wt[p, 4] + sigma_wt[p, 4] * w2_pr[p]);
-    w3[p]   = Phi_approx(mu_wt[p, 5] + sigma_wt[p, 5] * w3_pr[p]);
+    w0[p]   = Phi_approx(mu_wt_pr[p, 1] + sigma_wt[p, 1] * w0_pr[p]);
+    w1_o[p] = Phi_approx(mu_wt_pr[p, 2] + sigma_wt[p, 2] * w1_o_pr[p]);
+    w1_b[p] = Phi_approx(mu_wt_pr[p, 3] + sigma_wt[p, 3] * w1_b_pr[p]);
+    w2[p]   = Phi_approx(mu_wt_pr[p, 4] + sigma_wt[p, 4] * w2_pr[p]);
+    w3[p]   = Phi_approx(mu_wt_pr[p, 5] + sigma_wt[p, 5] * w3_pr[p]);
   }
 }
 
@@ -98,7 +98,7 @@ model {
 
   // hyperpriors on the weights
   for (p in 1:3) {
-    mu_wt[p]    ~ normal(0, 1);
+    mu_wt_pr[p]    ~ normal(0, 1);
     sigma_wt[p] ~ uniform(0.001, 1000);
   }
 
@@ -110,7 +110,6 @@ model {
   alpha_s  ~ uniform(0.001, 1000);
   beta_s   ~ uniform(0.001, 1000);
 
-
   // priors on QL parameters
   alpha_pos_pr ~ normal(0, 1);
   alpha_neg_pr ~ normal(0, 1);
@@ -118,11 +117,11 @@ model {
 
   // priors on the weights
   for (p in 1:3) {
-    w0[p]   ~ normal(0, 1);
-    w1_o[p] ~ normal(0, 1);
-    w1_b[p] ~ normal(0, 1);
-    w2[p]   ~ normal(0, 1);
-    w3[p]   ~ normal(0, 1);
+    w0_pr[p]   ~ normal(0, 1);
+    w1_o_pr[p] ~ normal(0, 1);
+    w1_b_pr[p] ~ normal(0, 1);
+    w2_pr[p]   ~ normal(0, 1);
+    w3_pr[p]   ~ normal(0, 1);
   }
 
   // priors on gamma
@@ -212,11 +211,11 @@ generated quantities {
 
   for (p in 1:3) {
     mu_q_gamma[p] = quantile(gamma[p], 0.5);
-    mu_w0[p]      = Phi_approx(mu_wt[p, 1]);
-    mu_w1_o[p]    = Phi_approx(mu_wt[p, 2]);
-    mu_w1_b[p]    = Phi_approx(mu_wt[p, 3]);
-    mu_w2[p]      = Phi_approx(mu_wt[p, 4]);
-    mu_w3[p]      = Phi_approx(mu_wt[p, 5]);
+    mu_w0[p]      = Phi_approx(mu_wt_pr[p, 1]);
+    mu_w1_o[p]    = Phi_approx(mu_wt_pr[p, 2]);
+    mu_w1_b[p]    = Phi_approx(mu_wt_pr[p, 3]);
+    mu_w2[p]      = Phi_approx(mu_wt_pr[p, 4]);
+    mu_w3[p]      = Phi_approx(mu_wt_pr[p, 5]);
   }
 
   {
