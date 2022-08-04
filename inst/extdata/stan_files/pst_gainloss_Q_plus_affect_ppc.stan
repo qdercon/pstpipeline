@@ -237,21 +237,21 @@ generated quantities {
 
         log_lik[i] += student_t_lpdf(affect[i, t] |
           nu,
-          w0[question[i, t], i] +
-          w1_o[question[i, t], i] * ovl_time[i, t] +
-          w1_b[question[i, t], i] * blk_time[i, t] +
-          w2[question[i, t], i] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-          w3[question[i, t], i] * (reverse(pe_vec[:t]) * decayvec[:t]),
+          w0[i, question[i, t]] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
+          w1_b[i, question[i, t]] * blk_time[i, t] +
+          w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
+          w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
         );
 
         y_pred[i, t] = student_t_rng(
           nu,
-          w0[question[i, t], i] +
-          w1_o[question[i, t], i] * ovl_time[i, t] +
-          w1_b[question[i, t], i] * blk_time[i, t] +
-          w2[question[i, t], i] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-          w3[question[i, t], i] * (reverse(pe_vec[:t]) * decayvec[:t]),
+          w0[i, question[i, t]] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
+          w1_b[i, question[i, t]] * blk_time[i, t] +
+          w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
+          w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
         );
       }
