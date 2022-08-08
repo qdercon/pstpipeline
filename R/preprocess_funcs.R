@@ -114,10 +114,13 @@ preprocess_func_affect <- function(raw_data, general_info) {
   t_max   <- general_info$t_max
 
   # Initialize (model-specific) data arrays
-  affect <- array(0, c(n_subj, t_max))
+  affect    <- array(0, c(n_subj, t_max))
+  block_no  <- array(0, c(n_subj, t_max))
+  ovl_trial <- array(0, c(n_subj, t_max))
+  blk_trial <- array(0, c(n_subj, t_max))
   ovl_time  <- array(0, c(n_subj, t_max))
   blk_time  <- array(0, c(n_subj, t_max))
-  question <- array(0, c(n_subj, t_max))
+  question  <- array(0, c(n_subj, t_max))
 
   option1 <- array(-1, c(n_subj, t_max))
   option2 <- array(-1, c(n_subj, t_max))
@@ -129,29 +132,35 @@ preprocess_func_affect <- function(raw_data, general_info) {
     subj <- subjs[i]
     t <- t_subjs[i]
     DT_subj <- raw_data[raw_data$subjID == subj]
-    option1[i, 1:t] <- DT_subj$type %/% 10
-    option2[i, 1:t] <- DT_subj$type %% 10
-    choice[i, 1:t]  <- DT_subj$choice
-    reward[i, 1:t]  <- DT_subj$reward
+    option1[i, 1:t]   <- DT_subj$type %/% 10
+    option2[i, 1:t]   <- DT_subj$type %% 10
+    choice[i, 1:t]    <- DT_subj$choice
+    reward[i, 1:t]    <- DT_subj$reward
     question[i, 1:t]  <- DT_subj$question
-    ovl_time[i, 1:t] <- DT_subj$trial_time / 60 # in hours
-    blk_time[i, 1:t] <- DT_subj$block_time / 60
-    affect[i, 1:t] <- DT_subj$question_response / 100
+    block_no[i, 1:t]  <- DT_subj$trial_block
+    ovl_trial[i, 1:t] <- DT_subj$trial_no
+    blk_trial[i, 1:t] <- DT_subj$trial_no_block
+    ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
+    blk_time[i, 1:t]  <- DT_subj$block_time / 60
+    affect[i, 1:t]    <- DT_subj$question_response / 100
   }
 
   # Wrap into a list for Stan
   data_list <- list(
-    N        = n_subj,
-    T        = t_max,
-    Tsubj    = t_subjs,
-    option1  = option1,
-    option2  = option2,
-    choice   = choice,
-    reward   = reward,
-    affect   = affect,
-    ovl_time = ovl_time,
-    blk_time = blk_time,
-    question = question
+    N         = n_subj,
+    T         = t_max,
+    Tsubj     = t_subjs,
+    option1   = option1,
+    option2   = option2,
+    choice    = choice,
+    reward    = reward,
+    affect    = affect,
+    block_no  = block_no,
+    ovl_trial = ovl_trial,
+    blk_trial = blk_trial,
+    ovl_time  = ovl_time,
+    blk_time  = blk_time,
+    question  = question
   )
   # Returned data_list will directly be passed to Stan
   return(data_list)

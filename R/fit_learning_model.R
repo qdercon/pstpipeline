@@ -18,8 +18,11 @@
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param exp_part Fit to \code{training} or \code{test}?
 #' @param affect Fit extended Q-learning model with affect ratings?
-#' @param adj_order Numerical order of affect adjectives, defaults to 1 =
-#' "happy", 2 = "confident", and 3 = "engaged".
+#' @param affect_sfx String prefix to identify specific affect model, ignored if
+#' \code{affect == FALSE}. Defaults to full model with trial- and block-wise
+#' passage-of-time.
+#' @param adj_order Vector of affect adjectives which is used to define their
+#' numerical order in the model output.
 #' @param vb Use variational inference to get the approximate posterior? Default
 #' is \code{TRUE} for computational efficiency.
 #' @param ppc Generate quantities including mean parameters, log likelihood, and
@@ -69,6 +72,7 @@ fit_learning_model <-
            model,
            exp_part,
            affect = FALSE,
+           affect_sfx = "",
            adj_order = c("happy", "confident", "engaged"),
            vb = TRUE,
            ppc = vb,
@@ -226,7 +230,9 @@ fit_learning_model <-
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  label <- ifelse(!affect, exp_part, "plus_affect")
+  label <- ifelse(
+    !affect, exp_part, paste("plus_affect", affect_sfx, sep = "_")
+  )
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
       paste0(
@@ -419,8 +425,19 @@ fit_learning_model <-
         )
     }
   }
-  if (any(outputs == "loo_obj") & !vb) {
-    ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+  if (any(outputs == "loo_obj")) {
+    if (!vb) ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+    else {
+      ll <- ret$draws[[1]][grep("log_lik", names(ret$draws[[1]]))]
+      log_lik_mat <- t(do.call(rbind, ll))
+
+      log_p <- ret$draws[[1]]$lp__
+      log_g <- ret$draws[[1]]$lp_approx__
+
+      ret$loo_obj <- loo::loo_approximate_posterior(
+        log_lik_mat, log_p, log_g, cores = cores, save_psis = TRUE
+      )
+    }
     if (save_outputs) {
       saveRDS(ret$loo_obj, file = paste0(
         out_dir, "/", save_model_as, "_loo_obj", ".RDS")

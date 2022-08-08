@@ -9,6 +9,7 @@ fit_learning_model(
   model,
   exp_part,
   affect = FALSE,
+  affect_sfx = "",
   adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
   ppc = vb,
@@ -32,8 +33,12 @@ fit_learning_model(
 
 \item{affect}{Fit extended Q-learning model with affect ratings?}
 
-\item{adj_order}{Numerical order of affect adjectives, defaults to 1 =
-"happy", 2 = "confident", and 3 = "engaged".}
+\item{affect_sfx}{String prefix to identify specific affect model, ignored if
+\code{affect == FALSE}. Defaults to full model with trial- and block-wise
+passage-of-time.}
+
+\item{adj_order}{Vector of affect adjectives which is used to define their
+numerical order in the model output.}
 
 \item{vb}{Use variational inference to get the approximate posterior? Default
 is \code{TRUE} for computational efficiency.}
