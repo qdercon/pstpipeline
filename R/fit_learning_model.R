@@ -161,6 +161,8 @@ fit_learning_model <-
           dplyr::rowwise() %>%
           dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) %>%
           dplyr::mutate(
+            trial_no_group_blk = trial_no_group - ((trial_block - 1) * 20)) %>%
+          dplyr::mutate(
             question =
               ifelse(question_type == adj_order[1], 1,
                      ifelse(question_type == adj_order[2], 2, 3)

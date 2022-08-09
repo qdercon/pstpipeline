@@ -138,8 +138,8 @@ preprocess_func_affect <- function(raw_data, general_info) {
     reward[i, 1:t]    <- DT_subj$reward
     question[i, 1:t]  <- DT_subj$question
     block_no[i, 1:t]  <- DT_subj$trial_block
-    ovl_trial[i, 1:t] <- DT_subj$trial_no
-    blk_trial[i, 1:t] <- DT_subj$trial_no_block
+    ovl_trial[i, 1:t] <- DT_subj$trial_no_group # ovl question no., by question
+    blk_trial[i, 1:t] <- DT_subj$trial_no_group_blk # question no. of that block
     ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
     blk_time[i, 1:t]  <- DT_subj$block_time / 60
     affect[i, 1:t]    <- DT_subj$question_response / 100
