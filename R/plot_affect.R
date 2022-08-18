@@ -35,7 +35,7 @@ plot_affect <- function(fit_list,
 
   if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
 
-  if (type == "grouped") {
+  if (plt_type == "grouped") {
     ppc_list <- lapply(
       1:length(adj_order),
       function(f) {
@@ -82,10 +82,10 @@ plot_affect <- function(fit_list,
       ggplot2::theme(legend.position = c(0.85, 0.85))
   }
 
-  median_id <- function(df, type, id = NULL) {
-    if (type == "num") {
+  median_id <- function(df, kind, id = NULL) {
+    if (kind == "num") {
       subset(df, R2 == quantile(df$R2, p = 0.5, type = 1, na.rm = T))$id_no
-    } else if (type == "id" & !is.null(id)) {
+    } else if (kind == "id" & !is.null(id)) {
       subset(df, id_no == id)$subjID
     }
   }
