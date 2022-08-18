@@ -6,7 +6,9 @@
 #' list of posterior predictions and/or grouping.
 #'
 #' @param fit_list List of outputs from [get_affect_ppc].
-#' @param plt_type Either \code{"individual"} or \code{"grouped"}.
+#' @param grouped Boolean denoting whether the plot should show overall mean
+#' posterior prediction (by adjective) or individual-level fits (as defined by
+#' \code{id_num}).
 #' @param adj_order Same as [fit_learning_model()].
 #' @param nouns Formatted noun versions of the adjectives, in order.
 #' @param id_no If \code{type == "individual"}, a participant number to plot.
@@ -23,7 +25,7 @@
 #' @export
 
 plot_affect <- function(fit_list,
-                        plt_type,
+                        grouped = FALSE,
                         adj_order = c("happy", "confident", "engaged"),
                         nouns = c("Happiness", "Confidence", "Engagement"),
                         id_no = NULL,
@@ -35,7 +37,7 @@ plot_affect <- function(fit_list,
 
   if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
 
-  if (plt_type == "grouped") {
+  if (grouped) {
     ppc_list <- lapply(
       1:length(adj_order),
       function(f) {
@@ -48,7 +50,8 @@ plot_affect <- function(fit_list,
       }
     )
 
-    data.table::rbindlist(ppc_list) %>%
+    grouped_plot <-
+      data.table::rbindlist(ppc_list) %>%
       dplyr::group_by(adj, type, trial_no_q) %>%
       dplyr::mutate(mean_val = mean(value), se_val = std(value)) %>%
       dplyr::distinct(trial_no_q, adj, type, mean_val, se_val) %>%
@@ -80,62 +83,65 @@ plot_affect <- function(fit_list,
         font = font
       ) +
       ggplot2::theme(legend.position = c(0.85, 0.85))
+    return(grouped_plot)
   }
 
-  median_id <- function(df, kind, id = NULL) {
-    if (kind == "num") {
-      subset(df, R2 == quantile(df$R2, p = 0.5, type = 1, na.rm = T))$id_no
-    } else if (kind == "id" & !is.null(id)) {
-      subset(df, id_no == id)$subjID
+  else if (!grouped) {
+    median_id <- function(df, kind, id = NULL) {
+      if (kind == "num") {
+        subset(df, R2 == quantile(df$R2, p = 0.5, type = 1, na.rm = T))$id_no
+      } else if (kind == "id" & !is.null(id)) {
+        subset(df, id_no == id)$subjID
+      }
     }
+
+    len <- length(fit_list)
+    id_vec <- vector(mode = "integer", length = len)
+
+    if (is.null(id_no)) {
+      id_vec <- sapply(1:len, function(f) median_id(fit_list[[f]]$fit_df, "num"))
+    } else {
+      id_vec <- rep(id_no, len)
+    }
+
+    indiv_ppc_plots <- list()
+
+    for (a in 1:length(adj_order)) {
+      adj <- adj_order[a]
+      r2 <- subset(fit_list[[a]]$fit_df, id_no == id_vec[a])$R2
+
+      indiv_ppc_plots[[adj]] <-
+        fit_list[[a]]$indiv_ppcs[[
+          median_id(fit_list[[a]]$fit_df, "id", id_vec[a])
+        ]] %>%
+        ggplot2::ggplot(
+          ggplot2::aes(x = trial_no_q, y = value, color = type, fill = type)
+        ) +
+        ggplot2::geom_line() +
+        ggplot2::geom_ribbon(
+          ggplot2::aes(ymin = value - se_pred, ymax = value + se_pred),
+          alpha = 0.5
+        ) +
+        ggplot2::scale_color_manual(
+          name = "Data type", labels = c("Predicted", "Real"),
+          values = c(pal[a*2-1], pal[a*2])
+        ) +
+        ggplot2::scale_fill_manual(
+          name = "Data type", labels = c("Predicted", "Real"),
+          values = c(pal[a*2-1], pal[a*2])
+        ) +
+        ggplot2::xlab("Trial number") +
+        ggplot2::ylab(paste0(nouns[a], " rating /100")) +
+        cowplot::theme_half_open(font_size = font_size, font = font) +
+        ggplot2::annotation_custom(
+          grid::textGrob(
+            bquote(R^2~"="~.(round(r2, 3))),
+            gp = grid::gpar(fontsize = 16, col = "steelblue4"),
+            x = r2_coords[1], y = r2_coords[2]
+          )
+        )  +
+        ggplot2::theme(legend.position = legend_pos)
+    }
+    return(indiv_ppc_plots)
   }
-
-  len <- length(fit_list)
-  id_vec <- vector(mode = "integer", length = len)
-
-  if (is.null(id_no)) {
-    id_vec <- sapply(1:len, function(f) median_id(fit_list[[f]]$fit_df, "num"))
-  } else {
-    id_vec <- rep(id_no, len)
-  }
-
-  plots <- list()
-
-  for (a in 1:length(adj_order)) {
-    adj <- adj_order[a]
-    r2 <- subset(fit_list[[a]]$fit_df, id_no == id_vec[a])$R2
-
-    plots[[adj]] <-
-      fit_list[[a]]$indiv_ppcs[[
-        median_id(fit_list[[a]]$fit_df, "id", id_vec[a])
-      ]] %>%
-      ggplot2::ggplot(
-        ggplot2::aes(x = trial_no_q, y = value, color = type, fill = type)
-      ) +
-      ggplot2::geom_line() +
-      ggplot2::geom_ribbon(
-        ggplot2::aes(ymin = value - se_pred, ymax = value + se_pred),
-        alpha = 0.5
-      ) +
-      ggplot2::scale_color_manual(
-        name = "Data type", labels = c("Predicted", "Real"),
-        values = c(pal[a*2-1], pal[a*2])
-      ) +
-      ggplot2::scale_fill_manual(
-        name = "Data type", labels = c("Predicted", "Real"),
-        values = c(pal[a*2-1], pal[a*2])
-      ) +
-      ggplot2::xlab("Trial number") +
-      ggplot2::ylab(paste0(nouns[a], " rating /100")) +
-      cowplot::theme_half_open(font_size = font_size, font = font) +
-      ggplot2::annotation_custom(
-        grid::textGrob(
-          bquote(R^2~"="~.(round(r2, 3))),
-          gp = grid::gpar(fontsize = 16, col = "steelblue4"),
-          x = r2_coords[1], y = r2_coords[2]
-        )
-      )  +
-      ggplot2::theme(legend.position = legend_pos)
-  }
-  return(plots)
 }

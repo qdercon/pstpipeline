@@ -7,7 +7,7 @@ ratings}
 \usage{
 plot_affect(
   fit_list,
-  plt_type,
+  grouped = FALSE,
   adj_order = c("happy", "confident", "engaged"),
   nouns = c("Happiness", "Confidence", "Engagement"),
   id_no = NULL,
@@ -21,7 +21,9 @@ plot_affect(
 \arguments{
 \item{fit_list}{List of outputs from \link{get_affect_ppc}.}
 
-\item{plt_type}{Either \code{"individual"} or \code{"grouped"}.}
+\item{grouped}{Boolean denoting whether the plot should show overall mean
+posterior prediction (by adjective) or individual-level fits (as defined by
+\code{id_num}).}
 
 \item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
