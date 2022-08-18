@@ -150,7 +150,7 @@ plot_glm <- function(
   }
 
   plot_together <- cowplot::plot_grid(
-    plotlist = plots, rel_widths = plt_rel_widths, nrow = length(pars)/3
+    plotlist = plots, rel_widths = plt_rel_widths, nrow = 1
   )
 
   if (!is.null(ovrll_title)) {
