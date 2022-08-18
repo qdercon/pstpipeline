@@ -19,8 +19,7 @@
 #' @param exp_part Fit to \code{training} or \code{test}?
 #' @param affect Fit extended Q-learning model with affect ratings?
 #' @param affect_sfx String prefix to identify specific affect model, ignored if
-#' \code{affect == FALSE}. Defaults to full model with trial- and block-wise
-#' passage-of-time.
+#' \code{affect == FALSE}. Defaults to model with trial-wise passage-of-time.
 #' @param adj_order Vector of affect adjectives which is used to define their
 #' numerical order in the model output.
 #' @param vb Use variational inference to get the approximate posterior? Default
@@ -72,7 +71,7 @@ fit_learning_model <-
            model,
            exp_part,
            affect = FALSE,
-           affect_sfx = "",
+           affect_sfx = "4wt_time",
            adj_order = c("happy", "confident", "engaged"),
            vb = TRUE,
            ppc = vb,
