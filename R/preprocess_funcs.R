@@ -117,7 +117,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
   affect    <- array(0, c(n_subj, t_max))
   block_no  <- array(0, c(n_subj, t_max))
   ovl_trial <- array(0, c(n_subj, t_max))
-  blk_trial <- array(0, c(n_subj, t_max))
   ovl_time  <- array(0, c(n_subj, t_max))
   blk_time  <- array(0, c(n_subj, t_max))
   question  <- array(0, c(n_subj, t_max))
@@ -139,7 +138,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
     question[i, 1:t]  <- DT_subj$question
     block_no[i, 1:t]  <- DT_subj$trial_block
     ovl_trial[i, 1:t] <- DT_subj$trial_no_group # ovl question no., by question
-    blk_trial[i, 1:t] <- DT_subj$trial_no_group_blk # question no. of that block
     ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
     blk_time[i, 1:t]  <- DT_subj$block_time / 60
     affect[i, 1:t]    <- DT_subj$question_response / 100
@@ -157,7 +155,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
     affect    = affect,
     block_no  = block_no,
     ovl_trial = ovl_trial,
-    blk_trial = blk_trial,
     ovl_time  = ovl_time,
     blk_time  = blk_time,
     question  = question

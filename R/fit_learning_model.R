@@ -94,6 +94,10 @@ fit_learning_model <-
   if (model == "1a" & affect) {
     stop("Affect data model is dual learning rate only.")
   }
+  if (model == "affect" & !ppc) {
+    warning("Separate posterior predictions after affect models not supported.")
+    ppc <- TRUE
+  }
   if (ppc & !vb) {
     warning(
       strwrap(
@@ -160,8 +164,6 @@ fit_learning_model <-
         training_df <- training_df %>%
           dplyr::rowwise() %>%
           dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) %>%
-          dplyr::mutate(
-            trial_no_group_blk = trial_no_group - ((trial_block - 1) * 20)) %>%
           dplyr::mutate(
             question =
               ifelse(question_type == adj_order[1], 1,
