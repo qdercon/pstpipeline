@@ -21,6 +21,8 @@ plot_affect(
 \arguments{
 \item{fit_list}{List of outputs from \link{get_affect_ppc}.}
 
+\item{plt_type}{Either \code{"individual"} or \code{"grouped"}.}
+
 \item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
 \item{nouns}{Formatted noun versions of the adjectives, in order.}
@@ -33,8 +35,6 @@ for each adjective.}
 \eqn{R^2} value.}
 
 \item{legend_pos, pal, font, font_size}{Same as \link{plot_import}.}
-
-\item{type}{Either \code{"individual"} or \code{"grouped"}.}
 }
 \value{
 A \code{list} of or single \code{ggplot} object(s) (if

@@ -6,7 +6,7 @@
 #' list of posterior predictions and/or grouping.
 #'
 #' @param fit_list List of outputs from [get_affect_ppc].
-#' @param type Either \code{"individual"} or \code{"grouped"}.
+#' @param plt_type Either \code{"individual"} or \code{"grouped"}.
 #' @param adj_order Same as [fit_learning_model()].
 #' @param nouns Formatted noun versions of the adjectives, in order.
 #' @param id_no If \code{type == "individual"}, a participant number to plot.
