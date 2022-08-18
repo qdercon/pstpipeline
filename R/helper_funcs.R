@@ -1,3 +1,14 @@
+#' Compute a standard error of the mean
+#'
+#' \code{std} computes the standard error of a mean.
+#'
+#' @param x A numerical vector of values.
+#'
+#' @return A numeric value.
+#' @noRd
+
+std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
+
 #' Compute a single highest posterior density interval (HDI)
 #'
 #' \code{single_hdi} computes the highest density interval from a sample of

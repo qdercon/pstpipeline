@@ -72,7 +72,6 @@ plot_ppc <- function(
 
   pairs <- list("AB", "CD", "EF")
   names(pairs) <- c("12", "34", "56")
-  std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
 
   plt_list <- list()
 

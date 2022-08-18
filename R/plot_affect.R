@@ -1,7 +1,7 @@
 #' Plot an individual's mean posterior predictions compared to their raw affect
 #' ratings
 #'
-#' \code{plot_affect_ppc} is capable of plotting either grouped or
+#' \code{plot_affect} is capable of plotting either grouped or
 #' individual-level posterior predictions (vs. raw observations) for a defined
 #' list of posterior predictions and/or grouping.
 #'
@@ -22,16 +22,16 @@
 #' @importFrom magrittr %>%
 #' @export
 
-plot_affect_ppc <- function(fit_list,
-                            type,
-                            adj_order = c("happy", "confident", "engaged"),
-                            nouns = c("Happiness", "Confidence", "Engagement"),
-                            id_no = NULL,
-                            r2_coords = c(0.9, 0.8),
-                            legend_pos = "right",
-                            pal = NULL,
-                            font = "",
-                            font_size = 11) {
+plot_affect <- function(fit_list,
+                        plt_type,
+                        adj_order = c("happy", "confident", "engaged"),
+                        nouns = c("Happiness", "Confidence", "Engagement"),
+                        id_no = NULL,
+                        r2_coords = c(0.9, 0.8),
+                        legend_pos = "right",
+                        pal = NULL,
+                        font = "",
+                        font_size = 11) {
 
   if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
 
