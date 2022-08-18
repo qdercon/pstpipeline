@@ -35,9 +35,8 @@ plot_affect <- function(fit_list,
                         font = "",
                         font_size = 11) {
 
-  if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
-
   if (grouped) {
+    if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     ppc_list <- lapply(
       1:length(adj_order),
       function(f) {
@@ -87,6 +86,9 @@ plot_affect <- function(fit_list,
   }
 
   else if (!grouped) {
+    if(is.null(pal)) {
+      pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
+    }
     median_id <- function(df, kind, id = NULL) {
       if (kind == "num") {
         subset(df, R2 == quantile(df$R2, p = 0.5, type = 1, na.rm = T))$id_no
