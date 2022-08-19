@@ -18,23 +18,35 @@
 #' @param ... Other arguments to pass to [fit_learning_model()] and/or
 #' [parameter_glm()].
 #'
+#' @returns A data frame with parameter values for each of the fits.
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#' dir.create("outputs/cmdstan/compare_blocks")
+#'
+#' comp_blocks <- compare_block_diffs(
+#'   example_data,
+#'   var_of_interest = "distanced",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   model = "2a"
+#' )}
+#' #'
 #' @importFrom magrittr %>%
 #' @export
 
-compare_block_diffs <-
-  function(all_res,
-           var_of_interest,
-           covariates,
-           model,
-           vb = TRUE,
-           fit_together = vb,
-           out_dir = "outputs/cmdstan/compare_blocks",
-           iter_warmup_glm = 2000,
-           iter_sampling_glm = 4000,
-           min_blocks = 1,
-           max_blocks = 6,
-           save_mod_out = FALSE,
-           ...) {
+compare_block_diffs <- function(all_res,
+                                var_of_interest,
+                                covariates,
+                                model,
+                                vb = TRUE,
+                                fit_together = vb,
+                                out_dir = "outputs/cmdstan/compare_blocks",
+                                iter_warmup_glm = 2000,
+                                iter_sampling_glm = 4000,
+                                min_blocks = 1,
+                                max_blocks = 6,
+                                save_mod_out = FALSE,
+                                ...) {
 
   l <- list(...)
   if (is.null(l$task_excl)) l$task_excl <- TRUE

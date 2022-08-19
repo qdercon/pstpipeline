@@ -34,8 +34,8 @@ interest.}
 \item{raw_df}{List of raw data inputs to the above fits (in the same order).
 Used to correctly link subject IDs to independent variables.}
 
-\item{type}{Type of plot to retunn - either separate plots for each
-\code{parameter}, or each transdiagnostic rlang::symptom \code{factor}.}
+\item{type}{Type of plot to return - either separate plots for each
+\code{parameter}, or each transdiagnostic symptom \code{factor}.}
 
 \item{test}{Boolean indicating whether summaries are from the test phase.}
 
@@ -72,7 +72,35 @@ x-direction.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
+\value{
+A ggplot.
+}
 \description{
 \code{plot_raincloud} plots simple "raincloud" plots of posterior densities,
 most likely for model parameters (by group).
+}
+\examples{
+\dontrun{
+data(example_data)
+
+fit_nd <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+fit_dis <- fit_learning_model(
+  example_data$dis,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+
+plot_raincloud(
+  summary_df = list(fit_nd$summary, fit_dis$summary),
+  raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+  by = "distanced",
+  flip = FALSE
+)}
+
 }

@@ -28,7 +28,9 @@ differences in mean observed/predicted densities for.}
 \item{train_trials}{List, maximum length 3. The first element should be a
 trial-level \code{tibble} containing summed posterior draws and their HDIs,
 both overall and for each block and block group of interest (outputted
-from \link{get_preds_by_chain}).}
+from \link{get_preds_by_chain}). The second and third elements are optional, but
+enable lagging by a certain number of trials for the cumulative and
+difference (i.e., observed minus predicted) plots.}
 
 \item{test_perf}{List, maximum length 3. The first element should be a
 individual-level \code{tibble} containing summed predictions for each trial
@@ -52,8 +54,65 @@ ith participant in the output.}
 or the name of the predicted variable.}
 }
 \value{
-Either a single or named \code{list} of \code{ggplot} objects
+Either a single or named \code{list} of \code{ggplot} objects.
 }
 \description{
 \code{plot_ppc} plots posterior predictions in a variety of ways.
+}
+\examples{
+\dontrun{
+data(example_data)
+dir.create("outputs/cmdstan/predictions")
+
+fit <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training",
+  iter_sampling = 2000,
+  outputs = c("model_env", "raw_df", "stan_datalist")
+)
+
+pred_paths <- generate_posterior_quantities(
+  fit_mcmc = fit$fit,
+  data_list = fit$stan_datalist,
+  return_type = "paths"
+)
+
+obs_df_preds <- get_preds_by_chain(
+  out_files = pred_paths,
+  out_dir = "outputs/cmdstan/predictions",
+  obs_df = fit$raw_df,
+  n_draws_chain = 2000
+)
+
+ind <- readRDS("outputs/cmdstan/predictions/indiv_obs_sum_ppcs_df.RDS")
+tri <- readRDS("outputs/cmdstan/predictions/trial_block_avg_hdi_ppcs_df.RDS")
+
+# Cumulative choice probabilities, block-lagged
+plot_ppc(
+  train_indiv = list(ind, 20),
+  group_title = "Cumulative choice probabilities"
+)
+
+# Difference between observed and predicted choice, over the whole task
+# i.e., 120 trials per type
+plot_ppc(
+  train_indiv = list(ind, list(), 120),
+  group_title = "Difference between observed and predicted choices"
+)
+
+# Individual-level predictions and observed choice probabilities, across task
+
+## N.B. partial match can be used to plot the types in names(tri$types)
+## e.g., using "block_6" to plot "AB_block_6", "CD_block_6", and "EF_block_6"
+
+plot_ppc(
+  train_trials = list(tri, "all_trials"),
+  group_title = "Individual-level choices against predictions"
+)
+
+# Test plots can be plotted similarly with test_perf - the second and third
+# arguments follow the same logic as plot_import(plt.test)}
+
 }

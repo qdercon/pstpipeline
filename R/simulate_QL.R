@@ -1,4 +1,4 @@
-#' Simulate data from 1-alpha and 2-alpha Q-learning models
+#' Simulate data from single and dual learning rate Q-learning models
 #'
 #' \code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha
 #' Q-learning models, with an experiment structure identical to that run online.
@@ -11,7 +11,7 @@
 #' @param sample_size How may sets of parameters to sample; defaults to 100 or
 #' the number of individuals in
 #' the \code{summary_df}.
-#' @param gain_loss Fit the 2-learning-rate or 1-learning-rate model?
+#' @param gain_loss Fit the dual learning rate model?
 #' @param test Simulate test choices in addition to training choices?
 #' @param prev_sample An optional previous sample of id numbers (if you wish to
 #' simulate data for the same subset of individual parameters across a number
@@ -21,8 +21,16 @@
 #' @param ... Other arguments which can be used to control the parameters of the
 #' gamma/Gaussian distributions from which parameter values are sampled.
 #'
-#' @return Simulated training data (and test data relevant) for a random or
+#' @returns Simulated training data (and test data relevant) for a random or
 #' previously fitted sample of parameter values.
+#'
+#' @examples
+#' train_sim_2a <- simulate_QL(
+#'   sample_size = 10,
+#'   alpha_pos_dens = c(shape = 2, scale = 0.1), # default
+#'   alpha_neg_dens = c(shape = 2, scale = 0.1), # default
+#'   beta_dens = c(mean = 3, sd = 1) # default
+#' )
 #'
 #' @importFrom magrittr %>%
 #' @export

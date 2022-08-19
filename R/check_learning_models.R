@@ -14,21 +14,33 @@
 #' \pkg{bayesplot} package.
 #' @param alpha_par_nms Option to rename learning rate parameters for models
 #' with more than one.
-#' the names from \code{draws}.
 #' @param pal,font,font_size Same as [plot_import].
 #'
+#' @returns Either a single or named \code{list} of \code{ggplot} objects.
+#'
 #' @importFrom magrittr %>%
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#'
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#'  )
+#' model_checks <-  check_learning_models(fit$draws)}
+#'
 #' @export
 
-check_learning_models <-
-  function(draws,
-           test = FALSE,
-           mean_pars = TRUE,
-           diagnostic_plots = TRUE,
-           alpha_par_nms = NA,
-           pal = NULL,
-           font = "",
-           font_size = 11) {
+check_learning_models <- function(draws,
+                                  test = FALSE,
+                                  mean_pars = TRUE,
+                                  diagnostic_plots = TRUE,
+                                  alpha_par_nms = NA,
+                                  pal = NULL,
+                                  font = "",
+                                  font_size = 11) {
 
   ## to appease R CMD check
   value <- ..count.. <- ..density.. <- NULL

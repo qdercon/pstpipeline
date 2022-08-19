@@ -7,8 +7,11 @@
 #' @param parsed_list A list outputted from [import_multiple()].
 #' @param n_ppts Sample size to take.
 #'
-#' @return A named \code{list}.
+#' @returns A named \code{list}.
 #'
+#' @examples
+#' data(example_data)
+#' subsamp <- take_subsample(example_data$nd, 10) # sample of 10 participants
 #' @importFrom magrittr %>%
 #' @export
 
@@ -44,9 +47,9 @@ take_subsample <- function(parsed_list,
 #' @name example_data
 #' @usage data(example_data)
 #' @format A list with two elements: \code{nd} has ten non-distanced
-#' individuals, and \code(dis) has ten distanced individuals. Each sub-list is a
+#' individuals, and \code{dis} has ten distanced individuals. Each sub-list is a
 #' list with four elements: (\code{ppt_info}, \code{training}, \code{test}, and
-#' \code{gillan_questions})
+#' \code{gillan_questions}).
 NULL
 
 #' Compute a standard error of the mean
@@ -55,7 +58,7 @@ NULL
 #'
 #' @param x A numerical vector of values.
 #'
-#' @return A numeric value.
+#' @returns A numeric value.
 #' @noRd
 
 std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
@@ -70,7 +73,7 @@ std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
 #' @param cred A scalar between 0 and 1, indicating the mass within the
 #' credible interval that is to be estimated.
 #'
-#' @return A vector with the lower and upper HDI.
+#' @returns A vector with the lower and upper HDI.
 #' @noRd
 
 # Adapted from hBayesDM::HDIofMCMC, in turn based on John Kruschke's code.
@@ -103,17 +106,25 @@ single_hdi <- function(vals,
 #' @param var A vector of representative values from a probability distribution
 #' (e.g., MCMC samples).
 #' @param quantile A vector of quantiles to return.
-#' @param transform Are values log-scaled (e.g., estimated from Gamma GLMs)?
+#' @param ... Internal arguments.
 #'
-#' @return A sorted vector with all specified quantiles.
+#' @returns A sorted vector with all specified quantiles.
+#'
+#' @examples
+#' p_density <- rnorm(100, 2, 0.5)
+#' quantile_hdi(p_density, c(0, 0.025, 0.5, 0.0975, 1))
 #' @export
 
 quantile_hdi <- function(var,
                          quantile,
-                         transform = FALSE) {
+                         ...) {
 
-  if (transform) {
-   var <- log(var/100 + 1)
+  l <- list(...)
+  if (is.null(l$transform)) l$transform <- FALSE
+
+  if (l$transform) { # fixes issues calling function from within ggplot with
+                     # exponentiated coefficients
+    var <- log(var/100 + 1)
   }
 
   returns <- vector(mode = "numeric")
@@ -136,7 +147,7 @@ quantile_hdi <- function(var,
   }
 
   ret <- sort(returns)
-  if (transform) {
+  if (l$transform) {
     ret <- (exp(ret) - 1) *100
   }
   names(ret) <- sapply(1:length(quantile),
@@ -153,7 +164,7 @@ quantile_hdi <- function(var,
 #'
 #' @param param Parameter name.
 #'
-#' @return A [stats::family()].
+#' @returns A [stats::family()].
 #' @noRd
 
 family_ch <- function(param) {
@@ -174,8 +185,19 @@ family_ch <- function(param) {
 #' @param ess_lower Lower bound of effective sample size values to include. Set
 #' to \code{0} to include all participants.
 #'
-#' @return A long format [tibble::tibble()] with model parameters and baseline
+#' @returns A long format [tibble::tibble()] with model parameters and baseline
 #' participant data.
+#'
+#' @examples \dontrun{
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#'  )
+#'
+#' make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)}
+#'
 #' @importFrom magrittr %>%
 #' @export
 
@@ -183,7 +205,7 @@ make_par_df <- function(raw,
                         summary,
                         rhat_upper,
                         ess_lower) {
-  subjID <- variable <- . <- matches <- NULL # appease R CMD check
+  subjID <- id_all <- variable <- . <- matches <- NULL # appease R CMD check
   ids <- raw %>%
     dplyr::distinct(subjID, .keep_all = TRUE) %>%
     dplyr::mutate(id_no = dplyr::row_number())
@@ -246,7 +268,7 @@ make_par_df <- function(raw,
 #' @param alpha_par_nms Names of learning rate parameters (ignored if
 #' \code{!alpha_par}).
 #'
-#' @return Axis title as a character string containing an expression.
+#' @returns Axis title as a character string containing an expression.
 #' @noRd
 
 axis_title <- function(param,
@@ -283,9 +305,24 @@ axis_title <- function(param,
 #' @param adj Name of the affect adjective - one of "happy", "confident" or
 #' "engaged".
 #'
-#' @return List containing a dataframe with participant identifiers, numbers,
+#' @returns List containing a dataframe with participant identifiers, numbers,
 #' and \eqn{R^2}, MAE and RMSE for each individual; and a named list (by ID) of
 #' data frames with individuals' mean posterior predictions and raw affect data.
+#'
+#' @examples \dontrun{
+#' fit_affect <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#'  )
+#'
+#'  fit_ls_happy <- get_affect_ppc(
+#'    draws = fit_affect$draws,
+#'    raw = fit_affect$raw_df,
+#'    adj = "happy"
+#'  )}
+#'
 #' @importFrom magrittr %>%
 #' @importFrom data.table .SD as.data.table
 #' @export
@@ -296,6 +333,10 @@ get_affect_ppc <- function(draws,
 
   draws <- as.data.table(draws)
   indiv_ppcs <- list()
+
+  ## to appease R CMD check
+  question_type <- subjID <- trial_no_q <- question_response <- value <-
+    aff_tr <- variable <- "patterns" <- "..aff_tr" <- NULL
 
   n_id <- length(unique(raw$subjID))
   fit_df <- as.data.frame(
@@ -363,12 +404,25 @@ get_affect_ppc <- function(draws,
 #' @param summary A [cmdstanr::summary()].
 #' @param adj_order Same as [fit_learning_model()].
 #'
-#' @return A [tibble::tibble()] with weights by individual and adjective.
+#' @returns A [tibble::tibble()] with weights by individual and adjective.
+#' @examples \dontrun{
+#' fit_affect <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#'
+#' aff_wts <- get_affect_wts(fit_affect$summary)}
+#'
 #' @importFrom magrittr %>%
 #' @export
 
 get_affect_wts <- function(summary,
                            adj_order = c("happy", "confident", "engaged")) {
+
+  ## to appease R CMD check
+  variable <- aff_num <- id_no <- param <- post_mean <- adj <- NULL
 
   summary %>%
     dplyr::filter(grepl("w|gamma\\[", variable)) %>%
@@ -376,12 +430,12 @@ get_affect_wts <- function(summary,
     dplyr::select(variable, mean) %>%
     dplyr::rowwise() %>%
     dplyr::mutate(
-      par = unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[1],
+      param = unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[1],
       id_no = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[2]),
       aff_num = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[3]),
       adj = adj_order[aff_num]
     ) %>%
     dplyr::rename(post_mean = mean) %>%
     dplyr::ungroup() %>%
-    dplyr::select(id_no, par, aff_num, post_mean, adj)
+    dplyr::select(id_no, param, aff_num, post_mean, adj)
 }

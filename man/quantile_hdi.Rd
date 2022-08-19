@@ -5,7 +5,7 @@
 \title{Compute quantiles of a probability distrbution based on highest density
 intervals (HDIs)}
 \usage{
-quantile_hdi(var, quantile, transform = FALSE)
+quantile_hdi(var, quantile, ...)
 }
 \arguments{
 \item{var}{A vector of representative values from a probability distribution
@@ -13,13 +13,18 @@ quantile_hdi(var, quantile, transform = FALSE)
 
 \item{quantile}{A vector of quantiles to return.}
 
-\item{transform}{Are values log-scaled (e.g., estimated from Gamma GLMs)?}
+\item{...}{Internal arguments.}
 }
 \value{
-A sorted \code{\link[base:vector]{base::vector()}} with all HDIs plus the min/max/median if
-specified.
+A sorted vector with all specified quantiles.
 }
 \description{
 \code{quantile_hdi} computes any number of highest density quantiles from a
-sample of representative values, estimated as shortest credible intervals.
+sample of representative values, estimated as shortest credible intervals. If
+\code{quantile} contains 0, 0.5, or 1, will return the minimum, median, and
+maximum respectively.
+}
+\examples{
+p_density <- rnorm(100, 2, 0.5)
+quantile_hdi(p_density, c(0, 0.025, 0.5, 0.0975, 1))
 }

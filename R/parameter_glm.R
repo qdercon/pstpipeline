@@ -35,7 +35,61 @@
 #' number of warm-up and sampling iterations). In addition, use \code{cores} to
 #' change the number of parallel chains to sample from.
 #'
-#' @return A [posterior::draws_df()].
+#' @returns A [posterior::draws_df()].
+#'
+#' @examples \dontrun{
+#' # Comparing parameters across groups
+#'
+#' data(example_data)
+#'
+#' fit_nd <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#' fit_dis <- fit_learning_model(
+#'   example_data$dis,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#'
+#' distanced <- parameter_glm(
+#'   summary_df = list(fit_nd$summary, fit_dis$summary),
+#'   raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+#'   var_of_interest = "distanced",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   iter_warmup = 1000, iter_sampling = 1000
+#' )
+#'
+#' # Comparing affect model parameters w.r.t. anxiety/depression factor scores
+#' # with interaction on distancing
+#'
+#' factor_scores <- read.csv("data-raw/gillan_scores.csv")[-1] # from Github
+#'
+#' fit_affect_nd <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#' fit_affect_dis <- fit_learning_model(
+#'   example_data$dis,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#'
+#' AD_affect_all <- pstpipeline::parameter_glm(
+#'   summary_df = list(fit_affect_nd$summary, fit_affect_dis$summary),
+#'   raw_df = list(fit_affect_nd$raw_df, fit_affect_dis$raw_df),
+#'   var_of_interest = "AD",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   interaction = "distanced",
+#'   affect_number = 1,
+#'   factor_scores = factor_scores
+#'  )}
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang !! :=
@@ -64,7 +118,7 @@ parameter_glm <- function(summary_df = list(),
 
   ## to appease R CMD check
   variable <- parameter <- . <- subjID <- value <- trial_no <-
-    id_no <- recode <- NULL
+    id_no <- recode <- aff_num <- NULL
 
   all_data <- list()
   for (s in seq_along(summary_df)) {

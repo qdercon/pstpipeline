@@ -67,3 +67,59 @@ decay factor models (i.e., positively skewed and constrained between 0 and 1)
 while standard Gaussian models with identity link functions are used for
 models with inverse temperature or weights as the response variable.
 }
+\examples{
+\dontrun{
+# Comparing parameters across groups
+
+data(example_data)
+
+fit_nd <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+fit_dis <- fit_learning_model(
+  example_data$dis,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+
+distanced <- parameter_glm(
+  summary_df = list(fit_nd$summary, fit_dis$summary),
+  raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+  var_of_interest = "distanced",
+  covariates = c("age", "sex", "digit_span"),
+  iter_warmup = 1000, iter_sampling = 1000
+)
+
+# Comparing affect model parameters w.r.t. anxiety/depression factor scores
+# with interaction on distancing
+
+factor_scores <- read.csv("data-raw/gillan_scores.csv")[-1] # from Github
+
+fit_affect_nd <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+fit_affect_dis <- fit_learning_model(
+  example_data$dis,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+
+AD_affect_all <- pstpipeline::parameter_glm(
+  summary_df = list(fit_affect_nd$summary, fit_affect_dis$summary),
+  raw_df = list(fit_affect_nd$raw_df, fit_affect_dis$raw_df),
+  var_of_interest = "AD",
+  covariates = c("age", "sex", "digit_span"),
+  interaction = "distanced",
+  affect_number = 1,
+  factor_scores = factor_scores
+ )}
+
+}

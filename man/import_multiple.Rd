@@ -26,12 +26,14 @@ groups?}
 \code{\link[=plot_import]{plot_import()}}.
 and plotted for one individual at a time.}
 
-\item{ret_incomplete}{Return incomplete datasets? They may require manual parsing.}
+\item{ret_incomplete}{Return incomplete datasets? They may require manual
+parsing.}
 
 \item{...}{Other arguments passed to \code{\link[=import_single]{import_single()}}.}
 }
 \value{
-\code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
+\code{list} of \code{tibbles} or a single \code{tibble} if
+\code{combine == TRUE}.
 }
 \description{
 \code{import_multiple()} parses a JATOS .txt file containing multiple

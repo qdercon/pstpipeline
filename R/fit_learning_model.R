@@ -58,32 +58,66 @@
 #' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html)
 #' for full details and defaults.
 #'
-#' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC]
+#' @returns List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC]
 #' fit object, plus any other outputs passed to \code{outputs}.
 #'
 #' @importFrom data.table as.data.table .N
 #' @importFrom magrittr %>%
-#' @export
 #'
+#' @examples \dontrun{
+#' # Single learning rate Q-learning model fit to training data with MCMC
+#'
+#' data(example_data)
+#' fit1 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "1a",
+#'   vb = FALSE,
+#'   exp_part = "training",
+#'   iter_warmup = 1000, # default
+#'   iter_sampling = 1000, # default
+#'   chains = 4 # default
+#' )
+#'
+#' # Dual learning rate Q-learning model fit to training plus test data with
+#' # variational inference
+#'
+#' data(example_data)
+#' fit2 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   exp_part = "test",
+#'   vb = TRUE
+#' )
+#'
+#' # Simplest affect model with three weights, fit with variational inference
+#'
+#' fit3 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   affect_sfx = "3wt",
+#'   exp_part = "training"
+#' )}
+#'
+#' @export
 
-fit_learning_model <-
-  function(df_all,
-           model,
-           exp_part,
-           affect = FALSE,
-           affect_sfx = "4wt_time",
-           adj_order = c("happy", "confident", "engaged"),
-           vb = TRUE,
-           ppc = vb,
-           task_excl = TRUE,
-           accuracy_excl = FALSE,
-           model_checks = TRUE,
-           save_model_as = "",
-           out_dir = "outputs/cmdstan",
-           outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
-           save_outputs = TRUE,
-           cores = getOption("mc.cores", 4),
-           ...) {
+fit_learning_model <- function(df_all,
+                               model,
+                               exp_part,
+                               affect = FALSE,
+                               affect_sfx = "4wt_time",
+                               adj_order = c("happy", "confident", "engaged"),
+                               vb = TRUE,
+                               ppc = vb,
+                               task_excl = TRUE,
+                               accuracy_excl = FALSE,
+                               model_checks = TRUE,
+                               save_model_as = "",
+                               out_dir = "outputs/cmdstan",
+                               outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+                               save_outputs = TRUE,
+                               cores = getOption("mc.cores", 4),
+                               ...) {
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
@@ -120,6 +154,8 @@ fit_learning_model <-
   else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
       # default (explicitly defined here for file naming)
+    if (is.null(l$iter_warmup)) l$iter_warmup <- 1000
+    # default (explicitly defined here for file naming)
     if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
       # default (explicitly defined here for file naming)
     if (model_checks) {
@@ -130,7 +166,7 @@ fit_learning_model <-
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- NULL
+    question_type <- reward <- trial_time <- NULL
 
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl) {

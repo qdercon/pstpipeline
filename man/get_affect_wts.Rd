@@ -18,3 +18,15 @@ A \code{\link[tibble:tibble]{tibble::tibble()}} with weights by individual and a
 \code{get_affect_wts} obtains weight parameters from affect data models, and
 names them with the appropriate affect adjective.
 }
+\examples{
+\dontrun{
+fit_affect <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+
+aff_wts <- get_affect_wts(fit_affect$summary)}
+
+}

@@ -7,7 +7,7 @@ ratings}
 \usage{
 plot_affect(
   fit_list,
-  grouped = FALSE,
+  plt_type = c("individual", "grouped"),
   adj_order = c("happy", "confident", "engaged"),
   nouns = c("Happiness", "Confidence", "Engagement"),
   id_no = NULL,
@@ -21,29 +21,48 @@ plot_affect(
 \arguments{
 \item{fit_list}{List of outputs from \link{get_affect_ppc}.}
 
-\item{grouped}{Boolean denoting whether the plot should show overall mean
-posterior prediction (by adjective) or individual-level fits (as defined by
-\code{id_num}).}
+\item{plt_type}{Possible types are "grouped" or "individual".}
 
 \item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
 \item{nouns}{Formatted noun versions of the adjectives, in order.}
 
-\item{id_no}{If \code{type == "individual"}, a participant number to plot.
-If left as \code{NULL}, defaults to the individual with the median \eqn{R^2}
-for each adjective.}
+\item{id_no}{If \code{grouped == FALSE}, a participant number to plot. If
+left as \code{NULL}, defaults to the individual with the median \eqn{R^2} for
+each adjective.}
 
-\item{r2_coords}{If \code{type == "individual"}, coordinates to print the
+\item{r2_coords}{If \code{grouped == FALSE}, coordinates to print the
 \eqn{R^2} value.}
 
 \item{legend_pos, pal, font, font_size}{Same as \link{plot_import}.}
 }
 \value{
-A \code{list} of or single \code{ggplot} object(s) (if
-\code{type == "grouped"} and \code{length(adj_order) == 1}).
+A single or list of \code{ggplot} object(s) depending on type.
 }
 \description{
 \code{plot_affect} is capable of plotting either grouped or
 individual-level posterior predictions (vs. raw observations) for a defined
 list of posterior predictions and/or grouping.
+}
+\examples{
+\dontrun{
+fit_affect <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+
+fit_dfs <- list()
+for (adj in c("happy", "confident", "engaged")) {
+  fits_dfs[[adj]] <- get_affect_ppc(fit_affect$draws, fit_affect$raw_df, adj = adj)
+}
+
+# Grouped plot
+plot_affect(fit_dfs, plt_type = "grouped")
+
+# Individual-level median posterior predictions
+plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
+}
+
 }

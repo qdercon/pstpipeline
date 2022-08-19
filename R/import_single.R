@@ -21,8 +21,8 @@
 #' non-binary individuals).
 #' @param ... Other arguments (used by [import_multiple()]).
 #'
-#' @return \code{list} of \code{tbl_df}, or a single \code{tbl_df} if
-#' \code{combine = TRUE}.
+#' @returns \code{list} of \code{tbl_df}, or a single \code{tbl_df} if
+#' \code{combine == TRUE}.
 #'
 #' @importFrom magrittr %>%
 

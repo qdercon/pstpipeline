@@ -9,6 +9,7 @@ plot_recovery(
   sim_pars,
   test = FALSE,
   alpha_par_nms = NULL,
+  plot_together = TRUE,
   pal = NULL,
   font = "",
   font_size = 11
@@ -26,12 +27,39 @@ phase.}
 \item{alpha_par_nms}{Option to rename learning rate parameters, defaults to
 the names from \code{par_df}.}
 
+\item{plot_together}{If \code{TRUE}, returns a panel with all plots plotted,
+otherwise a named list of plots is returned.}
+
 \item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }
 \value{
 A named \code{list} of \code{ggplot} objects.
+
+A list or grid of ggplots.
 }
 \description{
 \code{plot_recovery} produces correlation plots between input and output
 parameter values, plus a confusability matrix.
+}
+\examples{
+\dontrun{
+dir.create("outputs/cmdstan/simulated_data")
+
+train_sim_2a <- simulate_QL(
+  sample_size = 10,
+  alpha_pos_dens = c(shape = 2, scale = 0.1), # default
+  alpha_neg_dens = c(shape = 2, scale = 0.1), # default
+  beta_dens = c(mean = 3, sd = 1) # default
+)
+
+mcmc_2a_train_sim <- fit_learning_model(
+  train_sim_2a$sim, model = "2a", exp_part = "training",
+  vb = FALSE, model_checks = FALSE, par_recovery = TRUE,
+  outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+  out_dir = "outputs/cmdstan/simulated_data"
+)
+
+plot_recovery(train_sim_2a$pars, mcmc_2a_train_sim$summary)
+}
+
 }

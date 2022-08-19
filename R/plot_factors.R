@@ -22,6 +22,9 @@
 #' @return A single or \code{list} of \code{ggplot} object(s).
 #'
 #' @importFrom magrittr %>%
+#' @examples
+#' # Please this notebook for usage (examples would require Python input):
+#' # https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb
 #' @export
 
 plot_factors <- function(df,

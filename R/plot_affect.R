@@ -6,26 +6,45 @@
 #' list of posterior predictions and/or grouping.
 #'
 #' @param fit_list List of outputs from [get_affect_ppc].
-#' @param grouped Boolean denoting whether the plot should show overall mean
-#' posterior prediction (by adjective) or individual-level fits (as defined by
-#' \code{id_num}).
+#' @param plt_type Possible types are "grouped" or "individual".
 #' @param adj_order Same as [fit_learning_model()].
 #' @param nouns Formatted noun versions of the adjectives, in order.
-#' @param id_no If \code{type == "individual"}, a participant number to plot.
-#' If left as \code{NULL}, defaults to the individual with the median \eqn{R^2}
-#' for each adjective.
-#' @param r2_coords If \code{type == "individual"}, coordinates to print the
+#' @param id_no If \code{grouped == FALSE}, a participant number to plot. If
+#' left as \code{NULL}, defaults to the individual with the median \eqn{R^2} for
+#' each adjective.
+#' @param r2_coords If \code{grouped == FALSE}, coordinates to print the
 #' \eqn{R^2} value.
 #' @param legend_pos,pal,font,font_size Same as [plot_import].
 #'
-#' @return A \code{list} of or single \code{ggplot} object(s) (if
-#' \code{type == "grouped"} and \code{length(adj_order) == 1}).
+#' @return A single or list of \code{ggplot} object(s) depending on type.
 #'
 #' @importFrom magrittr %>%
+#' @importFrom stats quantile
+#'
+#' @examples \dontrun{
+#' fit_affect <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#'
+#' fit_dfs <- list()
+#' for (adj in c("happy", "confident", "engaged")) {
+#'   fits_dfs[[adj]] <- get_affect_ppc(fit_affect$draws, fit_affect$raw_df, adj = adj)
+#' }
+#'
+#' # Grouped plot
+#' plot_affect(fit_dfs, plt_type = "grouped")
+#'
+#' # Individual-level median posterior predictions
+#' plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
+#' }
+#'
 #' @export
 
 plot_affect <- function(fit_list,
-                        grouped = FALSE,
+                        plt_type = c("individual", "grouped"),
                         adj_order = c("happy", "confident", "engaged"),
                         nouns = c("Happiness", "Confidence", "Engagement"),
                         id_no = NULL,
@@ -35,7 +54,11 @@ plot_affect <- function(fit_list,
                         font = "",
                         font_size = 11) {
 
-  if (grouped) {
+  plt_type <- match.arg(plt_type)
+
+  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- NULL
+
+  if (plt_type == "grouped") {
     if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     ppc_list <- lapply(
       1:length(adj_order),
@@ -59,12 +82,14 @@ plot_affect <- function(fit_list,
           x = trial_no_q, y = mean_val, color = adj, fill = adj,
           linetype = factor(type, levels = c("raw", "pred")))
       ) +
-      ggplot2::scale_x_continuous(limits = c(0, 120), breaks = seq(0, 120, 20)) +
+      ggplot2::scale_x_continuous(
+        limits = c(0, 120), breaks = seq(0, 120, 20)) +
       ggplot2::scale_y_continuous(limits = c(25, 72)) +
       ggplot2::geom_line(size = 1.1, alpha = 0.5) +
       ggplot2::geom_ribbon(
         ggplot2::aes(
-          ymin = mean_val - se_val, ymax = mean_val + se_val), alpha = 0.3, colour = NA
+          ymin = mean_val - se_val, ymax = mean_val + se_val),
+        alpha = 0.3, colour = NA
       ) +
       ggplot2::scale_color_manual(
         name = NULL,
@@ -75,7 +100,7 @@ plot_affect <- function(fit_list,
         values = pal
       ) +
       ggplot2::xlab("Trial number") +
-      ggplot2::ylab(paste0("Mean (± SE) affect rating")) +
+      ggplot2::ylab(paste0("Mean (\u00B1 SE) affect rating")) +
       ggplot2::guides(linetype = "none", color = "none", fill = "none") +
       cowplot::theme_half_open(
         font_size = font_size,
@@ -85,7 +110,7 @@ plot_affect <- function(fit_list,
     return(grouped_plot)
   }
 
-  else if (!grouped) {
+  else if (plt_type == "individual") {
     if(is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
@@ -101,7 +126,8 @@ plot_affect <- function(fit_list,
     id_vec <- vector(mode = "integer", length = len)
 
     if (is.null(id_no)) {
-      id_vec <- sapply(1:len, function(f) median_id(fit_list[[f]]$fit_df, "num"))
+      id_vec <- sapply(1:len,
+                       function(f) median_id(fit_list[[f]]$fit_df, "num"))
     } else {
       id_vec <- rep(id_no, len)
     }

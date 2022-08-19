@@ -30,5 +30,6 @@ Suggests:
     loo
 Additional_repositories: https://mc-stan.org/r-packages/
 SystemRequirements: GNU make
+LazyData: true
 RoxygenNote: 7.2.1
 Roxygen: list(markdown = TRUE)

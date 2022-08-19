@@ -105,3 +105,40 @@ for more detail.
 flexible; instead it is designed primarily to be less memory-intensive for
 our specific use-case and provide only relevant output.
 }
+\examples{
+\dontrun{
+# Single learning rate Q-learning model fit to training data with MCMC
+
+data(example_data)
+fit1 <- fit_learning_model(
+  example_data$nd,
+  model = "1a",
+  vb = FALSE,
+  exp_part = "training",
+  iter_warmup = 1000, # default
+  iter_sampling = 1000, # default
+  chains = 4 # default
+)
+
+# Dual learning rate Q-learning model fit to training plus test data with
+# variational inference
+
+data(example_data)
+fit2 <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  exp_part = "test",
+  vb = TRUE
+)
+
+# Simplest affect model with three weights, fit with variational inference
+
+fit3 <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  affect_sfx = "3wt",
+  exp_part = "training"
+)}
+
+}

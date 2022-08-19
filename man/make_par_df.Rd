@@ -26,3 +26,15 @@ participant data.
 \code{make_par_df} combines a \code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} with raw data to e.g.,
 pass to an outcome model, with filtering based on model fit metrics.
 }
+\examples{
+\dontrun{
+fit <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+ )
+
+make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)}
+
+}

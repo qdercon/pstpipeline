@@ -21,6 +21,22 @@
 #'
 #' @returns Either file paths or a [posterior::draws_list].
 #'
+#' @examples \dontrun{
+#' data(example_data)
+#'
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#'  )
+#'
+#'  posterior_preds <- generate_posterior_quantities(
+#'    fit_mcmc = fit,
+#'    data_list = fit$stan_datalist,
+#'    return_type = "draws_list"
+#'  )}
+#'
 #' @export
 
 generate_posterior_quantities <-
@@ -28,7 +44,7 @@ generate_posterior_quantities <-
            data_list,
            out_dir = "outputs/cmdstan",
            save_model_as = "",
-           return_type = "",
+           return_type = c("paths", "draws_list"),
            par_chains = getOption("mc.cores", 4)) {
 
   if (grepl("_ppc", fit_mcmc$metadata()$model_name)) {
@@ -40,6 +56,8 @@ generate_posterior_quantities <-
 
   if (grepl("gainloss", fit_mcmc$metadata()$model_name)) alphas <- "2a"
   else alphas <- "1a"
+
+  return_type <- match.arg(return_type)
 
   out_dir <- file.path(getwd(), out_dir)
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)

@@ -11,10 +11,12 @@
 #' @param indiv Return individual-level data? This can then be passed to
 #' [plot_import()].
 #' and plotted for one individual at a time.
-#' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
+#' @param ret_incomplete Return incomplete datasets? They may require manual
+#' parsing.
 #' @param ... Other arguments passed to [import_single()].
 #'
-#' @return \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
+#' @returns \code{list} of \code{tibbles} or a single \code{tibble} if
+#' \code{combine == TRUE}.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom utils setTxtProgressBar txtProgressBar

@@ -10,18 +10,44 @@
 #' phase.
 #' @param alpha_par_nms Option to rename learning rate parameters, defaults to
 #' the names from \code{par_df}.
+#' @param plot_together If \code{TRUE}, returns a panel with all plots plotted,
+#' otherwise a named list of plots is returned.
 #' @param pal,font,font_size Same as [plot_import()].
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang !!
+#'
+#' @returns A list or grid of ggplots.
+#'
+#' @examples \dontrun{
+#' dir.create("outputs/cmdstan/simulated_data")
+#'
+#' train_sim_2a <- simulate_QL(
+#'   sample_size = 10,
+#'   alpha_pos_dens = c(shape = 2, scale = 0.1), # default
+#'   alpha_neg_dens = c(shape = 2, scale = 0.1), # default
+#'   beta_dens = c(mean = 3, sd = 1) # default
+#' )
+#'
+#' mcmc_2a_train_sim <- fit_learning_model(
+#'   train_sim_2a$sim, model = "2a", exp_part = "training",
+#'   vb = FALSE, model_checks = FALSE, par_recovery = TRUE,
+#'   outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+#'   out_dir = "outputs/cmdstan/simulated_data"
+#' )
+#'
+#' plot_recovery(train_sim_2a$pars, mcmc_2a_train_sim$summary)
+#' }
+#'
 #' @export
 
 plot_recovery <- function(raw_pars,
                           sim_pars,
                           test = FALSE,
                           alpha_par_nms = NULL,
+                          plot_together = TRUE,
                           pal = NULL,
                           font = "",
                           font_size = 11) {
@@ -58,7 +84,7 @@ plot_recovery <- function(raw_pars,
 
   for (p in seq_along(unique(pars_df$parameter))) {
     par <- unique(pars_df$parameter)[p]
-    alpha <- grepl("alpha", par)
+    alpha_par <- grepl("alpha", par)
 
     pred_plots[[p]] <- pars_df %>%
       dplyr::filter(parameter == par) %>%
@@ -142,5 +168,6 @@ plot_recovery <- function(raw_pars,
     )
 
   pred_plots$heatmap <- corr_htmp
-  return(cowplot::plot_grid(plotlist = pred_plots, nrow = 1))
+  if (!plot_together) return(pred_plots)
+  else return(cowplot::plot_grid(plotlist = pred_plots, nrow = 1))
 }

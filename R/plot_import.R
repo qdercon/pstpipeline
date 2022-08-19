@@ -23,7 +23,7 @@
 #' "all" is selected as an option.
 #' @param plt.affect List of length <= 2 indicating (1) how many trials to lag
 #' (only a single value accepted), and (2) the nouns to plot (can be any of
-#' "happy", "confident", "engaged", or "fatigue").
+#' "happy", "confident", "engaged", or "fatigue"; defaults to all types).
 #' @param grp_compare Group to compare on which is found from the participant
 #' info. Note that if \code{parsed_list} is split into 2 (i.e., distanced and
 #' non-distanced), comparisons will be automatically made on this split.
@@ -44,29 +44,54 @@
 #' @param ... Other arguments, used internally by other functions calling this
 #' one.
 #'
-#' @return Either a single or named \code{list} of \code{ggplot} objects
+#' @returns Either a single or named \code{list} of \code{ggplot} objects.
+#'
+#' @examples
+#  data(example_data)
+#
+#' # Plot twenty-trial lagged training data, by distancing group
+#' plot_import(
+#'   example_data,
+#'   types = "train",
+#'   plt.train = list(20),
+#'   grp_compare = "distanced"
+#' )
+#'
+#' # Plot test data for training and novel types, by sex
+#' plot_import(
+#'   example_data,
+#'   types = "test",
+#'   plt.test = list(c("training", "novel"), "individual"),
+#'   grp_compare = "sex"
+#' )
+#'
+#' # Block end-of-block fatigue ratings in the non-distanced group only
+#' plot_import(
+#'   example_data$nd,
+#'   types = "affect",
+#'   plt.affect = list(20, "fatigue")
+#' )
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang := !!
 #' @export
 
-plot_import <-
-  function(parsed_list,
-           import_single = FALSE,
-           id = NULL,
-           types = c("train", "test", "affect"),
-           plt.train = list(),
-           plt.test = list(),
-           plt.affect = list(),
-           grp_compare = NULL,
-           grp_names = c(),
-           recode_na = NULL,
-           aff_by_reward = FALSE,
-           legend_pos = "right",
-           pal = NULL,
-           font = "",
-           font_size = 14,
-           ...) {
+plot_import <- function(parsed_list,
+                        import_single = FALSE,
+                        id = NULL,
+                        types = c("train", "test", "affect"),
+                        plt.train = list(),
+                        plt.test = list(),
+                        plt.affect = list(),
+                        grp_compare = NULL,
+                        grp_names = c(),
+                        recode_na = NULL,
+                        aff_by_reward = FALSE,
+                        legend_pos = "right",
+                        pal = NULL,
+                        font = "",
+                        font_size = 14,
+                        ...) {
 
     if (length(grp_compare) > 1) stop("Can only compare on one feature.")
     if (length(grp_names) > 2) warning(

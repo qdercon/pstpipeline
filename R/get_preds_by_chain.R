@@ -32,8 +32,34 @@
 #' \code{vars} (default = "y_pred"), and \code{pred_types} (default =
 #' \code{c("AB", "CD", "EF")}).
 #'
-#' @return An updated \code{tibble} with summed choices per chain and their
+#' @returns An updated \code{tibble} with summed choices per chain and their
 #' overall proportion.
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#' dir.create("outputs/cmdstan/predictions")
+#'
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training",
+#'   iter_sampling = 2000,
+#'   outputs = c("model_env", "raw_df", "stan_datalist")
+#'  )
+#'
+#'  pred_paths <- generate_posterior_quantities(
+#'    fit_mcmc = fit,
+#'    data_list = fit$stan_datalist,
+#'    return_type = "paths"
+#'  )
+#'
+#'  obs_df_preds <- get_preds_by_chain(
+#'    out_files = pred_paths,
+#'    out_dir = "outputs/cmdstan/predictions",
+#'    obs_df = fit$raw_df,
+#'    n_draws_chain = 2000
+#'  )}
 #'
 #' @importFrom magrittr %>%
 #' @importFrom rlang := !!
@@ -41,18 +67,18 @@
 #' @importFrom utils tail
 #' @export
 
-get_preds_by_chain <-
-  function(out_files,
-           out_dir = "",
-           obs_df,
-           n_draws_chain,
-           save_dir = out_dir,
-           test = FALSE,
-           prefix = "",
-           splits = list(blocks = 1:6, sum_blks = list(c(1,3), c(4,6))),
-           exclude = NULL,
-           memory_save = TRUE,
-           ...) {
+get_preds_by_chain <- function(out_files,
+                               out_dir = "",
+                               obs_df,
+                               n_draws_chain,
+                               save_dir = out_dir,
+                               test = FALSE,
+                               prefix = "",
+                               splits = list(blocks = 1:6,
+                                             sum_blks = list(c(1,3), c(4,6))),
+                               exclude = NULL,
+                               memory_save = TRUE,
+                               ...) {
 
   start <- Sys.time()
 
