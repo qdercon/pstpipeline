@@ -46,10 +46,10 @@ parameters {
   real<lower=0> alpha_s;
   real<lower=0> beta_s;
 
-  // individual-level parameters for Matt trick
-  vector[N] alpha_pos_pr;
-  vector[N] alpha_neg_pr;
-  vector[N] beta_pr;
+  // individual-level QL parameters
+  vector<lower=0,upper=1>[N] alpha_pos;
+  vector<lower=0,upper=1>[N] alpha_neg;
+  vector<lower=0,upper=10>[N] beta;
 
   // individual-level weights
   real w0[N, 3];
@@ -60,25 +60,15 @@ parameters {
   vector<lower=0>[N] sigma_t; // scale of t distribution
 }
 
-transformed parameters {
-  vector<lower=0,upper=1>[N] alpha_pos;
-  vector<lower=0,upper=1>[N] alpha_neg;
-  vector<lower=0,upper=10>[N] beta;
-
-  alpha_pos = Phi_approx(mu_ql_pr[1] + sigma_ql[1] * alpha_pos_pr);
-  alpha_neg = Phi_approx(mu_ql_pr[2] + sigma_ql[2] * alpha_neg_pr);
-  beta      = Phi_approx(mu_ql_pr[3] + sigma_ql[3] * beta_pr) * 10;
-}
-
 model {
   // hyperpriors on QL parameters
   mu_ql_pr ~ normal(0, 1);
   sigma_ql ~ normal(0, 0.2);
 
   // priors on QL parameters
-  alpha_pos_pr ~ normal(0, 1);
-  alpha_neg_pr ~ normal(0, 1);
-  beta_pr      ~ normal(0, 1);
+  alpha_pos ~ normal(mu_ql_pr[1], sigma_ql[1]);
+  alpha_neg ~ normal(mu_ql_pr[2], sigma_ql[2]);
+  beta      ~ normal(mu_ql_pr[3] * 10, sigma_ql[3] * 10);
 
   // priors on the weights
   for (p in 1:3) {
