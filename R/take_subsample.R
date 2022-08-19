@@ -34,3 +34,15 @@ take_subsample <- function(parsed_list,
 
   return(subsample)
 }
+
+#' Example probabilistic selection task data
+#'
+#' An example dataset with data from ten individuals (non-distanced).
+#'
+#' @docType data
+#' @keywords example_data
+#' @name example_data
+#' @usage data(example_data)
+#' @format A list with four elements (\code{ppt_info}, \code{training},
+#' \code{test}, \code{gillan_questions}).
+NULL
