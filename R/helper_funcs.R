@@ -1,3 +1,54 @@
+#' Helper function to take a subsample of our parsed list (for demonstration
+#' purposes)
+#'
+#' \code{take_subsample} takes a sample of size n to enable model fitting on a
+#' smaller sample.
+#'
+#' @param parsed_list A list outputted from [import_multiple()].
+#' @param n_ppts Sample size to take.
+#'
+#' @return A named \code{list}.
+#'
+#' @importFrom magrittr %>%
+#' @export
+
+take_subsample <- function(parsed_list,
+                           n_ppts) {
+
+  if (is.null(parsed_list[["ppt_info"]])) {
+    stop(
+      strwrap("Could not find a list of participant info to take a sample of
+              IDs. Perhaps the list is split?", prefix = " ", initial = "")
+    )
+  }
+
+  subjID <- NULL # to appease R CMD check
+  ids <- sample(unique(parsed_list[["ppt_info"]][["subjID"]]), size = n_ppts)
+  subsample <- list()
+  elements <- names(parsed_list)
+
+  for (el in elements) {
+    subsample[[el]] <- parsed_list[[el]] %>%
+      dplyr::filter(subjID %in% ids)
+  }
+
+  return(subsample)
+}
+
+#' Example probabilistic selection task data
+#'
+#' An example dataset with data from ten individuals from each group.
+#'
+#' @docType data
+#' @keywords example_data
+#' @name example_data
+#' @usage data(example_data)
+#' @format A list with two elements: \code{nd} has ten non-distanced
+#' individuals, and \code(dis) has ten distanced individuals. Each sub-list is a
+#' list with four elements: (\code{ppt_info}, \code{training}, \code{test}, and
+#' \code{gillan_questions})
+NULL
+
 #' Compute a standard error of the mean
 #'
 #' \code{std} computes the standard error of a mean.
@@ -19,7 +70,7 @@ std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
 #' @param cred A scalar between 0 and 1, indicating the mass within the
 #' credible interval that is to be estimated.
 #'
-#' @return A [base::vector()] with the lower and upper HDI.
+#' @return A vector with the lower and upper HDI.
 #' @noRd
 
 # Adapted from hBayesDM::HDIofMCMC, in turn based on John Kruschke's code.
@@ -45,15 +96,16 @@ single_hdi <- function(vals,
 #' intervals (HDIs)
 #'
 #' \code{quantile_hdi} computes any number of highest density quantiles from a
-#' sample of representative values, estimated as shortest credible intervals.
+#' sample of representative values, estimated as shortest credible intervals. If
+#' \code{quantile} contains 0, 0.5, or 1, will return the minimum, median, and
+#' maximum respectively.
 #'
 #' @param var A vector of representative values from a probability distribution
 #' (e.g., MCMC samples).
 #' @param quantile A vector of quantiles to return.
 #' @param transform Are values log-scaled (e.g., estimated from Gamma GLMs)?
 #'
-#' @return A sorted [base::vector()] with all HDIs plus the min/max/median if
-#' specified.
+#' @return A sorted vector with all specified quantiles.
 #' @export
 
 quantile_hdi <- function(var,
@@ -231,10 +283,9 @@ axis_title <- function(param,
 #' @param adj Name of the affect adjective - one of "happy", "confident" or
 #' "engaged".
 #'
-#' @return List containing a [base::data.frame()] with participant identifiers,
-#' numbers, and \eqn{R^2}, MAE and RMSE for each individual; and a named list
-#' (by ID) of data frames with individuals' mean posterior predictions and raw
-#' affect data.
+#' @return List containing a dataframe with participant identifiers, numbers,
+#' and \eqn{R^2}, MAE and RMSE for each individual; and a named list (by ID) of
+#' data frames with individuals' mean posterior predictions and raw affect data.
 #' @importFrom magrittr %>%
 #' @importFrom data.table .SD as.data.table
 #' @export
