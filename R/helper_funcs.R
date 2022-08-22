@@ -195,7 +195,8 @@ family_ch <- function(param) {
 #'   exp_part = "training"
 #'  )
 #'
-#' make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)}
+#' make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)
+#' }
 #'
 #' @export
 
@@ -319,7 +320,8 @@ axis_title <- function(param,
 #'    draws = fit_affect$draws,
 #'    raw = fit_affect$raw_df,
 #'    adj = "happy"
-#'  )}
+#'  )
+#'  }
 #'
 #' @importFrom data.table .SD as.data.table
 #' @export
@@ -410,7 +412,8 @@ get_affect_ppc <- function(draws,
 #'   exp_part = "training"
 #' )
 #'
-#' aff_wts <- get_affect_wts(fit_affect$summary)}
+#' aff_wts <- get_affect_wts(fit_affect$summary)
+#' }
 #'
 #' @export
 

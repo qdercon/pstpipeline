@@ -19,6 +19,12 @@
 #' \code{combine == TRUE}.
 #'
 #' @importFrom utils setTxtProgressBar txtProgressBar
+#'
+#' @examples \dontrun{
+#' # Data not included in package (as ~900MB)
+#' all_res_split <- import_multiple("data-raw/all_995_complete.txt", add_sex = TRUE)
+#' }
+#'
 #' @export
 
 import_multiple <- function(jatos_txt_file,

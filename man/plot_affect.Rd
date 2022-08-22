@@ -6,12 +6,13 @@
 ratings}
 \usage{
 plot_affect(
-  fit_list,
-  plt_type = c("individual", "grouped"),
+  data,
+  plt_type = c("individual", "grouped", "weights"),
   adj_order = c("happy", "confident", "engaged"),
   nouns = c("Happiness", "Confidence", "Engagement"),
   id_no = NULL,
   r2_coords = c(0.9, 0.8),
+  cred = c(0.95, 0.99),
   legend_pos = "right",
   pal = NULL,
   font = "",
@@ -19,9 +20,11 @@ plot_affect(
 )
 }
 \arguments{
-\item{fit_list}{List of outputs from \link{get_affect_ppc}.}
+\item{data}{Either a list of outputs from \link{get_affect_ppc}, or weights from
+\link{get_affect_wts}.}
 
-\item{plt_type}{Possible types are "grouped" or "individual".}
+\item{plt_type}{Possible types are "grouped" or "individual" (for
+\link{get_affect_ppc} outputs) or "weights" (for \link{get_affect_wts} output).}
 
 \item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
@@ -33,6 +36,8 @@ each adjective.}
 
 \item{r2_coords}{If \code{grouped == FALSE}, coordinates to print the
 \eqn{R^2} value.}
+
+\item{cred}{Same as \link{plot_glm}, ignored unless \code{plt_type == "weights"}.}
 
 \item{legend_pos, pal, font, font_size}{Same as \link{plot_import}.}
 }
@@ -63,6 +68,10 @@ plot_affect(fit_dfs, plt_type = "grouped")
 
 # Individual-level median posterior predictions
 plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
+
+# Weight plot
+aff_wts <- get_affect_wts(fit_affect$summary)
+plot_affect(aff_wts, plt_type = "weights"))
 }
 
 }

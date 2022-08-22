@@ -96,7 +96,8 @@
 #'   affect = TRUE,
 #'   affect_sfx = "3wt",
 #'   exp_part = "training"
-#' )}
+#' )
+#' }
 #'
 #' @export
 

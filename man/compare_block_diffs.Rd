@@ -63,6 +63,7 @@ comp_blocks <- compare_block_diffs(
   var_of_interest = "distanced",
   covariates = c("age", "sex", "digit_span"),
   model = "2a"
-)}
-#'
+)
+}
+
 }

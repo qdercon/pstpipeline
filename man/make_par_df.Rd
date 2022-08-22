@@ -35,6 +35,7 @@ fit <- fit_learning_model(
   exp_part = "training"
  )
 
-make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)}
+make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)
+}
 
 }

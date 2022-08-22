@@ -139,6 +139,7 @@ fit3 <- fit_learning_model(
   affect = TRUE,
   affect_sfx = "3wt",
   exp_part = "training"
-)}
+)
+}
 
 }

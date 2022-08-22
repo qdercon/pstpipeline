@@ -5,8 +5,10 @@
 #' individual-level posterior predictions (vs. raw observations) for a defined
 #' list of posterior predictions and/or grouping.
 #'
-#' @param fit_list List of outputs from [get_affect_ppc].
-#' @param plt_type Possible types are "grouped" or "individual".
+#' @param data Either a list of outputs from [get_affect_ppc], or weights from
+#' [get_affect_wts].
+#' @param plt_type Possible types are "grouped" or "individual" (for
+#' [get_affect_ppc] outputs) or "weights" (for [get_affect_wts] output).
 #' @param adj_order Same as [fit_learning_model()].
 #' @param nouns Formatted noun versions of the adjectives, in order.
 #' @param id_no If \code{grouped == FALSE}, a participant number to plot. If
@@ -14,6 +16,7 @@
 #' each adjective.
 #' @param r2_coords If \code{grouped == FALSE}, coordinates to print the
 #' \eqn{R^2} value.
+#' @param cred Same as [plot_glm], ignored unless \code{plt_type == "weights"}.
 #' @param legend_pos,pal,font,font_size Same as [plot_import].
 #'
 #' @return A single or list of \code{ggplot} object(s) depending on type.
@@ -38,16 +41,21 @@
 #'
 #' # Individual-level median posterior predictions
 #' plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
+#'
+#' # Weight plot
+#' aff_wts <- get_affect_wts(fit_affect$summary)
+#' plot_affect(aff_wts, plt_type = "weights"))
 #' }
 #'
 #' @export
 
-plot_affect <- function(fit_list,
-                        plt_type = c("individual", "grouped"),
+plot_affect <- function(data,
+                        plt_type = c("individual", "grouped", "weights"),
                         adj_order = c("happy", "confident", "engaged"),
                         nouns = c("Happiness", "Confidence", "Engagement"),
                         id_no = NULL,
                         r2_coords = c(0.9, 0.8),
+                        cred = c(0.95, 0.99),
                         legend_pos = "right",
                         pal = NULL,
                         font = "",
@@ -55,16 +63,74 @@ plot_affect <- function(fit_list,
 
   plt_type <- match.arg(plt_type)
 
-  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- NULL
+  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- w <- name <-
+    param <- post_mean <- NULL
 
-  if (plt_type == "grouped") {
+  if (plt_type == "weights") {
+
+    cred <- sort(cred)
+    cred_l1 <- (1-cred[2])/2
+    cred_l2 <- (1-cred[1])/2
+
+    p <- unique(data$param)
+    labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^o),
+              expression(w[1]^b), expression(w[2]), expression(w[3]))
+
+    if (any(grepl("w1_o", w) & !grepl("w1_b", w))) labs <- labs[c(1,2,3,6,7)]
+    else if (!grepl("w1_o", w)) labs <- labs[c(1,2,6,7)]
+
+    weight_plot <- data |>
+      dplyr::filter(!grepl("mu|sigma", param)) |>
+      dplyr::mutate(
+        adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(name)))
+      ) |>
+      ggplot2::ggplot(
+        ggplot2::aes(
+          x = param, y = post_mean, color = factor(adj), fill = factor(adj)
+        )) +
+      geom_flat_violin(position = ggplot2::position_nudge(x = .125, y = 0),
+                       adjust = 2, trim = FALSE, alpha = 0.5) +
+      ggplot2::geom_point(
+        ggplot2::aes(x = as.numeric(as.factor(param)) - 0.225),
+        position = ggplot2::position_jitter(width = .1, height = 0),
+        size = .25,
+        alpha = 0.15
+      ) +
+      ggplot2::stat_summary(
+        geom = "boxplot",
+        fun.data = function(x) {
+          setNames(
+            quantile_hdi(x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1)),
+            c("ymin", "lower", "middle", "upper", "ymax")
+          )
+        },
+        position = ggplot2::position_dodge2(),
+        alpha = 0.6,
+        width = 0.2
+      ) +
+      ggplot2::geom_hline(
+        ggplot2::aes(yintercept = 0),
+        size = 0.6,
+        alpha = 0.4,
+        linetype = "dashed",
+        colour = "slategrey"
+      ) +
+      ggplot2::scale_color_manual(name = NULL, values = pal) +
+      ggplot2::scale_fill_manual(name = NULL, values = pal) +
+      ggplot2::scale_x_discrete(name = "Parameter", labels = labs) +
+      ggplot2::scale_y_continuous(name = "Posterior mean") +
+      cowplot::theme_half_open(font_family = font, font_size = font_size) +
+      ggplot2::theme(legend.position = legend_pos)
+
+  }
+  else if (plt_type == "grouped") {
     if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     ppc_list <- lapply(
       1:length(adj_order),
       function(f) {
         dplyr::mutate(
           data.table::rbindlist(
-            fit_list[[f]]$indiv_ppcs, idcol = "subjID"
+            data[[f]]$indiv_ppcs, idcol = "subjID"
           ),
           adj = adj_order[f]
         )
@@ -108,7 +174,6 @@ plot_affect <- function(fit_list,
       ggplot2::theme(legend.position = c(0.85, 0.85))
     return(grouped_plot)
   }
-
   else if (plt_type == "individual") {
     if(is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -121,12 +186,12 @@ plot_affect <- function(fit_list,
       }
     }
 
-    len <- length(fit_list)
+    len <- length(data)
     id_vec <- vector(mode = "integer", length = len)
 
     if (is.null(id_no)) {
       id_vec <- sapply(1:len,
-                       function(f) median_id(fit_list[[f]]$fit_df, "num"))
+                       function(f) median_id(data[[f]]$fit_df, "num"))
     } else {
       id_vec <- rep(id_no, len)
     }
@@ -135,11 +200,11 @@ plot_affect <- function(fit_list,
 
     for (a in 1:length(adj_order)) {
       adj <- adj_order[a]
-      r2 <- subset(fit_list[[a]]$fit_df, id_no == id_vec[a])$R2
+      r2 <- subset(data[[a]]$fit_df, id_no == id_vec[a])$R2
 
       indiv_ppc_plots[[adj]] <-
-        fit_list[[a]]$indiv_ppcs[[
-          median_id(fit_list[[a]]$fit_df, "id", id_vec[a])
+        data[[a]]$indiv_ppcs[[
+          median_id(data[[a]]$fit_df, "id", id_vec[a])
         ]] |>
         ggplot2::ggplot(
           ggplot2::aes(x = trial_no_q, y = value, color = type, fill = type)

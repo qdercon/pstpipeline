@@ -101,6 +101,7 @@ plot_raincloud(
   raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
   by = "distanced",
   flip = FALSE
-)}
+)
+}
 
 }

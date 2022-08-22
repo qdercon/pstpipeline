@@ -40,6 +40,7 @@ fit_affect <- fit_learning_model(
    draws = fit_affect$draws,
    raw = fit_affect$raw_df,
    adj = "happy"
- )}
+ )
+ }
 
 }

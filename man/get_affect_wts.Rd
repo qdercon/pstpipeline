@@ -27,6 +27,7 @@ fit_affect <- fit_learning_model(
   exp_part = "training"
 )
 
-aff_wts <- get_affect_wts(fit_affect$summary)}
+aff_wts <- get_affect_wts(fit_affect$summary)
+}
 
 }

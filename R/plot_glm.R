@@ -70,7 +70,8 @@
 #'   covariates = c("age", "sex", "digit_span"),
 #'   iter_warmup = 1000, iter_sampling = 1000
 #' )
-#' plot_glm(distanced, plot_var = "distanced")}
+#' plot_glm(distanced, plot_var = "distanced")
+#' }
 #'
 #' @export
 

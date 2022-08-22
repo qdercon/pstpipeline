@@ -51,12 +51,13 @@ fit <- fit_learning_model(
   model = "2a",
   vb = FALSE,
   exp_part = "training"
- )
+)
 
- posterior_preds <- generate_posterior_quantities(
-   fit_mcmc = fit,
-   data_list = fit$stan_datalist,
-   return_type = "draws_list"
- )}
+posterior_preds <- generate_posterior_quantities(
+  fit_mcmc = fit,
+  data_list = fit$stan_datalist,
+  return_type = "draws_list"
+)
+}
 
 }

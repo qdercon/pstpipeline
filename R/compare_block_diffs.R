@@ -29,8 +29,9 @@
 #'   var_of_interest = "distanced",
 #'   covariates = c("age", "sex", "digit_span"),
 #'   model = "2a"
-#' )}
-#' #'
+#' )
+#' }
+#'
 #' @export
 
 compare_block_diffs <- function(all_res,

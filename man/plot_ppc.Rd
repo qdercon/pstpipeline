@@ -113,6 +113,7 @@ plot_ppc(
 )
 
 # Test plots can be plotted similarly with test_perf - the second and third
-# arguments follow the same logic as plot_import(plt.test)}
+# arguments follow the same logic as plot_import(plt.test)
+}
 
 }

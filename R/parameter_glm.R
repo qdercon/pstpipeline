@@ -89,7 +89,8 @@
 #'   interaction = "distanced",
 #'   affect_number = 1,
 #'   factor_scores = factor_scores
-#'  )}
+#' )
+#' }
 #'
 #' @importFrom rlang !! :=
 #' @export

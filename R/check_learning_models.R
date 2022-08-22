@@ -27,7 +27,8 @@
 #'   vb = FALSE,
 #'   exp_part = "training"
 #'  )
-#' model_checks <-  check_learning_models(fit$draws)}
+#' model_checks <-  check_learning_models(fit$draws)
+#' }
 #'
 #' @export
 
