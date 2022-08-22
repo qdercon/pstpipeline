@@ -62,7 +62,6 @@
 #' fit object, plus any other outputs passed to \code{outputs}.
 #'
 #' @importFrom data.table as.data.table .N
-#' @importFrom magrittr %>%
 #'
 #' @examples \dontrun{
 #' # Single learning rate Q-learning model fit to training data with MCMC
@@ -170,23 +169,23 @@ fit_learning_model <- function(df_all,
 
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl) {
-      ids <- df_all[["ppt_info"]] %>%
+      ids <- df_all[["ppt_info"]] |>
         dplyr::select(subjID, exclusion, final_block_AB)
-      if (accuracy_excl) ids <- ids %>% dplyr::filter(final_block_AB >= 0.6)
-      if (task_excl) ids <- ids %>% dplyr::filter(exclusion == 0)
-      ids <- ids %>% dplyr::select(subjID)
+      if (accuracy_excl) ids <- ids |> dplyr::filter(final_block_AB >= 0.6)
+      if (task_excl) ids <- ids |> dplyr::filter(exclusion == 0)
+      ids <- ids |> dplyr::select(subjID)
     }
     else {
       ids <- unique(df_all[["training"]][["subjID"]])
     }
 
-    training_df <- df_all[["training"]] %>%
-      dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
+    training_df <- df_all[["training"]] |>
+      dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
       tidyr::drop_na(choice)
 
     if (exp_part == "test") {
-      test_df <- df_all[["test"]] %>%
-        dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
+      test_df <- df_all[["test"]] |>
+        dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
         tidyr::drop_na(choice)
 
       raw_df <- list()
@@ -196,20 +195,20 @@ fit_learning_model <- function(df_all,
     else {
       if (!affect) raw_df <- data.table::as.data.table(training_df)
       else {
-        training_df <- training_df %>%
-          dplyr::rowwise() %>%
-          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) %>%
+        training_df <- training_df |>
+          dplyr::rowwise() |>
+          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
           dplyr::mutate(
             question =
               ifelse(question_type == adj_order[1], 1,
                      ifelse(question_type == adj_order[2], 2, 3)
               )
-          ) %>%
-          dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) %>%
-          dplyr::group_by(subjID, trial_block) %>%
-          dplyr::mutate(block_time = trial_time - min(trial_time)) %>%
-          dplyr::group_by(subjID, question_type) %>%
-          dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) %>%
+          ) |>
+          dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
+          dplyr::group_by(subjID, trial_block) |>
+          dplyr::mutate(block_time = trial_time - min(trial_time)) |>
+          dplyr::group_by(subjID, question_type) |>
+          dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
           dplyr::ungroup()
 
           raw_df <- data.table::as.data.table(training_df)
@@ -220,11 +219,11 @@ fit_learning_model <- function(df_all,
     if (exp_part == "training") raw_df <- df_all
     else {
       raw_df <- list()
-      raw_df$train <- df_all %>%
-        dplyr::filter(exp_part == "training") %>%
+      raw_df$train <- df_all |>
+        dplyr::filter(exp_part == "training") |>
         dplyr::select(-exp_part)
-      raw_df$test <- df_all %>%
-        dplyr::filter(exp_part == "test") %>%
+      raw_df$test <- df_all |>
+        dplyr::filter(exp_part == "test") |>
         dplyr::select(-exp_part)
     }
   }

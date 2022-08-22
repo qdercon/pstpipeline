@@ -91,7 +91,6 @@
 #'   factor_scores = factor_scores
 #'  )}
 #'
-#' @importFrom magrittr %>%
 #' @importFrom rlang !! :=
 #' @export
 
@@ -129,7 +128,7 @@ parameter_glm <- function(summary_df = list(),
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
   if (!is.null(factor_scores)) {
-    all_data <- all_data %>%
+    all_data <- all_data |>
       dplyr::left_join(factor_scores, by = "subjID")
   }
   if ("aff_num" %in% colnames(all_data)) {
@@ -137,9 +136,9 @@ parameter_glm <- function(summary_df = list(),
       warning(
         "Affect number not specified, defaulting to Q-learning parameters."
       )
-      all_data <- all_data %>% dplyr::filter(is.na(aff_num))
+      all_data <- all_data |> dplyr::filter(is.na(aff_num))
     }
-    else all_data <- all_data %>% dplyr::filter(aff_num == affect_number)
+    else all_data <- all_data |> dplyr::filter(aff_num == affect_number)
   }
 
   formula <- paste0("posterior_mean ~ ",
@@ -149,7 +148,7 @@ parameter_glm <- function(summary_df = list(),
     int_term <- rlang::sym(interaction)
     formula <- paste0(formula, "+", var_of_interest, "*", interaction)
     if (!is.null(recode_na)) {
-      all_data <- all_data %>%
+      all_data <- all_data |>
         dplyr::mutate(
           !!int_term := ifelse(
             is.na(!!int_term), recode_na, !!int_term
@@ -160,7 +159,7 @@ parameter_glm <- function(summary_df = list(),
     if (length(vals) > 2) {
       stop("Interaction term is non-binary. Perhaps NAs need to be recoded?")
     }
-    all_data_recode <- all_data %>%
+    all_data_recode <- all_data |>
       dplyr::mutate(
         !!int_term := ifelse(
           !!int_term == vals[1], vals[2], vals[1]
@@ -192,7 +191,7 @@ parameter_glm <- function(summary_df = list(),
       iter_sampling = l$iter_sampling, chains = l$chains,
       refresh = l$refresh
     )
-    par_ls[[par]] <- cmdstan_fit$draws(format = "df") %>%
+    par_ls[[par]] <- cmdstan_fit$draws(format = "df") |>
       dplyr::rename_with(
         .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
         .cols = tidyselect::starts_with("beta")
@@ -208,11 +207,11 @@ parameter_glm <- function(summary_df = list(),
         iter_sampling = l$iter_sampling, chains = l$chains,
         refresh = l$refresh
       )
-      par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") %>%
+      par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") |>
         dplyr::rename_with(
           .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
           .cols = tidyselect::starts_with("beta")
-          ) %>%
+          ) |>
         dplyr::mutate(recode = TRUE)
     }
   }
@@ -220,9 +219,9 @@ parameter_glm <- function(summary_df = list(),
   pars_df <- data.table::rbindlist(par_ls, idcol = "parameter")
   if (!is.null(interaction)) {
     int_nm <- rlang::sym(paste0(interaction, "_recode"))
-    pars_df <- pars_df %>% dplyr::mutate(recode = FALSE)
+    pars_df <- pars_df |> dplyr::mutate(recode = FALSE)
     pars_df_recode <- data.table::rbindlist(par_ls_recode, idcol = "parameter")
-    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) %>%
+    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) |>
       dplyr::rename(!!int_nm := recode)
   }
   return(pars_df)

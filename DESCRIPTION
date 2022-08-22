@@ -5,7 +5,7 @@ Version: 0.1.0
 Author: Quentin Dercon
 Maintainer: <quentindercon@gmail.com>
 Description: A high-level hierarchical Bayesian analysis pipeline for the PST with memory optimisations.
-Depends: R (>= 3.6.0)
+Depends: R (>= 4.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
@@ -16,18 +16,17 @@ Imports:
     tidyselect,
     data.table,
     runner,
-    cowplot,
-    posterior,
     rlang,
-    magrittr,
+    cowplot,
     methods
 Suggests:
-    jsonlite,
     cmdstanr,
+    posterior,
+    loo,
     vipor,
     Matrix,
-    bayesplot,
-    loo
+    jsonlite,
+    bayesplot
 Additional_repositories: https://mc-stan.org/r-packages/
 SystemRequirements: GNU make
 LazyData: true

@@ -72,7 +72,6 @@
 #'   plt.affect = list(20, "fatigue")
 #' )
 #'
-#' @importFrom magrittr %>%
 #' @importFrom rlang := !!
 #' @export
 
@@ -132,81 +131,81 @@ plot_import <- function(parsed_list,
       } else {
         if (is.numeric(id)) id <- unique(parsed_list$ppt_info$subjID)[[id]]
         else id <- gsub("#", "", id)
-        training <- parsed_list$training %>%
+        training <- parsed_list$training |>
           dplyr::right_join(tibble::as_tibble(id), by = c("subjID" = "value"))
-        test <- parsed_list$test %>%
+        test <- parsed_list$test |>
           dplyr::right_join(tibble::as_tibble(id), by = c("subjID" = "value"))
         import_single <- TRUE
       }
     }
     else if (!is.null(parsed_list)) {
       if (length(parsed_list) == 2 & is.null(grp_compare)) {
-        ids_vec <- parsed_list[[1]]$ppt_info %>%
-          dplyr::bind_rows(parsed_list[[2]]$ppt_info) %>%
-          dplyr::select(subjID, exclusion) %>%
-          dplyr::filter(exclusion == 0) %>%
+        ids_vec <- parsed_list[[1]]$ppt_info |>
+          dplyr::bind_rows(parsed_list[[2]]$ppt_info) |>
+          dplyr::select(subjID, exclusion) |>
+          dplyr::filter(exclusion == 0) |>
           dplyr::select(-exclusion)
-        training <- parsed_list[[1]]$training %>%
-            dplyr::mutate(group = names(parsed_list)[1]) %>%
+        training <- parsed_list[[1]]$training |>
+            dplyr::mutate(group = names(parsed_list)[1]) |>
             dplyr::bind_rows(
               dplyr::mutate(
                 parsed_list[[2]]$training, group = names(parsed_list)[2]
                 )
-              ) %>%
-            dplyr::right_join(ids_vec, by = "subjID") %>%
+              ) |>
+            dplyr::right_join(ids_vec, by = "subjID") |>
             dplyr::mutate(
               group = ifelse(
                 !is.null(recode_na) & is.na(group), recode_na, group
                 )
             )
-        test <- parsed_list[[1]]$test %>%
-          dplyr::mutate(group = names(parsed_list)[1]) %>%
+        test <- parsed_list[[1]]$test |>
+          dplyr::mutate(group = names(parsed_list)[1]) |>
           dplyr::bind_rows(
             dplyr::mutate(parsed_list[[2]]$test, group = names(parsed_list)[2])
-            ) %>%
-          dplyr::right_join(ids_vec, by = "subjID") %>%
+            ) |>
+          dplyr::right_join(ids_vec, by = "subjID") |>
           dplyr::mutate(
             group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
           )
       }
       else if (is.null(grp_compare)) {
-        ids_vec <- parsed_list$ppt_info %>%
-          dplyr::select(subjID, exclusion) %>%
-          dplyr::filter(exclusion == 0) %>%
+        ids_vec <- parsed_list$ppt_info |>
+          dplyr::select(subjID, exclusion) |>
+          dplyr::filter(exclusion == 0) |>
           dplyr::select(-exclusion)
-        training <- parsed_list$training %>%
+        training <- parsed_list$training |>
           dplyr::right_join(ids_vec, by = "subjID")
-        test <- parsed_list$test %>%
+        test <- parsed_list$test |>
           dplyr::right_join(ids_vec, by = "subjID")
       }
       else {
         if (length(parsed_list) == 2) {
-          ids_vec <- parsed_list[[1]]$ppt_info %>%
+          ids_vec <- parsed_list[[1]]$ppt_info |>
             dplyr::bind_rows(parsed_list[[2]]$ppt_info)
         }
         else {
           ids_vec <- parsed_list$ppt_info
         }
-        ids_vec <- ids_vec %>%
-          dplyr::select(subjID, exclusion, dplyr::any_of(grp_compare)) %>%
-          dplyr::filter(exclusion == 0) %>%
-          dplyr::select(-exclusion) %>%
-          dplyr::rename(group = 2) %>%
+        ids_vec <- ids_vec |>
+          dplyr::select(subjID, exclusion, dplyr::any_of(grp_compare)) |>
+          dplyr::filter(exclusion == 0) |>
+          dplyr::select(-exclusion) |>
+          dplyr::rename(group = 2) |>
           dplyr::mutate(
             group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
           )
 
         if (length(parsed_list) == 2) {
-          training <- parsed_list[[1]]$training %>%
-            dplyr::bind_rows(parsed_list[[2]]$training) %>%
+          training <- parsed_list[[1]]$training |>
+            dplyr::bind_rows(parsed_list[[2]]$training) |>
             dplyr::right_join(ids_vec, by = "subjID")
-          test <- parsed_list[[1]]$test %>%
-            dplyr::bind_rows(parsed_list[[2]]$test) %>%
+          test <- parsed_list[[1]]$test |>
+            dplyr::bind_rows(parsed_list[[2]]$test) |>
             dplyr::right_join(ids_vec, by = "subjID")
         } else {
-          training <- parsed_list$training %>%
+          training <- parsed_list$training |>
             dplyr::right_join(ids_vec, by = "subjID")
-          test <- parsed_list$test %>%
+          test <- parsed_list$test |>
             dplyr::right_join(ids_vec, by = "subjID")
         }
       }
@@ -219,53 +218,53 @@ plot_import <- function(parsed_list,
       names(pairs) <- c("12", "34", "56")
       if (!is.null(grp_compare) | length(parsed_list) == 2) {
         if (length(grp_names) == 0) {
-          training <- training %>%
-            dplyr::rowwise() %>%
+          training <- training |>
+            dplyr::rowwise() |>
             dplyr::mutate(
               type = paste0(pairs[[as.character(type)]], " (", group, ")")
-              ) %>%
+              ) |>
             dplyr::ungroup()
         }
         else {
           names(grp_names) <- as.character(unique(training$group))
-          training <- training %>%
-            dplyr::rowwise() %>%
+          training <- training |>
+            dplyr::rowwise() |>
             dplyr::mutate(
               type = paste0(pairs[[as.character(type)]], " (",
-                            grp_names[[as.character(group)]], ")")) %>%
-            dplyr::mutate(group = grp_names[[as.character(group)]]) %>%
+                            grp_names[[as.character(group)]], ")")) |>
+            dplyr::mutate(group = grp_names[[as.character(group)]]) |>
             dplyr::ungroup()
         }
       }
       else {
-        training <- training %>%
-          dplyr::rowwise() %>%
-          dplyr::mutate(type = pairs[[as.character(type)]]) %>%
+        training <- training |>
+          dplyr::rowwise() |>
+          dplyr::mutate(type = pairs[[as.character(type)]]) |>
           dplyr::ungroup()
       }
 
       if (tryCatch(length(plt.train[[2]]), error = function(e) FALSE)) {
-          train_types <- tibble::as_tibble(plt.train[[2]]) %>%
+          train_types <- tibble::as_tibble(plt.train[[2]]) |>
             dplyr::mutate(value = as.character(value))
-          train_df <- training %>%
+          train_df <- training |>
             dplyr::inner_join(train_types, by = c("type" = "value"))
       }
       else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
           trial_lags <- plt.train[[1]][is.numeric(plt.train[[1]])]
-          train_df <- training %>%
-            dplyr::select(-tidyselect::contains("cum_prob")) %>%
-            tidyr::drop_na(choice) %>%
-            dplyr::arrange(trial_no) %>%
+          train_df <- training |>
+            dplyr::select(-tidyselect::contains("cum_prob")) |>
+            tidyr::drop_na(choice) |>
+            dplyr::arrange(trial_no) |>
             dplyr::group_by(subjID, type)
           if (!is.null(grp_compare) | length(parsed_list) == 2) {
-            train_df <- train_df %>%
+            train_df <- train_df |>
               dplyr::group_by(group, .add = TRUE)
           }
-          train_df <- train_df %>%
+          train_df <- train_df |>
             dplyr::mutate(trial_no_group = dplyr::row_number())
           for (lag in trial_lags) {
             col_name <- rlang::sym(paste0("cuml_accuracy_l", lag))
-            train_df <- train_df %>%
+            train_df <- train_df |>
               dplyr::mutate(
                 !!col_name := runner::runner(
                   x = choice,
@@ -274,7 +273,7 @@ plot_import <- function(parsed_list,
                   )
                 )
           }
-          train_df <- train_df %>%
+          train_df <- train_df |>
             dplyr::ungroup()
       }
       else {
@@ -284,10 +283,10 @@ plot_import <- function(parsed_list,
         trial_lags <- 20
       }
 
-      train_df <- train_df %>%
+      train_df <- train_df |>
         dplyr::select(subjID, trial_no_group, type,
                       tidyselect::contains("cuml_accuracy"),
-                      dplyr::any_of("group")) %>%
+                      dplyr::any_of("group")) |>
         dplyr::group_by(trial_no_group, type)
 
       cols <- names(train_df)[startsWith(names(train_df), "cuml_accuracy")]
@@ -297,17 +296,17 @@ plot_import <- function(parsed_list,
         col <- rlang::sym(cols[l])
         plt_name <- paste0("training_lag", n_lag)
 
-        tr_plot_df <- train_df %>%
-          dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = TRUE)) %>%
-          dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) %>%
-          dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) %>%
-          dplyr::ungroup() %>%
+        tr_plot_df <- train_df |>
+          dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = TRUE)) |>
+          dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) |>
+          dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) |>
+          dplyr::ungroup() |>
           dplyr::distinct(
             trial_no_group, type, cuml_acc_mean, cuml_acc_mean_sub_se,
             cuml_acc_mean_pl_se
           )
 
-        plt_tr <- tr_plot_df %>%
+        plt_tr <- tr_plot_df |>
           ggplot2::ggplot(
             ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
                          colour = factor(type), fill = factor(type))
@@ -357,24 +356,24 @@ plot_import <- function(parsed_list,
       else af_types <- c("happy", "confident", "engaged", "fatigue")
 
       if (any(af_types == "fatigue")) {
-        fatigue_qs <- training %>%
-          dplyr::filter(!is.na(fatigue_response)) %>%
+        fatigue_qs <- training |>
+          dplyr::filter(!is.na(fatigue_response)) |>
           dplyr::mutate(
             dplyr::across(.cols = c(2:3, 8:17), ~ replace(.x, values = NA))
-            ) %>%
-          dplyr::mutate(question_type = "fatigue") %>%
-          dplyr::mutate(question_slider_start = fatigue_slider_start) %>%
+            ) |>
+          dplyr::mutate(question_type = "fatigue") |>
+          dplyr::mutate(question_slider_start = fatigue_slider_start) |>
           dplyr::mutate(question_response = fatigue_response)
-        training <- training %>%
+        training <- training |>
           dplyr::bind_rows(fatigue_qs)
       }
 
-      affect_df <- training %>%
+      affect_df <- training |>
         dplyr::select(subjID, type, choice, reward, trial_no, question_type,
                       question_response, question_slider_start,
-                      dplyr::any_of("group")) %>%
-        dplyr::arrange(trial_no) %>%
-        dplyr::group_by(subjID, question_type) %>%
+                      dplyr::any_of("group")) |>
+        dplyr::arrange(trial_no) |>
+        dplyr::group_by(subjID, question_type) |>
         dplyr::mutate(
           cum_resp_l =
             runner::runner(
@@ -382,21 +381,21 @@ plot_import <- function(parsed_list,
               f = function(x) {sum(x, na.rm=T)/sum(!is.na(x))},
               k = a_lag
               )
-        ) %>%
-        dplyr::mutate(question_no_group = dplyr::row_number()) %>%
+        ) |>
+        dplyr::mutate(question_no_group = dplyr::row_number()) |>
         dplyr::group_by(question_no_group, question_type)
 
       if (aff_by_reward) {
-        affect_df <- affect_df %>%
+        affect_df <- affect_df |>
           dplyr::mutate(
             group = ifelse(reward==1, "Rewarded", "Not rewarded")
-            ) %>%
+            ) |>
           dplyr::group_by(group, .add = TRUE)
       } else if (!is.null(grp_compare) | length(parsed_list) == 2) {
-        affect_df <- affect_df %>%
+        affect_df <- affect_df |>
           dplyr::group_by(group, .add = TRUE)
       } else {
-        affect_df <- affect_df %>%
+        affect_df <- affect_df |>
           dplyr::mutate(group = question_type)
       }
 
@@ -404,16 +403,16 @@ plot_import <- function(parsed_list,
 
       for (n in seq_along(af_types)) {
         noun <- af_types[n]
-        df_to_plt <- affect_df %>%
-          dplyr::filter(question_type == noun) %>%
-          dplyr::mutate(question_type = group) %>%
-          dplyr::mutate(cum_resp_l_mean = mean(cum_resp_l, na.rm = TRUE)) %>%
+        df_to_plt <- affect_df |>
+          dplyr::filter(question_type == noun) |>
+          dplyr::mutate(question_type = group) |>
+          dplyr::mutate(cum_resp_l_mean = mean(cum_resp_l, na.rm = TRUE)) |>
           dplyr::mutate(
             cum_resp_l_mean_sub_se = cum_resp_l_mean - std(cum_resp_l)
-            ) %>%
+            ) |>
           dplyr::mutate(
             cum_resp_l_mean_pl_se = cum_resp_l_mean + std(cum_resp_l)
-            ) %>%
+            ) |>
           dplyr::distinct(
             question_type, question_no_group, cum_resp_l_mean,
             cum_resp_l_mean_sub_se, cum_resp_l_mean_pl_se
@@ -426,7 +425,7 @@ plot_import <- function(parsed_list,
         if (length(unique(df_to_plt$question_type)) == 1) pal_af <- pal[n]
         else pal_af <- pal
 
-        af_plt <- df_to_plt %>%
+        af_plt <- df_to_plt |>
           ggplot2::ggplot(
             ggplot2::aes(
               x = question_no_group, y = cum_resp_l_mean,
@@ -511,11 +510,11 @@ plot_import <- function(parsed_list,
 
       if (tt_grp == "grouped" &
           (length(setdiff(test_types_plt, known_grps)) == 0)) {
-        test <- test %>%
-          dplyr::filter(test_type %in% test_types_plt) %>%
+        test <- test |>
+          dplyr::filter(test_type %in% test_types_plt) |>
           dplyr::mutate(
             test_type = factor(test_type, levels = test_types_plt)
-            ) %>%
+            ) |>
           dplyr::group_by(subjID, test_type)
       }
       else {
@@ -531,32 +530,32 @@ plot_import <- function(parsed_list,
           to_keep <- c(to_keep, setdiff(test_types_plt, known_grps))
         }
 
-      test <- test %>%
-        dplyr::rowwise() %>%
-        dplyr::mutate(test_type = all_pairs[[as.character(type)]]) %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(test_type %in% to_keep) %>%
-        dplyr::mutate(test_type = factor(test_type)) %>%
+      test <- test |>
+        dplyr::rowwise() |>
+        dplyr::mutate(test_type = all_pairs[[as.character(type)]]) |>
+        dplyr::ungroup() |>
+        dplyr::filter(test_type %in% to_keep) |>
+        dplyr::mutate(test_type = factor(test_type)) |>
         dplyr::group_by(subjID, test_type)
       }
 
       if (!is.null(grp_compare) | length(parsed_list) == 2) {
-        test <- test %>%
+        test <- test |>
           dplyr::group_by(group, .add = TRUE)
       }
 
-      test_plot_df <- test %>%
+      test_plot_df <- test |>
         dplyr::mutate(
           test_type_perf = sum(choice, na.rm = TRUE)/length(!is.na(choice))
-          ) %>%
+          ) |>
         dplyr::select(subjID, choice, test_type, test_type_perf,
-                      dplyr::any_of("group")) %>%
+                      dplyr::any_of("group")) |>
         dplyr::ungroup(subjID)
 
       if (import_single) {
-        plot_test <- test_plot_df %>%
-          dplyr::ungroup() %>%
-          dplyr::mutate(choice = ifelse(is.na(choice), 2, choice)) %>%
+        plot_test <- test_plot_df |>
+          dplyr::ungroup() |>
+          dplyr::mutate(choice = ifelse(is.na(choice), 2, choice)) |>
           ggplot2::ggplot(ggplot2::aes(
             x = test_type, fill = factor(choice, levels=c(1, 0, 2)))
           ) +
@@ -586,50 +585,50 @@ plot_import <- function(parsed_list,
       }
       else {
         if (!is.null(grp_compare) | length(parsed_list) == 2) {
-          test_plot_df <- test_plot_df %>%
+          test_plot_df <- test_plot_df |>
             dplyr::distinct(subjID, test_type, test_type_perf, group)
         }
         else {
-          test_plot_df <- test_plot_df %>%
+          test_plot_df <- test_plot_df |>
             dplyr::distinct(subjID, test_type, test_type_perf)
         }
-        test_plot_df <- test_plot_df %>%
+        test_plot_df <- test_plot_df |>
           dplyr::mutate(
             mean_prop_correct = mean(test_type_perf, na.rm = TRUE)
-            ) %>%
+            ) |>
           dplyr::mutate(
             mean_prop_correct_sub_se = mean_prop_correct - std(test_type_perf)
-            ) %>%
+            ) |>
           dplyr::mutate(
             mean_prop_correct_pl_se = mean_prop_correct + std(test_type_perf)
-            ) %>%
-          dplyr::ungroup() %>%
-          dplyr::select(-subjID) %>%
+            ) |>
+          dplyr::ungroup() |>
+          dplyr::select(-subjID) |>
           dplyr::distinct()
 
         if (!is.null(grp_compare) | length(parsed_list) == 2) {
-          test_plot_df <- test_plot_df %>%
+          test_plot_df <- test_plot_df |>
             dplyr::mutate(colour_stim = factor(group))
         }
         else {
           n_types <- length(unique(test_plot_df$test_type))
           if (length(pal) < n_types) {
-            test_plot_df <- test_plot_df %>%
-              dplyr::rowwise() %>%
-              dplyr::mutate(colour_stim = substr(test_type, 1, 1)) %>%
+            test_plot_df <- test_plot_df |>
+              dplyr::rowwise() |>
+              dplyr::mutate(colour_stim = substr(test_type, 1, 1)) |>
               dplyr::mutate(
                 colour_stim = factor(colour_stim,
                                      levels = c("A", "C", "D", "E", "F"))
-                ) %>%
+                ) |>
               dplyr::ungroup()
           } else {
-              test_plot_df <- test_plot_df %>%
+              test_plot_df <- test_plot_df |>
                 dplyr::mutate(colour_stim = factor(test_type))
           }
         }
 
-        plot_test <- test_plot_df %>%
-          dplyr::distinct(test_type, colour_stim, .keep_all = T) %>%
+        plot_test <- test_plot_df |>
+          dplyr::distinct(test_type, colour_stim, .keep_all = T) |>
           ggplot2::ggplot(
             ggplot2::aes(x = test_type, y = mean_prop_correct*100,
                          fill = colour_stim)

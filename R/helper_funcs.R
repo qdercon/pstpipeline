@@ -12,7 +12,6 @@
 #' @examples
 #' data(example_data)
 #' subsamp <- take_subsample(example_data$nd, 10) # sample of 10 participants
-#' @importFrom magrittr %>%
 #' @export
 
 take_subsample <- function(parsed_list,
@@ -31,7 +30,7 @@ take_subsample <- function(parsed_list,
   elements <- names(parsed_list)
 
   for (el in elements) {
-    subsample[[el]] <- parsed_list[[el]] %>%
+    subsample[[el]] <- parsed_list[[el]] |>
       dplyr::filter(subjID %in% ids)
   }
 
@@ -198,7 +197,6 @@ family_ch <- function(param) {
 #'
 #' make_par_df(fit$raw_df, fit$summary, rhat_upper = 1.1, ess_lower = 100)}
 #'
-#' @importFrom magrittr %>%
 #' @export
 
 make_par_df <- function(raw,
@@ -206,43 +204,43 @@ make_par_df <- function(raw,
                         rhat_upper,
                         ess_lower) {
   subjID <- id_all <- variable <- . <- matches <- NULL # appease R CMD check
-  ids <- raw %>%
-    dplyr::distinct(subjID, .keep_all = TRUE) %>%
+  ids <- raw |>
+    dplyr::distinct(subjID, .keep_all = TRUE) |>
     dplyr::mutate(id_no = dplyr::row_number())
 
   n_id <- length(ids$subjID)
 
-  summ <- summary %>%
-    dplyr::filter(grepl("alpha|beta|gamma|w", variable)) %>%
-    dplyr::filter(!grepl("_pr|mu_|sigma|_s", variable)) %>%
+  summ <- summary |>
+    dplyr::filter(grepl("alpha|beta|gamma|w", variable)) |>
+    dplyr::filter(!grepl("_pr|mu_|sigma|_s", variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(matches("ess|rhat"))
-    ) %>%
+    ) |>
     dplyr::mutate(
       id_all = sub("\\].*$", "", sub(".*\\[", "", .[["variable"]]))
-    ) %>%
-    dplyr::rowwise() %>%
+    ) |>
+    dplyr::rowwise() |>
     dplyr::mutate(
       id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
       aff_num = as.numeric(strsplit(id_all, ",")[[1]][2])
-    ) %>%
+    ) |>
     # NA unless affect model
-    dplyr::ungroup() %>%
-    dplyr::mutate(parameter = sub("\\[.*$", "", .[["variable"]])) %>%
-    dplyr::select(-variable, -id_all) %>%
-    dplyr::rename(posterior_mean = mean) %>%
-    dplyr::right_join(ids, by = "id_no") %>%
-    dplyr::group_by(subjID) %>%
+    dplyr::ungroup() |>
+    dplyr::mutate(parameter = sub("\\[.*$", "", .[["variable"]])) |>
+    dplyr::select(-variable, -id_all) |>
+    dplyr::rename(posterior_mean = mean) |>
+    dplyr::right_join(ids, by = "id_no") |>
+    dplyr::group_by(subjID) |>
     dplyr::filter(dplyr::if_any(
       tidyselect::any_of("rhat"), ~!any(.x > rhat_upper))
-    ) %>%
+    ) |>
     dplyr::filter(dplyr::if_any(
       tidyselect::any_of(
         tidyselect::starts_with("ess_b")), ~!any(.x < ess_lower)
-    )) %>%
+    )) |>
     dplyr::select(
       tidyselect::vars_select_helpers$where(~!all(is.na(.x)))
-    ) %>%
+    ) |>
     dplyr::ungroup()
 
   lost_ids <- n_id - length(unique(summ$subjID))
@@ -250,7 +248,7 @@ make_par_df <- function(raw,
     lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS."
     )
 
-  par_df <- ppt_info %>%
+  par_df <- ppt_info |>
     dplyr::inner_join(summ, by = "subjID")
 
   return(par_df)
@@ -323,7 +321,6 @@ axis_title <- function(param,
 #'    adj = "happy"
 #'  )}
 #'
-#' @importFrom magrittr %>%
 #' @importFrom data.table .SD as.data.table
 #' @export
 
@@ -349,9 +346,9 @@ get_affect_ppc <- function(draws,
     setTxtProgressBar(pb, i)
     id <- unique(raw$subjID)[i]
 
-    affect_raw <- raw %>%
-      dplyr::filter(question_type == adj & subjID == id) %>%
-      dplyr::select(trial_no_q, question_response) %>%
+    affect_raw <- raw |>
+      dplyr::filter(question_type == adj & subjID == id) |>
+      dplyr::select(trial_no_q, question_response) |>
       dplyr::rename(mean_raw = question_response)
 
     aff_tr <- which(raw[raw$subjID == id,]$question_type == adj)
@@ -365,14 +362,14 @@ get_affect_ppc <- function(draws,
 
     pred_df <- tibble::tibble(
       mean_pred = means, se_pred = se
-    ) %>%
+    ) |>
       dplyr::mutate(trial_no_q = dplyr::row_number())
 
     obs <- affect_raw$mean_raw
     pred <- pred_df$mean_pred
 
-    res_df <- affect_raw %>%
-      dplyr::left_join(pred_df, by = "trial_no_q") %>%
+    res_df <- affect_raw |>
+      dplyr::left_join(pred_df, by = "trial_no_q") |>
       tidyr::pivot_longer(
         cols = tidyselect::contains("mean"), names_to = "type",
         names_prefix = "mean_"
@@ -415,7 +412,6 @@ get_affect_ppc <- function(draws,
 #'
 #' aff_wts <- get_affect_wts(fit_affect$summary)}
 #'
-#' @importFrom magrittr %>%
 #' @export
 
 get_affect_wts <- function(summary,
@@ -424,18 +420,18 @@ get_affect_wts <- function(summary,
   ## to appease R CMD check
   variable <- aff_num <- id_no <- param <- post_mean <- adj <- NULL
 
-  summary %>%
-    dplyr::filter(grepl("w|gamma\\[", variable)) %>%
-    dplyr::filter(!grepl("mu|sigma", variable)) %>%
-    dplyr::select(variable, mean) %>%
-    dplyr::rowwise() %>%
+  summary |>
+    dplyr::filter(grepl("w|gamma\\[", variable)) |>
+    dplyr::filter(!grepl("mu|sigma", variable)) |>
+    dplyr::select(variable, mean) |>
+    dplyr::rowwise() |>
     dplyr::mutate(
       param = unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[1],
       id_no = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[2]),
       aff_num = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[3]),
       adj = adj_order[aff_num]
-    ) %>%
-    dplyr::rename(post_mean = mean) %>%
-    dplyr::ungroup() %>%
+    ) |>
+    dplyr::rename(post_mean = mean) |>
+    dplyr::ungroup() |>
     dplyr::select(id_no, param, aff_num, post_mean, adj)
 }

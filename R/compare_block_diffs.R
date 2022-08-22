@@ -31,7 +31,6 @@
 #'   model = "2a"
 #' )}
 #' #'
-#' @importFrom magrittr %>%
 #' @export
 
 compare_block_diffs <- function(all_res,
@@ -74,7 +73,7 @@ compare_block_diffs <- function(all_res,
   for (i in seq_along(iter)) {
     if (fit_together) {
       rel_data_tr <- rel_data
-      rel_data_tr$training <- rel_data_tr$training %>%
+      rel_data_tr$training <- rel_data_tr$training |>
         dplyr::filter(trial_no <= iter[i]*60)
 
       fit_typ <- ifelse(vb, "vb", "mcmc")
@@ -103,9 +102,9 @@ compare_block_diffs <- function(all_res,
       rel_data_gr1 <- rel_data[[1]]
       rel_data_gr2 <- rel_data[[2]]
 
-      rel_data_gr1$training <- rel_data_gr1$training %>%
+      rel_data_gr1$training <- rel_data_gr1$training |>
         dplyr::filter(trial_no <= iter[i]*60)
-      rel_data_gr2$training <- rel_data_gr2$training %>%
+      rel_data_gr2$training <- rel_data_gr2$training |>
         dplyr::filter(trial_no <= iter[i]*60)
       fit_typ <- ifelse(vb, "vb", "mcmc")
       grp_names <- names(rel_data)
@@ -148,7 +147,7 @@ compare_block_diffs <- function(all_res,
     )
   names(par_df_ls) <- names_all[c(min_blocks:max_blocks)]
 
-  glm_pars_df <- data.table::rbindlist(par_df_ls, idcol = "block_group") %>%
+  glm_pars_df <- data.table::rbindlist(par_df_ls, idcol = "block_group") |>
     dplyr::mutate(
       block_group = factor(block_group, levels = rev(names(par_df_ls)))
       )

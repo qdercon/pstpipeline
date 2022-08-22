@@ -61,7 +61,6 @@
 #'    n_draws_chain = 2000
 #'  )}
 #'
-#' @importFrom magrittr %>%
 #' @importFrom rlang := !!
 #' @importFrom data.table rbindlist
 #' @importFrom utils tail
@@ -133,10 +132,10 @@ get_preds_by_chain <- function(out_files,
   ids <- sapply(1:n_indiv, function(i) list(i))
   names(ids) <- indiv
 
-  indiv_obs_list <- obs_df %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(id_no = ids[[subjID]]) %>%
-    dplyr::ungroup() %>%
+  indiv_obs_list <- obs_df |>
+    dplyr::rowwise() |>
+    dplyr::mutate(id_no = ids[[subjID]]) |>
+    dplyr::ungroup() |>
     split(., as.factor(.$id_no))
 
   trial_avg_types <- 1+sum(length(splits[[1]]), length(splits[[2]]))
@@ -148,8 +147,8 @@ get_preds_by_chain <- function(out_files,
                               "pred_post_median", "pred_post_lower_95_hdi",
                               "pred_post_upper_95_hdi", "type"))
     )
-  ) %>%
-    dplyr::mutate(dplyr::across(c(1,8), as.character)) %>%
+  ) |>
+    dplyr::mutate(dplyr::across(c(1,8), as.character)) |>
     dplyr::mutate(dplyr::across(2:7, as.numeric))
   trial_avg_list <- rep(list(trial_avg_df), n_indiv)
 
@@ -182,14 +181,14 @@ get_preds_by_chain <- function(out_files,
                                      format = "draws_list")[[2]][[1]]
         if (is.list(all_indiv_draws[[o]])) all_indiv_draws[[o]] <-
             data.table::as.data.table(all_indiv_draws[[o]])
-        all_indiv_draws[[o]] <- all_indiv_draws[[o]] %>%
+        all_indiv_draws[[o]] <- all_indiv_draws[[o]] |>
           dplyr::select(-tidyselect::vars_select_helpers$where(~ any(. == -1)))
       }
       all_indiv_draws <- data.table::rbindlist(all_indiv_draws)
     }
     else {
-      all_indiv_draws <- all_draws_df %>%
-        dplyr::select(indiv_vars[[id]]) %>%
+      all_indiv_draws <- all_draws_df |>
+        dplyr::select(indiv_vars[[id]]) |>
         dplyr::select(-tidyselect::vars_select_helpers$where(~ any(. == -1)))
     }
 
@@ -197,7 +196,7 @@ get_preds_by_chain <- function(out_files,
 
     missing <- which(!seq(1:l$n_trials) %in% indiv_obs_list_id$trial_no)
     for (m in missing) {
-      all_indiv_draws <- all_indiv_draws %>%
+      all_indiv_draws <- all_indiv_draws |>
         tibble::add_column(NA, .after = m-1)
           # adds columns of NAs in the correct place where a trial was missed
     }
@@ -219,24 +218,24 @@ get_preds_by_chain <- function(out_files,
         indiv_obs_list_id[indiv_obs_list_id$type ==
                             type_key[[l$pred_types[stim]]],]$trial_no
         )
-      preds <- all_indiv_draws %>%
+      preds <- all_indiv_draws |>
         dplyr::select(tidyselect::all_of(pred_nms))
 
       pred_sums <- tibble::as_tibble(colSums(preds)/dim(preds)[1],
-                                     rownames = "trial_no") %>%
-        dplyr::rename(choice_pred_prop = value) %>%
-        dplyr::rowwise() %>%
+                                     rownames = "trial_no") |>
+        dplyr::rename(choice_pred_prop = value) |>
+        dplyr::rowwise() |>
         dplyr::mutate(
           trial_no = as.integer(tail(strsplit(trial_no, "_")[[1]], n=1))
-          ) %>%
+          ) |>
         dplyr::ungroup()
 
       obs <-
         tibble::as_tibble(
           indiv_obs_list_id[indiv_obs_list_id$type ==
                               type_key[[l$pred_types[stim]]],]
-        ) %>%
-        dplyr::mutate(id_no = id) %>%
+        ) |>
+        dplyr::mutate(id_no = id) |>
         dplyr::left_join(pred_sums, by = "trial_no")
 
       indiv_obs_types[[l$pred_types[stim]]] <- obs
@@ -244,7 +243,7 @@ get_preds_by_chain <- function(out_files,
       ## get different types of rowsum
       summed_trials <- rowSums(preds)/dim(preds)[2]
       all_trials_q <- quantile_hdi(summed_trials, c(0.025, 0.5, 0.975))
-      trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
+      trial_avg_list[[id]] <- trial_avg_list[[id]] |>
         dplyr::bind_rows(
           tibble::tibble(
             "subjID" = indiv[id],
@@ -276,14 +275,14 @@ get_preds_by_chain <- function(out_files,
         if (length(blk_indiv) > 0) {
           blknames <- paste0("block_", splits[[1]])
           for (blk in seq_along(blknames)) {
-            preds_blk <- preds %>%
+            preds_blk <- preds |>
               dplyr::select(tidyselect::all_of(pred_names[[blknames[blk]]]))
             summed_trials_blk <- rowSums(preds_blk)/dim(preds_blk)[2]
             blk_trials_q <- quantile_hdi(
               summed_trials_blk, c(0.025, 0.5, 0.975)
               )
 
-            trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
+            trial_avg_list[[id]] <- trial_avg_list[[id]] |>
               dplyr::bind_rows(
                 tibble::tibble(
                   "subjID" = indiv[id],
@@ -316,14 +315,14 @@ get_preds_by_chain <- function(out_files,
             included_names <- as.vector(
               unlist(sapply(included, function(nm) pred_names[[blknames[nm]]]))
               )
-            preds_blkgrp <- preds %>%
+            preds_blkgrp <- preds |>
               dplyr::select(tidyselect::all_of(included_names))
             summed_trials_blkgrp <- rowSums(preds_blkgrp)/dim(preds_blkgrp)[2]
             blk_trial_grp_q <- quantile_hdi(
               summed_trials_blkgrp, c(0.025, 0.5, 0.975)
               )
 
-            trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
+            trial_avg_list[[id]] <- trial_avg_list[[id]] |>
               dplyr::bind_rows(
                 tibble::tibble(
                   "subjID" = indiv[id],
@@ -351,7 +350,7 @@ get_preds_by_chain <- function(out_files,
           l$pred_var, "_",
           indiv_obs_list_id[indiv_obs_list_id$test_type == test_grp,]$trial_no
         )
-        preds <- all_indiv_draws %>%
+        preds <- all_indiv_draws |>
           dplyr::select(tidyselect::all_of(pred_nms))
         obs <-
           tibble::as_tibble(
@@ -360,7 +359,7 @@ get_preds_by_chain <- function(out_files,
           )
         group_sum_trials <- rowSums(preds)/dim(preds)[2]
         group_trials_q <- quantile_hdi(group_sum_trials, c(0.025, 0.5, 0.975))
-        trial_avg_list[[id]] <- trial_avg_list[[id]] %>%
+        trial_avg_list[[id]] <- trial_avg_list[[id]] |>
           dplyr::bind_rows(
             tibble::tibble(
               "subjID" = indiv[id],
@@ -382,8 +381,8 @@ get_preds_by_chain <- function(out_files,
   trial_obs_df <- data.table::rbindlist(trial_avg_list)
 
   if (!is.null(exclude)) {
-    indiv_obs_df <- indiv_obs_df %>% dplyr::filter(!id_no %in% exclude)
-    trial_obs_df <- trial_obs_df %>% dplyr::filter(!id_no %in% exclude)
+    indiv_obs_df <- indiv_obs_df |> dplyr::filter(!id_no %in% exclude)
+    trial_obs_df <- trial_obs_df |> dplyr::filter(!id_no %in% exclude)
   }
 
   saveRDS(indiv_obs_df, file = paste0(

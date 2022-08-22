@@ -18,7 +18,6 @@
 #'
 #' @return A single or list of \code{ggplot} object(s) depending on type.
 #'
-#' @importFrom magrittr %>%
 #' @importFrom stats quantile
 #'
 #' @examples \dontrun{
@@ -73,10 +72,10 @@ plot_affect <- function(fit_list,
     )
 
     grouped_plot <-
-      data.table::rbindlist(ppc_list) %>%
-      dplyr::group_by(adj, type, trial_no_q) %>%
-      dplyr::mutate(mean_val = mean(value), se_val = std(value)) %>%
-      dplyr::distinct(trial_no_q, adj, type, mean_val, se_val) %>%
+      data.table::rbindlist(ppc_list) |>
+      dplyr::group_by(adj, type, trial_no_q) |>
+      dplyr::mutate(mean_val = mean(value), se_val = std(value)) |>
+      dplyr::distinct(trial_no_q, adj, type, mean_val, se_val) |>
       ggplot2::ggplot(
         ggplot2::aes(
           x = trial_no_q, y = mean_val, color = adj, fill = adj,
@@ -141,7 +140,7 @@ plot_affect <- function(fit_list,
       indiv_ppc_plots[[adj]] <-
         fit_list[[a]]$indiv_ppcs[[
           median_id(fit_list[[a]]$fit_df, "id", id_vec[a])
-        ]] %>%
+        ]] |>
         ggplot2::ggplot(
           ggplot2::aes(x = trial_no_q, y = value, color = type, fill = type)
         ) +

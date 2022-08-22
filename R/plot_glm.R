@@ -106,7 +106,7 @@ plot_glm <- function(par_df,
 
   parameter <- value <- NULL ## appease R CMD check
 
-  par_df <- par_df %>%
+  par_df <- par_df |>
     dplyr::rename(value = tidyselect::all_of(plot_var))
 
   plots <- list()
@@ -126,10 +126,10 @@ plot_glm <- function(par_df,
       alpha_par <- grepl("alpha", par)
       voi <- rlang::sym(plot_var)
 
-      par_df_tr <- par_df %>% dplyr::filter(parameter == par)
+      par_df_tr <- par_df |> dplyr::filter(parameter == par)
       if (alpha_par) {
         title <- "Estimated mean % difference in"
-        plot <- par_df_tr %>%
+        plot <- par_df_tr |>
           ggplot2::ggplot(
             ggplot2::aes(x = !!grp, y = (exp(value) - 1)*100, fill = id.col,
                          colour = id.col)
@@ -137,7 +137,7 @@ plot_glm <- function(par_df,
       }
       else {
         title <- "Estimated mean difference in"
-        plot <- par_df_tr %>%
+        plot <- par_df_tr |>
           ggplot2::ggplot(
             ggplot2::aes(x = !!grp, y = value, fill = id.col, colour = id.col)
           )

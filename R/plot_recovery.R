@@ -16,7 +16,6 @@
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
 #'
-#' @importFrom magrittr %>%
 #' @importFrom rlang !!
 #'
 #' @returns A list or grid of ggplots.
@@ -60,24 +59,24 @@ plot_recovery <- function(raw_pars,
   variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
     obs_var <- corr <- NULL
 
-  sim_pars_df <- sim_pars %>%
-    dplyr::filter(grepl("alpha|beta", variable)) %>%
-    dplyr::filter(!grepl("_pr", variable)) %>%
-    dplyr::filter(!grepl("mu_", variable)) %>%
-    dplyr::select(variable, mean) %>%
+  sim_pars_df <- sim_pars |>
+    dplyr::filter(grepl("alpha|beta", variable)) |>
+    dplyr::filter(!grepl("_pr", variable)) |>
+    dplyr::filter(!grepl("mu_", variable)) |>
+    dplyr::select(variable, mean) |>
     dplyr::mutate(
       id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
-      ) %>%
-    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
-    dplyr::rename(parameter = variable) %>%
+      ) |>
+    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) |>
+    dplyr::rename(parameter = variable) |>
     dplyr::rename(sim_mean = mean)
 
-  pars_df <- raw_pars %>%
-    dplyr::select(-tidyselect::any_of("subjID")) %>%
+  pars_df <- raw_pars |>
+    dplyr::select(-tidyselect::any_of("subjID")) |>
     tidyr::pivot_longer(
       cols = c(tidyselect::contains("alpha"), tidyselect::contains("beta")),
       names_to = "parameter", values_to = "obs_mean"
-      ) %>%
+      ) |>
     dplyr::left_join(sim_pars_df, by = c("id_no", "parameter"))
 
   pred_plots <- list()
@@ -86,8 +85,8 @@ plot_recovery <- function(raw_pars,
     par <- unique(pars_df$parameter)[p]
     alpha_par <- grepl("alpha", par)
 
-    pred_plots[[p]] <- pars_df %>%
-      dplyr::filter(parameter == par) %>%
+    pred_plots[[p]] <- pars_df |>
+      dplyr::filter(parameter == par) |>
       ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = sim_mean)) +
       ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[p]],
                           colour = pal[[p]]) +
@@ -117,10 +116,10 @@ plot_recovery <- function(raw_pars,
       )
   }
 
-  cor_mat <- pars_df %>%
+  cor_mat <- pars_df |>
     tidyr::pivot_wider(names_from = parameter,
-                       values_from = tidyselect::contains("mean")) %>%
-    dplyr::select(-id_no) %>%
+                       values_from = tidyselect::contains("mean")) |>
+    dplyr::select(-id_no) |>
     cor()
 
   n_pars <- dim(cor_mat)[1]/2
@@ -147,13 +146,13 @@ plot_recovery <- function(raw_pars,
 
   corr_htmp <- tibble::as_tibble(
       cor_mat[-(1:n_pars), -((n_pars+1):(2*n_pars))], rownames = NA
-    ) %>%
-    dplyr::mutate(sim_var = sub("sim_mean_", "", row.names(.))) %>%
+    ) |>
+    dplyr::mutate(sim_var = sub("sim_mean_", "", row.names(.))) |>
     tidyr::pivot_longer(cols = tidyselect::contains("obs"),
                         names_to = "obs_var", names_prefix = "obs_mean_",
-                        values_to = "corr") %>%
-    dplyr::mutate(sim_var = factor(sim_var, levels = order)) %>%
-    dplyr::mutate(obs_var = factor(obs_var, levels = order)) %>%
+                        values_to = "corr") |>
+    dplyr::mutate(sim_var = factor(sim_var, levels = order)) |>
+    dplyr::mutate(obs_var = factor(obs_var, levels = order)) |>
     ggplot2::ggplot(ggplot2::aes(x = obs_var, y = sim_var, fill = corr)) +
     ggplot2::geom_tile(alpha = 0.6) +
     ggplot2::guides(fill = "none") +

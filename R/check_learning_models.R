@@ -18,8 +18,6 @@
 #'
 #' @returns Either a single or named \code{list} of \code{ggplot} objects.
 #'
-#' @importFrom magrittr %>%
-#'
 #' @examples \dontrun{
 #' data(example_data)
 #'
@@ -55,8 +53,8 @@ check_learning_models <- function(draws,
     }
     else {
       suppressWarnings(
-        mu_pars <- draws %>%
-          dplyr::select(tidyselect::starts_with("mu_")) %>%
+        mu_pars <- draws |>
+          dplyr::select(tidyselect::starts_with("mu_")) |>
           dplyr::select(-tidyselect::contains("pr"))
         )
       mu_pars_df <- mu_pars
@@ -95,8 +93,8 @@ check_learning_models <- function(draws,
   if (mean_pars) {
     if (!draws_df) {
       mu_pars_df <- suppressWarnings(
-        posterior::as_draws_df(mu_pars) %>%
-        dplyr::select(tidyselect::starts_with("mu_")) %>%
+        posterior::as_draws_df(mu_pars) |>
+        dplyr::select(tidyselect::starts_with("mu_")) |>
         dplyr::select(-tidyselect::contains("pr"))
       )
     }
@@ -108,9 +106,9 @@ check_learning_models <- function(draws,
       bin_wdth <- diff(rnge) / nbins
       alpha <- grepl("alpha", par)
 
-      plt <- df %>%
-        dplyr::select(tidyselect::all_of(par)) %>%
-        dplyr::rename(value = 1) %>%
+      plt <- df |>
+        dplyr::select(tidyselect::all_of(par)) |>
+        dplyr::rename(value = 1) |>
         ggplot2::ggplot(ggplot2::aes(x = value)) +
         ggplot2::geom_histogram(
           ggplot2::aes(y = ..count.., fill = "value"),

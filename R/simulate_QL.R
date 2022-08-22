@@ -32,7 +32,6 @@
 #'   beta_dens = c(mean = 3, sd = 1) # default
 #' )
 #'
-#' @importFrom magrittr %>%
 #' @export
 
 simulate_QL <- function(summary_df = NULL,
@@ -79,22 +78,22 @@ simulate_QL <- function(summary_df = NULL,
     }
   }
   else {
-    pars_df <- summary_df %>%
-      dplyr::filter(grepl("alpha|beta", variable)) %>%
-      dplyr::filter(!grepl("_pr", variable)) %>%
-      dplyr::filter(!grepl("mu_", variable)) %>%
-      dplyr::select(variable, mean) %>%
+    pars_df <- summary_df |>
+      dplyr::filter(grepl("alpha|beta", variable)) |>
+      dplyr::filter(!grepl("_pr", variable)) |>
+      dplyr::filter(!grepl("mu_", variable)) |>
+      dplyr::select(variable, mean) |>
       dplyr::mutate(
         id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
-        ) %>%
-      dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
+        ) |>
+      dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) |>
       tidyr::pivot_wider(names_from = variable, values_from = mean)
 
     if (!is.null(prev_sample)) {
       ids_sample <- prev_sample
     }
     else if (!is.null(sample_size)) { # do we want a sample < everyone
-      ids_sample <- sample(1:dim(pars_df)[1], sample_size) %>% sort()
+      ids_sample <- sample(1:dim(pars_df)[1], sample_size) |> sort()
     }
     else {
       ids_sample <- 1:dim(pars_df)[1]
@@ -102,10 +101,10 @@ simulate_QL <- function(summary_df = NULL,
 
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
-      raw_df <- raw_df %>%
-        dplyr::select(subjID) %>%
-        dplyr::distinct() %>%
-        dplyr::mutate(id_no = dplyr::row_number()) %>%
+      raw_df <- raw_df |>
+        dplyr::select(subjID) |>
+        dplyr::distinct() |>
+        dplyr::mutate(id_no = dplyr::row_number()) |>
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
           )
@@ -143,9 +142,9 @@ simulate_QL <- function(summary_df = NULL,
     if (test) {
       choice1_test <- tibble::as_tibble(sample(rep(c("A", "C", "D", "E", "F"),
                                                    times = c(20, 16, 4, 12, 8)))
-                                        ) %>%
-        dplyr::rename(choice1_test = value) %>%
-        dplyr::mutate(trial_no = dplyr::row_number()) %>%
+                                        ) |>
+        dplyr::rename(choice1_test = value) |>
+        dplyr::mutate(trial_no = dplyr::row_number()) |>
         dplyr::arrange(choice1_test)
 
       choice2_test <- c(
@@ -156,12 +155,12 @@ simulate_QL <- function(summary_df = NULL,
         sample(rep(c("B", "D"), each = 4))
       )
 
-      conds_test <- cbind(choice1_test, choice2_test) %>%
-        dplyr::arrange(trial_no) %>%
+      conds_test <- cbind(choice1_test, choice2_test) |>
+        dplyr::arrange(trial_no) |>
         dplyr::select(-trial_no)
     }
 
-    indiv_pars <- pars_df %>%
+    indiv_pars <- pars_df |>
       dplyr::filter(id_no == id)
 
     if (gain_loss) {
@@ -174,11 +173,11 @@ simulate_QL <- function(summary_df = NULL,
       beta <- indiv_pars$beta
     }
 
-    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) %>%
+    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) |>
         # 6 blocks
-      dplyr::group_by(type) %>%
-      dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
+      dplyr::group_by(type) |>
+      dplyr::mutate(trial_no_group = dplyr::row_number()) |>
+      dplyr::ungroup() |>
       dplyr::select(-block)
 
     training_results <- data.frame(
@@ -188,16 +187,16 @@ simulate_QL <- function(summary_df = NULL,
       "reward" = rep(NA, 360)
     )
 
-    training_results <- training_results %>%
-      dplyr::group_by(type) %>%
-      dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
+    training_results <- training_results |>
+      dplyr::group_by(type) |>
+      dplyr::mutate(trial_no_group = dplyr::row_number()) |>
+      dplyr::ungroup() |>
       dplyr::left_join(hidden_rewards, by = c("type", "trial_no_group"))
     rm(hidden_rewards)
 
     if (test) {
-      training_results <- training_results %>%
-        dplyr::mutate(exp_part = "training") %>%
+      training_results <- training_results |>
+        dplyr::mutate(exp_part = "training") |>
         dplyr::mutate(test_type = NA)
     }
 
@@ -290,30 +289,30 @@ simulate_QL <- function(summary_df = NULL,
         test_results$test_type[j] <- test_type
       }
 
-      test_results <- test_results %>%
-        dplyr::group_by(type) %>%
-        dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
+      test_results <- test_results |>
+        dplyr::group_by(type) |>
+        dplyr::mutate(trial_no_group = dplyr::row_number()) |>
         dplyr::ungroup()
       all_res <- dplyr::bind_rows(all_res, test_results)
     }
   }
 
-  all_res <- tibble::as_tibble(all_res) %>%
+  all_res <- tibble::as_tibble(all_res) |>
     dplyr::select(-hidden_reward)
 
   if (!is.null(raw_df)) {
-    all_res <- all_res %>%
+    all_res <- all_res |>
       dplyr::left_join(raw_df, by = "id_no")
-    pars_df <- pars_df %>%
+    pars_df <- pars_df |>
       dplyr::inner_join(raw_df, by = "id_no")
   }
   else {
-    all_res <- all_res %>%
+    all_res <- all_res |>
       dplyr::mutate(subjID = id_no)
-    pars_df <- pars_df %>%
+    pars_df <- pars_df |>
       dplyr::inner_join(
         tibble::as_tibble(ids_sample), by = c("id_no" = "value")
-        ) %>%
+        ) |>
       dplyr::mutate(subjID = id_no)
   }
 
