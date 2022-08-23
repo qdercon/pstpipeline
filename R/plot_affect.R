@@ -78,6 +78,7 @@ plot_affect <- function(data,
 
     if (any(grepl("w1_o", p)) & !any(grepl("w1_b", p))) labs <- labs[c(1,2,3,6,7)]
     else if (!any(grepl("w1_o", p))) labs <- labs[c(1,2,6,7)]
+    else labs <- labs[c(1,2,4,5,6,7)]
 
     weight_plot <- data |>
       dplyr::filter(!grepl("mu|sigma", param)) |>
