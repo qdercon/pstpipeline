@@ -63,8 +63,8 @@ plot_affect <- function(data,
 
   plt_type <- match.arg(plt_type)
 
-  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- name <-
-    param <- post_mean <- NULL
+  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- param <-
+    post_mean <- NULL
 
   if (plt_type == "weights") {
 
@@ -82,7 +82,7 @@ plot_affect <- function(data,
     weight_plot <- data |>
       dplyr::filter(!grepl("mu|sigma", param)) |>
       dplyr::mutate(
-        adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(name)))
+        adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj)))
       ) |>
       ggplot2::ggplot(
         ggplot2::aes(
