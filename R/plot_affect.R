@@ -181,7 +181,9 @@ plot_affect <- function(data,
     }
     median_id <- function(df, kind, id = NULL) {
       if (kind == "num") {
-        subset(df, R2 == quantile(df$R2, p = 0.5, type = 1, na.rm = T))$id_no
+        sample( # takes someone with approx. median R2, so can show diff. ppts
+          subset(df, round(R2,2) == round(median(df$R2, na.rm=T), 2))$id_no, 1
+        )
       } else if (kind == "id" & !is.null(id)) {
         subset(df, id_no == id)$subjID
       }
@@ -228,7 +230,7 @@ plot_affect <- function(data,
         cowplot::theme_half_open(font_size = font_size, font = font) +
         ggplot2::annotation_custom(
           grid::textGrob(
-            bquote(R^2~"="~.(round(r2, 3))),
+            bquote(R^2~"="~.(round(r2, 2))),
             gp = grid::gpar(fontsize = 16, col = "steelblue4"),
             x = r2_coords[1], y = r2_coords[2]
           )
