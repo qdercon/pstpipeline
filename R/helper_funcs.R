@@ -424,8 +424,8 @@ get_affect_wts <- function(summary,
   variable <- aff_num <- id_no <- param <- post_mean <- adj <- NULL
 
   summary |>
-    dplyr::filter(grepl("w|gamma\\[", variable)) |>
-    dplyr::filter(!grepl("mu|sigma", variable)) |>
+    dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
+    dplyr::filter(!grepl("mu|sigma|_pr", variable)) |>
     dplyr::select(variable, mean) |>
     dplyr::rowwise() |>
     dplyr::mutate(
