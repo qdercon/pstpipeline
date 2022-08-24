@@ -5,7 +5,14 @@
 \title{Construct a tibble containing individual-level parameter values and baseline
 information}
 \usage{
-make_par_df(raw, summary, rhat_upper, ess_lower)
+make_par_df(
+  raw,
+  summary,
+  rhat_upper,
+  ess_lower,
+  join_dem = TRUE,
+  adj_order = c("happy", "confident", "engaged")
+)
 }
 \arguments{
 \item{raw}{Raw data, e.g., saved by \code{\link[=fit_learning_model]{fit_learning_model()}}.}
@@ -17,6 +24,10 @@ make_par_df(raw, summary, rhat_upper, ess_lower)
 
 \item{ess_lower}{Lower bound of effective sample size values to include. Set
 to \code{0} to include all participants.}
+
+\item{join_dem}{Combine output with participant demographic info?}
+
+\item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 }
 \value{
 A long format \code{\link[tibble:tibble]{tibble::tibble()}} with model parameters and baseline

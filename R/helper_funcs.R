@@ -42,8 +42,8 @@ take_subsample <- function(parsed_list,
 #' \code{std} computes the standard error of a mean.
 #'
 #' @param n Number of samples to draw.
-#' @param range Vector of two values denoting the minimum and maximum.
 #' @param mu,sd Mean and standard deviation of underlying distrubtion.
+#' @param min,max Determines the truncation.
 #'
 #' @returns A numeric value.
 #' @importFrom stats pnorm qnorm
@@ -52,11 +52,10 @@ take_subsample <- function(parsed_list,
 # credit:
 # https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
 
-rnormt <- function(n, mu, s, range) {
-  # range is a vector of two values
+rnormt <- function(n, mu, s, min, max) {
 
-  F.a <- pnorm(min(range), mean = mu, sd = s)
-  F.b <- pnorm(max(range), mean = mu, sd = s)
+  F.a <- pnorm(min, mean = mu, sd = s)
+  F.b <- pnorm(max, mean = mu, sd = s)
 
   u <- runif(n, min = F.a, max = F.b)
 
@@ -209,6 +208,8 @@ family_ch <- function(param) {
 #' \code{Inf} to include all participants.
 #' @param ess_lower Lower bound of effective sample size values to include. Set
 #' to \code{0} to include all participants.
+#' @param join_dem Combine output with participant demographic info?
+#' @param adj_order Same as [fit_learning_model()].
 #'
 #' @returns A long format [tibble::tibble()] with model parameters and baseline
 #' participant data.
@@ -229,31 +230,34 @@ family_ch <- function(param) {
 make_par_df <- function(raw,
                         summary,
                         rhat_upper,
-                        ess_lower) {
+                        ess_lower,
+                        join_dem = TRUE,
+                        adj_order = c("happy", "confident", "engaged")) {
   subjID <- id_all <- variable <- . <- matches <- NULL # appease R CMD check
   ids <- raw |>
-    dplyr::distinct(subjID, .keep_all = TRUE) |>
+    dplyr::distinct(subjID) |>
     dplyr::mutate(id_no = dplyr::row_number())
 
   n_id <- length(ids$subjID)
 
   summ <- summary |>
-    dplyr::filter(grepl("alpha|beta|gamma|w", variable)) |>
-    dplyr::filter(!grepl("_pr|mu_|sigma|_s", variable)) |>
+    dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
+    dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(matches("ess|rhat"))
     ) |>
     dplyr::mutate(
-      id_all = sub("\\].*$", "", sub(".*\\[", "", .[["variable"]]))
+      id_all = sub("\\].*$", "", sub(".*\\[", "", variable))
     ) |>
     dplyr::rowwise() |>
     dplyr::mutate(
       id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
-      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2])
+      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2]),
+      adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])
     ) |>
     # NA unless affect model
     dplyr::ungroup() |>
-    dplyr::mutate(parameter = sub("\\[.*$", "", .[["variable"]])) |>
+    dplyr::mutate(parameter = sub("\\[.*$", "", variable)) |>
     dplyr::select(-variable, -id_all) |>
     dplyr::rename(posterior_mean = mean) |>
     dplyr::right_join(ids, by = "id_no") |>
@@ -274,11 +278,11 @@ make_par_df <- function(raw,
   if (lost_ids > 0) message(
     lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS."
     )
-
-  par_df <- ppt_info |>
-    dplyr::inner_join(summ, by = "subjID")
-
-  return(par_df)
+  if (join_dem) {
+    summ <- ppt_info |>
+      dplyr::inner_join(summ, by = "subjID")
+  }
+  return(summ)
 }
 
 #' Define axis title name
@@ -456,8 +460,10 @@ get_affect_wts <- function(summary,
     dplyr::rowwise() |>
     dplyr::mutate(
       param = unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[1],
-      id_no = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[2]),
-      aff_num = as.numeric(unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[3]),
+      id_no = as.numeric(
+        unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[2]),
+      aff_num = as.numeric(
+        unlist(strsplit(gsub("\\].*", "", variable), "\\[|,"))[3]),
       adj = adj_order[aff_num]
     ) |>
     dplyr::rename(post_mean = mean) |>

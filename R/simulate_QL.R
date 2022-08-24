@@ -87,9 +87,9 @@ simulate_QL <- function(summary_df = NULL,
       if (is.null(l$w0_dens)) l$w0_dens <- c(0.4, 0.2) # Normal(mu, sigma)
       if (is.null(l$w1_o_dens)) l$w1_o_dens <- c(-0.05, 0.2) # Normal(mu, sigma)
       if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.1, 0.05) # Normal(mu, sigma)
-      if (is.null(l$w2_dens)) l$w2_dens <- c(0.02, 0.05, c(-0.05, Inf))
-      if (is.null(l$w3_dens)) l$w3_dens <- c(0.02, 0.05, c(-0.05, Inf))
-        # trNormal(mu, sigma, range)
+      if (is.null(l$w2_dens)) l$w2_dens <- c(0.02, 0.05, -0.05, Inf)
+      if (is.null(l$w3_dens)) l$w3_dens <- c(0.02, 0.05, -0.05, Inf)
+        # trNormal(mu, sigma, min, max)
 
       pars_df <-
         dplyr::bind_rows(
@@ -103,8 +103,10 @@ simulate_QL <- function(summary_df = NULL,
           w0    = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
           w1_o  = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
           w1_b  = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
-          w2    = rnormt(1, l$w2_dens[1], l$w2_dens[2], range = l$w2_dens[3]),
-          w3    = rnormt(1, l$w3_dens[1], l$w3_dens[2], range = l$w3_dens[3])
+          w2    = rnormt(
+            1, l$w2_dens[1], l$w2_dens[2], l$w2_dens[3], l$w2_dens[4]),
+          w3    = rnormt(
+            1, l$w3_dens[1], l$w3_dens[2], l$w3_dens[3], l$w3_dens[4])
         ) |>
         dplyr::ungroup()
     }
