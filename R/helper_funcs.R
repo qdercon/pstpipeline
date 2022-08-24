@@ -52,7 +52,7 @@ take_subsample <- function(parsed_list,
 # credit:
 # https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
 
-rnormt <- function(n, range, mu, s = 1) {
+rnormt <- function(n, mu, s, range) {
   # range is a vector of two values
 
   F.a <- pnorm(min(range), mean = mu, sd = s)
