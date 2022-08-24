@@ -352,7 +352,7 @@ simulate_QL <- function(summary_df = NULL,
           }
         }
       }
-      if (any(training_results$question_response > 100) &
+      if (any(training_results$question_response > 100) |
           any(training_results$question_response < 0)) {
         training_results <- NULL
         drop_count <- drop_count + 1
