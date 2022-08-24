@@ -49,7 +49,7 @@ simulate_QL <- function(summary_df = NULL,
   variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
     hidden_reward <- question_response <- question_type <- NULL
 
-  if (!is.null(summary_df) & affect)
+  if ((!is.null(summary_df) | !is.null(raw_df)) & affect)
     stop("Only random samples supported for affect models.")
 
   if (is.null(summary_df)) {
@@ -424,6 +424,16 @@ simulate_QL <- function(summary_df = NULL,
     pars_df <- pars_df |>
       dplyr::inner_join(raw_df, by = "id_no")
   }
+  else if (drop_count > 0) {
+    all_res <- all_res |>
+      dplyr::mutate(subjID = id_no)
+    pars_df <- pars_df |>
+      dplyr::inner_join(
+        tibble::as_tibble(ids_sample), by = c("id_no" = "value")
+      ) |>
+      dplyr::filter(id_no %in% unique(all_res$id_no)) |>
+      dplyr::mutate(subjID = id_no)
+  }
   else {
     all_res <- all_res |>
       dplyr::mutate(subjID = id_no)
@@ -439,7 +449,7 @@ simulate_QL <- function(summary_df = NULL,
   ret$pars <- data.table::as.data.table(pars_df)
 
   if (drop_count > 0) {
-    warning(paste0(drop_count,
+    message(paste0(drop_count,
                    " sampled dataset(s) dropped due to extreme values."))
   }
   return(ret)
