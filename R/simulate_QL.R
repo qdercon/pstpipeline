@@ -424,14 +424,30 @@ simulate_QL <- function(summary_df = NULL,
     pars_df <- pars_df |>
       dplyr::inner_join(raw_df, by = "id_no")
   }
-  else if (drop_count > 0) {
+  else if (affect) {
     all_res <- all_res |>
-      dplyr::mutate(subjID = id_no)
+      dplyr::mutate(subjID = id_no) |>
+      dplyr::rowwise() |>
+      dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
+      dplyr::mutate(
+        question =
+          ifelse(question_type == adj_order[1], 1,
+                 ifelse(question_type == adj_order[2], 2, 3)
+          )
+      ) |>
+      dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
+      dplyr::group_by(subjID, trial_block) |>
+      dplyr::mutate(block_time = trial_time - min(trial_time)) |>
+      dplyr::group_by(subjID, question_type) |>
+      dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
+      dplyr::ungroup()
+
     pars_df <- pars_df |>
       dplyr::inner_join(
         tibble::as_tibble(ids_sample), by = c("id_no" = "value")
       ) |>
       dplyr::filter(id_no %in% unique(all_res$id_no)) |>
+        # only relevant if drop_count > 1
       dplyr::mutate(subjID = id_no)
   }
   else {
