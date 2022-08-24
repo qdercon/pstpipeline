@@ -52,7 +52,7 @@ simulate_QL <- function(summary_df = NULL,
   if (!is.null(summary_df) & affect)
     stop("Only random samples supported for affect models.")
 
-  if (is.null(summary_df) | affect) {
+  if (is.null(summary_df)) {
     if (is.null(sample_size)) sample_size <- 100
     l <- list(...)
     if (is.null(l$alpha_dens)) l$alpha_dens <- c(2, 0.1) # Gamma(alpha, beta)
