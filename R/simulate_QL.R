@@ -296,25 +296,25 @@ simulate_QL <- function(summary_df = NULL,
       if (affect) {
         ev_vec[i] <- ev
         pe_vec[i] <- pe
-        if (i > 1) {
-          if ((i-1) %% 60 == 0) {
-            trial_time[i] <-
-              trial_time[i-1] + (rnormt(1, c(5, Inf), 90, 45) / 3600)
-            block_time[i] <- 0
-          }
-          else {
-            elapsed <- rnormt(1, c(3, Inf), 8.5, 4) / 3600
-            trial_time[i] <- trial_time[i-1] + elapsed
-            block_time[i] <- block_time[i-1] + elapsed
-          }
-        }
+        # if (i > 1) {
+        #   if ((i-1) %% 60 == 0) {
+        #     trial_time[i] <-
+        #       trial_time[i-1] + (rnormt(1, c(5, Inf), 90, 45) / 3600)
+        #     block_time[i] <- 0
+        #   }
+        #   else {
+        #     elapsed <- rnormt(1, c(3, Inf), 8.5, 4) / 3600
+        #     trial_time[i] <- trial_time[i-1] + elapsed
+        #     block_time[i] <- block_time[i-1] + elapsed
+        #   }
+        # }
 
         q <- grep(training_results$question_type[i], adj_order)
 
         rating <-
           w0[q] +
-          w1_o[q] * trial_time[i] +
-          w1_b[q] * block_time[i] +
+          # w1_o[q] * trial_time[i] +
+          # w1_b[q] * block_time[i] +
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
