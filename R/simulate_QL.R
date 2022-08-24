@@ -104,7 +104,7 @@ simulate_QL <- function(summary_df = NULL,
           w1_o  = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
           w1_b  = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
           w2    = rnormt(1, l$w2_dens[1], l$w2_dens[2], range = l$w2_dens[3]),
-          w3    = rnormt(1, l$w3_dens[1], l$w3_dens[2], range = l$w3_dens[3]])
+          w3    = rnormt(1, l$w3_dens[1], l$w3_dens[2], range = l$w3_dens[3])
         ) |>
         dplyr::ungroup()
     }
