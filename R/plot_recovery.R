@@ -3,7 +3,7 @@
 #' \code{plot_recovery} produces correlation plots between input and output
 #' parameter values, plus a confusability matrix.
 #'
-#' @param raw_pars Data frame with factor scores or questions to plot.
+#' @param raw_pars Parameters outputted from [simulate_QL()].
 #' @param sim_pars [cmdstanr::summary()] containing the fitted parameter values
 #' for the relevant model.
 #' @param test Boolean indicating whether recovered parameters are from the test

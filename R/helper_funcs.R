@@ -37,6 +37,32 @@ take_subsample <- function(parsed_list,
   return(subsample)
 }
 
+#' Draws a random sample of size n from a truncated Normal distribution
+#'
+#' \code{std} computes the standard error of a mean.
+#'
+#' @param n Number of samples to draw.
+#' @param range Vector of two values denoting the minimum and maximum.
+#' @param mu,sd Mean and standard deviation of underlying distrubtion.
+#'
+#' @returns A numeric value.
+#' @importFrom stats pnorm qnorm
+#' @noRd
+
+# credit:
+# https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
+
+rnormt <- function(n, range, mu, s = 1) {
+  # range is a vector of two values
+
+  F.a <- pnorm(min(range), mean = mu, sd = s)
+  F.b <- pnorm(max(range), mean = mu, sd = s)
+
+  u <- runif(n, min = F.a, max = F.b)
+
+  qnorm(u, mean = mu, sd = s)
+}
+
 #' Example probabilistic selection task data
 #'
 #' An example dataset with data from ten individuals from each group.

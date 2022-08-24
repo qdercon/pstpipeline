@@ -16,7 +16,7 @@ plot_recovery(
 )
 }
 \arguments{
-\item{raw_pars}{Data frame with factor scores or questions to plot.}
+\item{raw_pars}{Parameters outputted from \code{\link[=simulate_QL]{simulate_QL()}}.}
 
 \item{sim_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values
 for the relevant model.}
