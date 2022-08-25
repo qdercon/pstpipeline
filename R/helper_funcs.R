@@ -407,7 +407,8 @@ get_affect_ppc <- function(draws,
       tidyr::pivot_longer(
         cols = tidyselect::contains("mean"), names_to = "type",
         names_prefix = "mean_"
-      )
+      ) |>
+      dplyr::mutate(se_pred == ifelse(type == "raw", 0, se_pred))
 
     fit_df[i,1] <- id
     fit_df[i,2] <- i
