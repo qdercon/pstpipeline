@@ -181,9 +181,10 @@ plot_affect <- function(data,
     }
     median_id <- function(df, kind, id = id_no) {
       if (kind == "num") {
-        sample( # takes someone with approx. median R2, so can show diff. ppts
-          subset(df, round(R2,2) == round(median(df$R2, na.rm=T), 2))$id_no, 1
-        )
+        med <- subset(df, round(R2,2) == round(median(df$R2, na.rm=T), 2))$id_no
+        if (length(med) > 1) sample(med, 1)
+        # takes someone with approx. median R2, so can show diff. ppts
+        else med
       } else if (kind == "id" & !is.null(id)) {
         subset(df, id_no == id)$subjID
       }
