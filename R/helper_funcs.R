@@ -345,7 +345,8 @@ axis_title <- function(param,
 #'   example_data$nd,
 #'   model = "2a",
 #'   affect = TRUE,
-#'   exp_part = "training"
+#'   exp_part = "training",
+#'   algorithm = "fullrank"
 #'  )
 #'
 #'  fit_ls_happy <- get_affect_ppc(
