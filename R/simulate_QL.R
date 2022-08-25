@@ -440,15 +440,10 @@ simulate_QL <- function(summary_df = NULL,
   all_res <- tibble::as_tibble(all_res) |>
     dplyr::select(-hidden_reward)
 
-  if (!is.null(raw_df)) {
+  if (affect) {
     all_res <- all_res |>
-      dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
-    pars_df <- pars_df |>
-      dplyr::inner_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
-  }
-  else if (affect) {
-    all_res <- all_res |>
-      dplyr::mutate(subjID = id_no) |>
+      dplyr::left_join(
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
       dplyr::rowwise() |>
       dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
       dplyr::mutate(
@@ -466,11 +461,15 @@ simulate_QL <- function(summary_df = NULL,
 
     pars_df <- pars_df |>
       dplyr::inner_join(
-        tibble::as_tibble(ids_sample), by = c("id_no" = "value")
-      ) |>
-      dplyr::filter(id_no %in% unique(all_res$id_no)) |>
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
+      dplyr::filter(id_no %in% unique(all_res$id_no))
         # only relevant if drop_count > 1
-      dplyr::mutate(subjID = id_no)
+  }
+  else if (!is.null(raw_df)) {
+    all_res <- all_res |>
+      dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
+    pars_df <- pars_df |>
+      dplyr::inner_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
   }
   else {
     all_res <- all_res |>
