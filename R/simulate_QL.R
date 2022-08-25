@@ -249,24 +249,24 @@ simulate_QL <- function(summary_df = NULL,
     if (affect) {
       training_results <- training_results |>
         dplyr::mutate(
-          trial_time = NA,
+          # trial_time = NA,
           question_type = rep(sample(adj_order), 120),
           question_response = NA
         )
 
-      time <- raw_df |>
-        dplyr::filter(id_no == ids_sample[id]) |>
-        dplyr::select(trial_no, block_time, trial_time)
-
-      missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+      # time <- raw_df |>
+      #   dplyr::filter(id_no == ids_sample[id]) |>
+      #   dplyr::select(trial_no, block_time, trial_time)
+      #
+      # missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
 
       ev_vec <- rep(0, 360)
       pe_vec <- rep(0, 360)
 
       gamma <- stats::na.omit(indiv_pars$gamma)
       w0    <- stats::na.omit(indiv_pars$w0)
-      w1_o  <- stats::na.omit(indiv_pars$w1_o)
-      w1_b  <- stats::na.omit(indiv_pars$w1_b)
+      # w1_o  <- stats::na.omit(indiv_pars$w1_o)
+      # w1_b  <- stats::na.omit(indiv_pars$w1_b)
       w2    <- stats::na.omit(indiv_pars$w2)
       w3    <- stats::na.omit(indiv_pars$w3)
     }
@@ -327,18 +327,18 @@ simulate_QL <- function(summary_df = NULL,
         # }
 
         q <- grep(training_results$question_type[i], adj_order)
-        trial_time <- time[time$trial_no == i,]$trial_time / 60
-        block_time <- time[time$trial_no == i,]$block_time / 60
+        # trial_time <- time[time$trial_no == i,]$trial_time / 60
+        # block_time <- time[time$trial_no == i,]$block_time / 60
 
         rating <-
           w0[q] +
-          w1_o[q] * trial_time +
-          w1_b[q] * block_time +
+          # w1_o[q] * trial_time +
+          # w1_b[q] * block_time +
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
         training_results$question_response[i] <- rating * 100
-        training_results$trial_time[i]        <- trial_time * 60 ## in mins
+        # training_results$trial_time[i]        <- trial_time * 60 ## in mins
       }
     }
 
