@@ -39,7 +39,7 @@ take_subsample <- function(parsed_list,
 
 #' Draws a random sample of size n from a truncated Normal distribution
 #'
-#' \code{std} computes the standard error of a mean.
+#' \code{rnormt} computes the standard error of a mean.
 #'
 #' @param n Number of samples to draw.
 #' @param mu,sd Mean and standard deviation of underlying distrubtion.

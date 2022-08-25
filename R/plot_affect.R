@@ -179,7 +179,7 @@ plot_affect <- function(data,
     if(is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
-    median_id <- function(df, kind, id = NULL) {
+    median_id <- function(df, kind, id = id_no) {
       if (kind == "num") {
         sample( # takes someone with approx. median R2, so can show diff. ppts
           subset(df, round(R2,2) == round(median(df$R2, na.rm=T), 2))$id_no, 1
