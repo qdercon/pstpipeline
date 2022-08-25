@@ -138,7 +138,8 @@ fit3 <- fit_learning_model(
   model = "2a",
   affect = TRUE,
   affect_sfx = "3wt",
-  exp_part = "training"
+  exp_part = "training",
+  algorithm = "fullrank"
 )
 }
 

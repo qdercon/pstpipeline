@@ -389,7 +389,8 @@ get_affect_ppc <- function(draws,
 
     affect_pred <-
       draws[, .SD, .SDcols = patterns(paste0("^y_pred\\[", i, ","))]
-    affect_pred <- affect_pred[, ..aff_tr]
+    affect_pred <- suppressWarnings(affect_pred[, ..aff_tr])
+      # https://github.com/Rdatatable/data.table/issues/2988
 
     means <- colMeans(affect_pred)*100
     se <- sapply(affect_pred, function(x) sd(x*100)/sqrt(length(x)))

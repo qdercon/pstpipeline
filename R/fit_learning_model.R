@@ -95,7 +95,8 @@
 #'   model = "2a",
 #'   affect = TRUE,
 #'   affect_sfx = "3wt",
-#'   exp_part = "training"
+#'   exp_part = "training",
+#'   algorithm = "fullrank"
 #' )
 #' }
 #'
@@ -159,10 +160,11 @@ fit_learning_model <- function(df_all,
     # default (explicitly defined here for file naming)
     if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
       # default (explicitly defined here for file naming)
-    if (model_checks) {
-      if (is.null(l$font)) l$font <- ""
-      if (is.null(l$font_size)) l$font_size <- 11
-    }
+  }
+
+  if (model_checks) {
+    if (is.null(l$font)) l$font <- ""
+    if (is.null(l$font_size)) l$font_size <- 11
   }
 
   ## to appease R CMD check
