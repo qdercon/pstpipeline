@@ -254,11 +254,11 @@ simulate_QL <- function(summary_df = NULL,
           question_response = NA
         )
 
-      # time <- raw_df |>
-      #   dplyr::filter(id_no == ids_sample[id]) |>
-      #   dplyr::select(trial_no, block_time, trial_time)
-      #
-      # missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+      time <- raw_df |>
+        dplyr::filter(id_no == ids_sample[id]) |>
+        dplyr::select(trial_no, block_time, trial_time)
+
+      missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
 
       ev_vec <- rep(0, 360)
       pe_vec <- rep(0, 360)
@@ -327,7 +327,7 @@ simulate_QL <- function(summary_df = NULL,
         # }
 
         q <- grep(training_results$question_type[i], adj_order)
-        # trial_time <- time[time$trial_no == i,]$trial_time / 60
+        trial_time <- time[time$trial_no == i,]$trial_time / 60
         # block_time <- time[time$trial_no == i,]$block_time / 60
 
         rating <-
@@ -338,7 +338,7 @@ simulate_QL <- function(summary_df = NULL,
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
         training_results$question_response[i] <- rating * 100
-        # training_results$trial_time[i]        <- trial_time * 60 ## in mins
+        training_results$trial_time[i]        <- trial_time * 60 ## in mins
       }
     }
 
@@ -444,7 +444,7 @@ simulate_QL <- function(summary_df = NULL,
   if (affect) {
     all_res <- all_res |>
       dplyr::left_join(
-        raw_df |> dplyr::distinct(subjID, id_no, trial_time), by = "id_no") |>
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
       dplyr::rowwise() |>
       dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
       dplyr::mutate(
