@@ -249,7 +249,7 @@ simulate_QL <- function(summary_df = NULL,
     if (affect) {
       training_results <- training_results |>
         dplyr::mutate(
-          # trial_time = NA,
+          trial_time = NA,
           question_type = rep(sample(adj_order), 120),
           question_response = NA
         )
