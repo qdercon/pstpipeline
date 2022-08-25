@@ -141,7 +141,11 @@ simulate_QL <- function(summary_df = NULL,
       ids_sample <- prev_sample
     }
     else if (!is.null(sample_size)) { # do we want a sample < everyone
-      ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
+      if (!affect) {
+        ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
+      } else {
+        ids_sample <- sample(1:max(pars_df$id_no)) # as there will be failures
+      }
     }
     else {
       ids_sample <- 1:dim(pars_df)[1]
@@ -150,7 +154,8 @@ simulate_QL <- function(summary_df = NULL,
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
       raw_df <- raw_df |>
-        dplyr::mutate(id_no = as.integer(factor(subjID))) |>
+        dplyr::mutate(id_no = as.integer(
+          factor(subjID, levels = unique(raw_df$subjID)))) |>
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
         )
@@ -171,12 +176,14 @@ simulate_QL <- function(summary_df = NULL,
     # rewarded "B", and 12 rewarded "C" symbols
 
   all_res <- data.frame()
-  pb = txtProgressBar(min = 0, max = length(ids_sample), initial = 0, style = 3)
+  if (is.null(sample_size)) sample_size <- length(ids_sample)
+  pb = txtProgressBar(min = 0, max = sample_size, initial = 0, style = 3)
+  num_sims <- 0
   drop_count <- 0
 
   for (id in seq_along(ids_sample)) {
 
-    setTxtProgressBar(pb, id)
+    if (num_sims == sample_size) break
 
     # make random sequence of trials, each condition balanced within blocks
     choice1 <- NULL
@@ -379,7 +386,12 @@ simulate_QL <- function(summary_df = NULL,
           # strict, but models won't work otherwise.
         training_results <- NULL
         drop_count <- drop_count + 1
+      } else {
+        num_sims <- num_sims + 1
+        setTxtProgressBar(pb, num_sims)
       }
+    } else {
+      setTxtProgressBar(pb, id)
     }
 
     all_res <- dplyr::bind_rows(all_res, training_results)
@@ -486,9 +498,8 @@ simulate_QL <- function(summary_df = NULL,
   ret$sim <- data.table::as.data.table(all_res)
   ret$pars <- data.table::as.data.table(pars_df)
 
-  if (drop_count > 0) {
-    message(paste0(drop_count,
-                   " sampled dataset(s) dropped due to extreme values."))
+  if (num_sims > 0 & num_sims < sample_size) {
+    message(paste0("Only able to obtain ", num_sims, " samples."))
   }
   return(ret)
 }
