@@ -367,7 +367,7 @@ get_affect_ppc <- function(draws,
 
   ## to appease R CMD check
   question_type <- subjID <- trial_no_q <- question_response <- value <-
-    aff_tr <- variable <- "patterns" <- "..aff_tr" <- NULL
+    type <- se_pred <- aff_tr <- variable <- "patterns" <- "..aff_tr" <- NULL
 
   n_id <- length(unique(raw$subjID))
   fit_df <- as.data.frame(

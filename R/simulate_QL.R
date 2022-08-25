@@ -48,7 +48,7 @@ simulate_QL <- function(summary_df = NULL,
   # to appease R CMD check
   variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
     hidden_reward <- question_response <- question_type <- missing_times <-
-    id_all <- aff_num <- trial_block <- NULL
+    id_all <- aff_num <- trial_block <- trial_time <- NULL
 
   l <- list(...)
 
@@ -444,7 +444,7 @@ simulate_QL <- function(summary_df = NULL,
   if (affect) {
     all_res <- all_res |>
       dplyr::left_join(
-        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
+        raw_df |> dplyr::distinct(subjID, id_no, trial_time), by = "id_no") |>
       dplyr::rowwise() |>
       dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
       dplyr::mutate(

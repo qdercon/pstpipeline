@@ -8,7 +8,7 @@
 #' @param data Either a list of outputs from [get_affect_ppc], or weights from
 #' [get_affect_wts].
 #' @param plt_type Possible types are "grouped" or "individual" (for
-#' [get_affect_ppc] outputs) or "weights" (for [get_affect_wts] output).
+#' [get_affect_ppc] outputs) or "weights" (for [make_par_df] output).
 #' @param adj_order Same as [fit_learning_model()].
 #' @param nouns Formatted noun versions of the adjectives, in order.
 #' @param id_no If \code{grouped == FALSE}, a participant number to plot. If

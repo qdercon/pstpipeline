@@ -24,7 +24,7 @@ plot_affect(
 \link{get_affect_wts}.}
 
 \item{plt_type}{Possible types are "grouped" or "individual" (for
-\link{get_affect_ppc} outputs) or "weights" (for \link{get_affect_wts} output).}
+\link{get_affect_ppc} outputs) or "weights" (for \link{make_par_df} output).}
 
 \item{adj_order}{Same as \code{\link[=fit_learning_model]{fit_learning_model()}}.}
 
