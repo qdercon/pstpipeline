@@ -233,7 +233,9 @@ make_par_df <- function(raw,
                         ess_lower,
                         join_dem = TRUE,
                         adj_order = c("happy", "confident", "engaged")) {
-  subjID <- id_all <- variable <- . <- matches <- NULL # appease R CMD check
+
+  subjID <- id_all <- variable <- matches <- aff_num <- NULL
+
   ids <- raw |>
     dplyr::distinct(subjID) |>
     dplyr::mutate(id_no = dplyr::row_number())

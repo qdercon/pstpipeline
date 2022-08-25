@@ -47,14 +47,20 @@ simulate_QL <- function(summary_df = NULL,
 
   # to appease R CMD check
   variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
-    hidden_reward <- question_response <- question_type <- NULL
+    hidden_reward <- question_response <- question_type <- missing_times <-
+    id_all <- aff_num <- trial_block <- NULL
 
-  if ((!is.null(summary_df) | !is.null(raw_df)) & affect)
-    stop("Only random samples supported for affect models.")
+  l <- list(...)
+
+  if (is.null(summary_df) & is.null(raw_df) & affect)
+    stop("Random samples not currently supported for affect models.")
+
+  if (affect & is.null(l$question_order)) {
+    adj_order <- c("happy", "confident", "engaged")
+  }
 
   if (is.null(summary_df)) {
     if (is.null(sample_size)) sample_size <- 100
-    l <- list(...)
     if (is.null(l$alpha_dens)) l$alpha_dens <- c(2, 0.1) # Gamma(alpha, beta)
     if (is.null(l$alpha_pos_dens)) l$alpha_pos_dens <- l$alpha_dens
     if (is.null(l$alpha_neg_dens)) l$alpha_neg_dens <- l$alpha_dens
@@ -82,52 +88,60 @@ simulate_QL <- function(summary_df = NULL,
         beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
-    if (affect) {
-      if (is.null(l$gamma_dens)) l$gamma_dens <- c(6, 0.07) # gamma(alpha, beta)
-      if (is.null(l$w0_dens)) l$w0_dens <- c(0.4, 0.2) # Normal(mu, sigma)
-      if (is.null(l$w1_o_dens)) l$w1_o_dens <- c(-0.05, 0.2) # Normal(mu, sigma)
-      if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.1, 0.05) # Normal(mu, sigma)
-      if (is.null(l$w2_dens)) l$w2_dens <- c(0.02, 0.05, -0.05, Inf)
-      if (is.null(l$w3_dens)) l$w3_dens <- c(0.02, 0.05, -0.05, Inf)
-        # trNormal(mu, sigma, min, max)
-
-      pars_df <-
-        dplyr::bind_rows(
-          list("happy" = pars_df, "confident" = pars_df, "engaged" = pars_df),
-          .id = "adj"
-        ) |>
-        dplyr::rowwise() |>
-        dplyr::mutate(
-          gamma = rgamma(1, shape = l$gamma_dens[1], scale = l$gamma_dens[2]),
-          gamma = ifelse(gamma >= 1, runif(1, 0, 1), gamma), # unlikely
-          w0    = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
-          w1_o  = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
-          w1_b  = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
-          w2    = rnormt(
-            1, l$w2_dens[1], l$w2_dens[2], l$w2_dens[3], l$w2_dens[4]),
-          w3    = rnormt(
-            1, l$w3_dens[1], l$w3_dens[2], l$w3_dens[3], l$w3_dens[4])
-        ) |>
-        dplyr::ungroup()
-    }
+    # if (affect) {
+    #   if (is.null(l$gamma_dens)) l$gamma_dens <- c(6, 0.07) # gamma(alpha, beta)
+    #   if (is.null(l$w0_dens)) l$w0_dens <- c(0.4, 0.2) # Normal(mu, sigma)
+    #   if (is.null(l$w1_o_dens)) l$w1_o_dens <- c(-0.05, 0.2) # Normal(mu, sigma)
+    #   if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.1, 0.05) # Normal(mu, sigma)
+    #   if (is.null(l$w2_dens)) l$w2_dens <- c(0.02, 0.05, -0.05, Inf)
+    #   if (is.null(l$w3_dens)) l$w3_dens <- c(0.02, 0.05, -0.05, Inf)
+    #     # trNormal(mu, sigma, min, max)
+    #
+    #   ids_sample <- data.frame("id_no" = ids_sample)
+    #   pars_df <-
+    #     dplyr::bind_rows(list("happy" = ids_sample , "confident" = ids_sample,
+    #                           "engaged" = ids_sample), .id = "adj") |>
+    #     dplyr::rowwise() |>
+    #     dplyr::mutate(
+    #       aff_num = grep(adj, adj_order),
+    #       gamma = rgamma(1, shape = l$gamma_dens[1], scale = l$gamma_dens[2]),
+    #       gamma = ifelse(gamma >= 1, runif(1, 0, 1), gamma), # unlikely
+    #       w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
+    #       w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
+    #       w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
+    #       w2 = rnormt(1, l$w2_dens[1], l$w2_dens[2], l$w2_dens[3], l$w2_dens[4]),
+    #       w3 = rnormt(1, l$w3_dens[1], l$w3_dens[2], l$w3_dens[3], l$w3_dens[4])
+    #     ) |>
+    #     dplyr::ungroup()
+    # }
   }
   else {
     pars_df <- summary_df |>
-      dplyr::filter(grepl("alpha|beta", variable)) |>
-      dplyr::filter(!grepl("_pr", variable)) |>
-      dplyr::filter(!grepl("mu_", variable)) |>
+      dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
+      dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
       dplyr::select(variable, mean) |>
       dplyr::mutate(
-        id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
-        ) |>
-      dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) |>
+        id_all = sub("\\].*$", "", sub(".*\\[", "", variable))
+      ) |>
+      dplyr::rowwise() |>
+      dplyr::mutate(
+        id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
+        aff_num = as.numeric(strsplit(id_all, ",")[[1]][2]),
+        adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])
+      ) |>
+      # NA unless affect model
+      dplyr::ungroup() |>
+      dplyr::select(
+        tidyselect::vars_select_helpers$where(~!all(is.na(.x))), -id_all
+      ) |>
+      dplyr::mutate(variable = sub("\\[.*$", "", variable)) |>
       tidyr::pivot_wider(names_from = variable, values_from = mean)
 
     if (!is.null(prev_sample)) {
       ids_sample <- prev_sample
     }
     else if (!is.null(sample_size)) { # do we want a sample < everyone
-      ids_sample <- sample(1:dim(pars_df)[1], sample_size) |> sort()
+      ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
     }
     else {
       ids_sample <- 1:dim(pars_df)[1]
@@ -136,12 +150,10 @@ simulate_QL <- function(summary_df = NULL,
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
       raw_df <- raw_df |>
-        dplyr::select(subjID) |>
-        dplyr::distinct() |>
-        dplyr::mutate(id_no = dplyr::row_number()) |>
+        dplyr::mutate(id_no = as.integer(factor(subjID))) |>
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
-          )
+        )
     }
   }
 
@@ -196,16 +208,16 @@ simulate_QL <- function(summary_df = NULL,
     }
 
     indiv_pars <- pars_df |>
-      dplyr::filter(id_no == id)
+      dplyr::filter(id_no == ids_sample[id])
 
     if (gain_loss) {
-      alpha_pos <- indiv_pars$alpha_pos
-      alpha_neg <- indiv_pars$alpha_neg
-      beta <- indiv_pars$beta
+      alpha_pos <- stats::na.omit(indiv_pars$alpha_pos)
+      alpha_neg <- stats::na.omit(indiv_pars$alpha_neg)
+      beta      <- stats::na.omit(indiv_pars$beta)
     }
     else {
-      alpha <- indiv_pars$alpha
-      beta <- indiv_pars$beta
+      alpha <- indiv_pars$alpha[[1]]
+      beta <- indiv_pars$beta[[1]]
     }
 
     hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) |>
@@ -235,9 +247,6 @@ simulate_QL <- function(summary_df = NULL,
     }
 
     if (affect) {
-      if (is.null(l$question_order)) {
-        adj_order <- c("happy", "confident", "engaged")
-      }
       training_results <- training_results |>
         dplyr::mutate(
           trial_time = NA,
@@ -245,24 +254,30 @@ simulate_QL <- function(summary_df = NULL,
           question_response = NA
         )
 
-      trial_time <- rep(0, 360)
-      block_time <- rep(0, 360)
+      time <- raw_df |>
+        dplyr::filter(id_no == ids_sample[id]) |>
+        dplyr::select(trial_no, block_time, trial_time)
+
+      missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+
       ev_vec <- rep(0, 360)
       pe_vec <- rep(0, 360)
 
-      gamma <- indiv_pars$gamma
-      w0    <- indiv_pars$w0
-      w1_o  <- indiv_pars$w1_o
-      w1_b  <- indiv_pars$w1_b
-      w2    <- indiv_pars$w2
-      w3    <- indiv_pars$w3
-
+      gamma <- stats::na.omit(indiv_pars$gamma)
+      w0    <- stats::na.omit(indiv_pars$w0)
+      w1_o  <- stats::na.omit(indiv_pars$w1_o)
+      w1_b  <- stats::na.omit(indiv_pars$w1_b)
+      w2    <- stats::na.omit(indiv_pars$w2)
+      w3    <- stats::na.omit(indiv_pars$w3)
     }
 
     # Initial Q values
     Q <- data.frame("A" = 0, "B" = 0, "C" = 0, "D" = 0, "E" = 0, "F" = 0)
 
     for (i in 1:360) {
+
+      if (affect & i %in% missing_times) next
+
       Q_t <- Q
       names(Q_t) <- c("Q_a", "Q_b", "Q_c", "Q_d", "Q_e", "Q_f")
       # probability to choose "correct" stimulus
@@ -312,51 +327,55 @@ simulate_QL <- function(summary_df = NULL,
         # }
 
         q <- grep(training_results$question_type[i], adj_order)
+        trial_time <- time[time$trial_no == i,]$trial_time / 60
+        block_time <- time[time$trial_no == i,]$block_time / 60
 
         rating <-
           w0[q] +
-          # w1_o[q] * trial_time[i] +
-          # w1_b[q] * block_time[i] +
+          w1_o[q] * trial_time +
+          w1_b[q] * block_time +
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
         training_results$question_response[i] <- rating * 100
-        training_results$trial_time[i]        <- trial_time[i] * 60 ## in mins
+        training_results$trial_time[i]        <- trial_time * 60 ## in mins
       }
     }
 
     if (affect) {
-      if (!(any(training_results$question_response > 100) &
-          any(training_results$question_response < 0))) {
-        # changing one may change the other, so skip these cases (v. rare)
-        if (any(training_results$question_response > 100) |
-          any(training_results$question_response < 0)) {
-          indiv_aff <- training_results |>
-            dplyr::filter(question_response > 100 | question_response < 0) |>
-            with(unique(question_type))
-          for (adj in indiv_aff) {
-            adj_num <- grep(adj, adj_order)
-            if (any(training_results$question_response < 0)) {
-              diff <- min(training_results$question_response)
-            }
-            else if (any(training_results$question_response > 100)) {
-              diff <- max(training_results$question_response) - 100
-            }
-            training_results <- training_results |>
-              dplyr::rowwise() |>
-              dplyr::mutate(
-                question_response =
-                  ifelse(question_type == adj, question_response - diff,
-                         question_response)
-              ) |>
-              dplyr::ungroup()
-            pars_df[pars_df$id_no == id & pars_df$adj == adj,]$w0 <-
-              pars_df[pars_df$id_no == id & pars_df$adj == adj,]$w0 - diff/100
-          }
-        }
-      }
-      if (any(training_results$question_response > 100) |
-          any(training_results$question_response < 0)) {
+      training_results <- training_results |> tidyr::drop_na(choice)
+    #
+    #   if (!(any(training_results$question_response > 100) &
+    #       any(training_results$question_response < 0))) {
+    #     # changing one may change the other, so skip these cases (v. rare)
+    #     if (any(training_results$question_response > 100) |
+    #       any(training_results$question_response < 0)) {
+    #       indiv_aff <- training_results |>
+    #         dplyr::filter(question_response > 100 | question_response < 0) |>
+    #         with(unique(question_type))
+    #       for (adj in indiv_aff) {
+    #         adj_num <- grep(adj, adj_order)
+    #         if (any(training_results$question_response < 0)) {
+    #           diff <- min(training_results$question_response)
+    #         }
+    #         else if (any(training_results$question_response > 100)) {
+    #           diff <- max(training_results$question_response) - 100
+    #         }
+    #         training_results <- training_results |>
+    #           dplyr::rowwise() |>
+    #           dplyr::mutate(
+    #             question_response =
+    #               ifelse(question_type == adj, question_response - diff,
+    #                      question_response)
+    #           ) |>
+    #           dplyr::ungroup()
+    #         pars_df[pars_df$id_no == id & pars_df$adj == adj,]$w0 <-
+    #           pars_df[pars_df$id_no == id & pars_df$adj == adj,]$w0 - diff/100
+    #       }
+    #     }
+    #   }
+      if (any(training_results$question_response > 105) |
+          any(training_results$question_response < -10)) {
         training_results <- NULL
         drop_count <- drop_count + 1
       }
@@ -423,9 +442,9 @@ simulate_QL <- function(summary_df = NULL,
 
   if (!is.null(raw_df)) {
     all_res <- all_res |>
-      dplyr::left_join(raw_df, by = "id_no")
+      dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
     pars_df <- pars_df |>
-      dplyr::inner_join(raw_df, by = "id_no")
+      dplyr::inner_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
   }
   else if (affect) {
     all_res <- all_res |>
