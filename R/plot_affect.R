@@ -63,8 +63,8 @@ plot_affect <- function(data,
 
   plt_type <- match.arg(plt_type)
 
-  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- param <-
-    post_mean <- NULL
+  type <- trial_no_q <- value <- mean_val <- se_val <- se_pred <- parameter <-
+    posterior_mean <- NULL
 
   if (plt_type == "weights") {
 
@@ -72,27 +72,30 @@ plot_affect <- function(data,
     cred_l1 <- (1-cred[2])/2
     cred_l2 <- (1-cred[1])/2
 
-    p <- unique(data$param)
+    data <- data |> dplyr::filter(!is.na(adj))
+
+    p <- unique(data$parameter)
     labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^o),
               expression(w[1]^b), expression(w[2]), expression(w[3]))
 
-    if (any(grepl("w1_o", p)) & !any(grepl("w1_b", p))) labs <- labs[c(1,2,3,6,7)]
+    if (any(grepl("w1_o", p)) & !any(grepl("w1_b", p)))
+      labs <- labs[c(1,2,3,6,7)]
     else if (!any(grepl("w1_o", p))) labs <- labs[c(1,2,6,7)]
     else labs <- labs[c(1,2,4,5,6,7)]
 
     weight_plot <- data |>
-      dplyr::filter(!grepl("mu|sigma", param)) |>
       dplyr::mutate(
         adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj)))
       ) |>
       ggplot2::ggplot(
         ggplot2::aes(
-          x = param, y = post_mean, color = factor(adj), fill = factor(adj)
+          x = parameter, y = posterior_mean, color = factor(adj),
+          fill = factor(adj)
         )) +
       geom_flat_violin(position = ggplot2::position_nudge(x = .125, y = 0),
                        adjust = 2, trim = FALSE, alpha = 0.5) +
       ggplot2::geom_point(
-        ggplot2::aes(x = as.numeric(as.factor(param)) - 0.225),
+        ggplot2::aes(x = as.numeric(as.factor(parameter)) - 0.225),
         position = ggplot2::position_jitter(width = .1, height = 0),
         size = .25,
         alpha = 0.15
