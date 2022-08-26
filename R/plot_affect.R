@@ -5,8 +5,8 @@
 #' individual-level posterior predictions (vs. raw observations) for a defined
 #' list of posterior predictions and/or grouping.
 #'
-#' @param data Either a list of outputs from [get_affect_ppc], or weights from
-#' [get_affect_wts].
+#' @param data Either a list of outputs from [get_affect_ppc], or parameters
+#' from [make_par_df].
 #' @param plt_type Possible types are "grouped" or "individual" (for
 #' [get_affect_ppc] outputs) or "weights" (for [make_par_df] output).
 #' @param adj_order Same as [fit_learning_model()].
@@ -44,8 +44,8 @@
 #' plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
 #'
 #' # Weight plot
-#' aff_wts <- get_affect_wts(fit_affect$summary)
-#' plot_affect(aff_wts, plt_type = "weights"))
+#' pars <- make_par_df(fit_affect$raw, fit_affect$summary)
+#' plot_affect(pars, plt_type = "weights"))
 #' }
 #'
 #' @export

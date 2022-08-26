@@ -272,8 +272,10 @@ simulate_QL <- function(summary_df = NULL,
 
       gamma <- stats::na.omit(indiv_pars$gamma)
       w0    <- stats::na.omit(indiv_pars$w0)
-      # w1_o  <- stats::na.omit(indiv_pars$w1_o)
-      # w1_b  <- stats::na.omit(indiv_pars$w1_b)
+      if ("w1_o" %in% names(indiv_pars)) w1_o <- stats::na.omit(indiv_pars$w1_o)
+      else w1_o <- c(0,0,0)
+      if ("w1_b" %in% names(indiv_pars)) w1_b <- stats::na.omit(indiv_pars$w1_b)
+      else w1_b <- c(0,0,0)
       w2    <- stats::na.omit(indiv_pars$w2)
       w3    <- stats::na.omit(indiv_pars$w3)
     }
@@ -335,12 +337,12 @@ simulate_QL <- function(summary_df = NULL,
 
         q <- grep(training_results$question_type[i], adj_order)
         trial_time <- time[time$trial_no == i,]$trial_time / 60
-        # block_time <- time[time$trial_no == i,]$block_time / 60
+        block_time <- time[time$trial_no == i,]$block_time / 60
 
         rating <-
           w0[q] +
-          # w1_o[q] * trial_time +
-          # w1_b[q] * block_time +
+          w1_o[q] * trial_time +
+          w1_b[q] * block_time +
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 

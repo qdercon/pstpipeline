@@ -20,8 +20,8 @@ plot_affect(
 )
 }
 \arguments{
-\item{data}{Either a list of outputs from \link{get_affect_ppc}, or weights from
-\link{get_affect_wts}.}
+\item{data}{Either a list of outputs from \link{get_affect_ppc}, or parameters
+from \link{make_par_df}.}
 
 \item{plt_type}{Possible types are "grouped" or "individual" (for
 \link{get_affect_ppc} outputs) or "weights" (for \link{make_par_df} output).}
@@ -71,8 +71,8 @@ plot_affect(fit_dfs, plt_type = "grouped")
 plot_affect(fit_dfs, plt_type = "individual", r2_coords = c(0.8, 0.97))
 
 # Weight plot
-aff_wts <- get_affect_wts(fit_affect$summary)
-plot_affect(aff_wts, plt_type = "weights"))
+pars <- make_par_df(fit_affect$raw, fit_affect$summary)
+plot_affect(pars, plt_type = "weights"))
 }
 
 }
