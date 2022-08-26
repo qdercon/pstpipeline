@@ -12,7 +12,6 @@ simulate_QL(
   affect = FALSE,
   prev_sample = NULL,
   raw_df = NULL,
-  sample_ql = FALSE,
   ...
 )
 }
@@ -38,9 +37,6 @@ of models).}
 
 \item{raw_df}{Provide the raw data used to fit the data originally, so that
 subject IDs can be labelled appropriately.}
-
-\item{sample_ql}{Randomly sample Q-learning parameters to avoid recovering
-correlated parameters?}
 
 \item{...}{Other arguments which can be used to control the parameters of the
 gamma/Gaussian distributions from which parameter values are sampled.}
