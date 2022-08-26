@@ -8,8 +8,10 @@ plot_recovery(
   raw_pars,
   sim_pars,
   test = FALSE,
+  affect = FALSE,
   alpha_par_nms = NULL,
   plot_together = TRUE,
+  incl_legend = !plot_together,
   pal = NULL,
   font = "",
   font_size = 11
@@ -24,11 +26,17 @@ for the relevant model.}
 \item{test}{Boolean indicating whether recovered parameters are from the test
 phase.}
 
+\item{affect}{Boolean indicating whether recovered parameters are from an
+affect model.}
+
 \item{alpha_par_nms}{Option to rename learning rate parameters, defaults to
 the names from \code{par_df}.}
 
 \item{plot_together}{If \code{TRUE}, returns a panel with all plots plotted,
 otherwise a named list of plots is returned.}
+
+\item{incl_legend}{Boolean indicating whether to include legends for affect
+parameter plots (for the question types).}
 
 \item{pal, font, font_size}{Same as \code{\link[=plot_import]{plot_import()}}.}
 }

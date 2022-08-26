@@ -8,10 +8,14 @@
 #' for the relevant model.
 #' @param test Boolean indicating whether recovered parameters are from the test
 #' phase.
+#' @param affect Boolean indicating whether recovered parameters are from an
+#' affect model.
 #' @param alpha_par_nms Option to rename learning rate parameters, defaults to
 #' the names from \code{par_df}.
 #' @param plot_together If \code{TRUE}, returns a panel with all plots plotted,
 #' otherwise a named list of plots is returned.
+#' @param incl_legend Boolean indicating whether to include legends for affect
+#' parameter plots (for the question types).
 #' @param pal,font,font_size Same as [plot_import()].
 #'
 #' @return A named \code{list} of \code{ggplot} objects.
@@ -45,8 +49,10 @@
 plot_recovery <- function(raw_pars,
                           sim_pars,
                           test = FALSE,
+                          affect = FALSE,
                           alpha_par_nms = NULL,
                           plot_together = TRUE,
+                          incl_legend = !plot_together,
                           pal = NULL,
                           font = "",
                           font_size = 11) {
@@ -57,7 +63,7 @@ plot_recovery <- function(raw_pars,
 
   # to appease R CMD check
   variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
-    obs_var <- corr <- NULL
+    obs_var <- corr <- aff_num <- adj <- NULL
 
   sim_pars_df <- clean_summary(sim_pars) |>
     dplyr::rename(sim_mean = mean)
@@ -65,29 +71,59 @@ plot_recovery <- function(raw_pars,
   pars_df <- raw_pars |>
     dplyr::select(-tidyselect::any_of("subjID")) |>
     tidyr::pivot_longer(
-      cols = c(tidyselect::contains("alpha"), tidyselect::contains("beta")),
+      cols = c(tidyselect::matches("alpha|beta|gamma|w")),
       names_to = "parameter", values_to = "obs_mean"
       ) |>
-    dplyr::left_join(sim_pars_df, by = c("id_no", "parameter"))
+    dplyr::left_join(sim_pars_df) |>
+    suppressMessages()
+
+  pars <- list()
+
+  if (affect) {
+    pars[[1]] <- pars_df |> dplyr::filter(is.na(aff_num) & !is.na(obs_mean))
+    pars[[2]] <- pars_df |>
+      dplyr::filter(!is.na(aff_num) & !is.na(obs_mean)) |>
+      dplyr::mutate(
+        adj = factor(paste0(
+          toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj))
+        ))
+      )
+  } else {
+    pars[[1]] <- pars_df
+  }
 
   pred_plots <- list()
+  pred_plots$cor_plots <- list()
+  all_pars <- unique(pars_df$parameter)
 
-  for (p in seq_along(unique(pars_df$parameter))) {
-    par <- unique(pars_df$parameter)[p]
+  for (p in seq_along(all_pars)) {
+    legend_pos <- "none"
+    if (!affect | p <= 3) {
+      pars_to_plot <- pars[[1]] |> dplyr::mutate(adj = factor(parameter))
+      line_col <- col_vals <- pal[[p]]
+
+    } else {
+      pars_to_plot <- pars[[2]]
+      line_col <- "slategray"
+      col_vals <- pal[3:length(pal)]
+      if (incl_legend) legend_pos <- "right"
+    }
+
+    par <- all_pars[p]
     alpha_par <- grepl("alpha", par)
 
-    pred_plots[[p]] <- pars_df |>
+    pred_plots$cor_plots[[all_pars[p]]] <- pars_to_plot |>
       dplyr::filter(parameter == par) |>
-      ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = sim_mean)) +
-      ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[p]],
-                          colour = pal[[p]]) +
+      ggplot2::ggplot(
+        ggplot2::aes(x = obs_mean, y = sim_mean, fill = adj, colour = adj)
+      ) +
+      ggplot2::geom_point(size= 2, alpha = 0.5) +
       ggplot2::geom_smooth(
-        method = "lm", formula = "y~x", se = FALSE, fill = pal[[p]],
-        colour = pal[[p]]
+        method = "lm", formula = "y~x", se = FALSE, fill = line_col,
+        colour = line_col
         ) +
-      ggplot2::scale_colour_manual(values = pal[p]) +
-      ggplot2::scale_fill_manual(values = pal[p]) +
-      ggplot2::guides(colour = "none", fill = "none") +
+      ggplot2::scale_colour_manual(name = NULL, values = col_vals) +
+      ggplot2::scale_fill_manual(name = NULL, values = col_vals) +
       ggplot2::ggtitle(
         bquote(
           .(rlang::parse_expr(
@@ -95,8 +131,9 @@ plot_recovery <- function(raw_pars,
             ))
         ),
         subtitle = bquote(
-          r~"="~.(round(cor(pars_df[pars_df$parameter == par,]$obs_mean,
-                              pars_df[pars_df$parameter == par,]$sim_mean), 2))
+          r~"="~.(round(
+            cor(pars_to_plot[pars_to_plot$parameter == par,]$obs_mean,
+                pars_to_plot[pars_to_plot$parameter == par,]$sim_mean), 2))
         )
       ) +
       ggplot2::xlab("Observed") +
@@ -104,60 +141,78 @@ plot_recovery <- function(raw_pars,
       cowplot::theme_half_open(
         font_size = font_size,
         font_family = font
+      ) +
+      ggplot2::theme(legend.position = legend_pos)
+  }
+
+  htmps <- list()
+
+  for (c in seq_along(pars)) {
+    cor_mat <- pars[[c]] |>
+      tidyr::pivot_wider(names_from = parameter,
+                         values_from = tidyselect::contains("mean")) |>
+      dplyr::select(
+        -tidyselect::any_of(tidyselect::matches("aff_num|adj")),
+      ) |>
+      dplyr::select(-id_no) |>
+      cor()
+
+    par_nms <- unique(pars[[c]]$parameter)
+    n_pars <- length(par_nms)
+    labs <- sapply(
+      1:length(par_nms), function(n)
+        axis_title(par_nms[n], n, test, grepl("alpha", n), alpha_par_nms)
+    )
+
+    htmps[[c]] <-
+      tibble::as_tibble(cor_mat, rownames = "sim_var") |>
+      dplyr::select(tidyselect::matches("var|obs")) |>
+      dplyr::filter(grepl("sim", sim_var)) |>
+      dplyr::mutate(sim_var = sub("sim_mean_", "", sim_var)) |>
+      tidyr::pivot_longer(cols = tidyselect::contains("obs"),
+                          names_to = "obs_var", names_prefix = "obs_mean_",
+                          values_to = "corr") |>
+      dplyr::mutate(sim_var = factor(sim_var, levels = par_nms)) |>
+      dplyr::mutate(obs_var = factor(obs_var, levels = par_nms)) |>
+      ggplot2::ggplot(ggplot2::aes(x = obs_var, y = sim_var, fill = corr)) +
+      ggplot2::geom_tile(alpha = 0.6) +
+      ggplot2::guides(fill = "none") +
+      ggplot2::geom_text(ggplot2::aes(label = round(corr, 2), family = font)) +
+      ggplot2::scale_fill_distiller(palette = "Blues", direction = 1) +
+      cowplot::theme_half_open(font_size = font_size, font_family = font) +
+      ggplot2::scale_x_discrete(
+        name = "Observed", labels = rlang::parse_exprs(labs)
+      ) +
+      ggplot2::scale_y_discrete(
+        name = "Recovered", labels = rlang::parse_exprs(labs)
       )
   }
 
-  cor_mat <- pars_df |>
-    tidyr::pivot_wider(names_from = parameter,
-                       values_from = tidyselect::contains("mean")) |>
-    dplyr::select(-id_no) |>
-    cor()
-
-  n_pars <- dim(cor_mat)[1]/2
-  if (n_pars == 3) {
-    order <- c("alpha_pos", "alpha_neg", "beta")
-    if (is.null(alpha_par_nms)) alpha_par_nms <- c("pos", "neg")
-    if (test) {
-      labs <- c(
-        paste0("alpha*minute[", alpha_par_nms[1], "]"),
-        paste0("alpha*minute[", alpha_par_nms[2], "]"),
-        "beta*minute")
-    }
+  if (!affect) {
+    pred_plots$heatmap <- htmps[[1]]
+    if (!plot_together) return(pred_plots)
     else {
-      labs <- c(
-        paste0("alpha[", alpha_par_nms[1], "]"),
-        paste0("alpha[", alpha_par_nms[2], "]"),
-        "beta")
+      ql_plots <- pred_plots$cor_plots
+      ql_plots$heatmap <- pred_plots$heatmap
+      plot <- cowplot::plot_grid(plotlist = ql_plots, nrow = 1)
+      return(plot)
+    }
+  } else {
+    pred_plots$heatmaps <- list()
+    pred_plots$heatmaps$ql <- htmps[[1]]
+    pred_plots$heatmaps$wts <- htmps[[2]]
+    if (!plot_together) return(pred_plots)
+    else {
+      ql_plots <- pred_plots$cor_plots[1:3]
+      ql_plots$heatmap <- pred_plots$heatmap$ql
+      wt_plots <- pred_plots$cor_plots[4:length(all_pars)]
+      wt_plots$heatmap <- pred_plots$heatmap$wts
+      plot <- cowplot::plot_grid(
+        cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
+        cowplot::plot_grid(plotlist = wt_plots, nrow = 1),
+        nrow = 2
+      )
+      return(plot)
     }
   }
-  else {
-    order <- labs <- c("alpha", "beta")
-    if (test) labs <- c("alpha*minute", "beta*minute")
-  }
-
-  corr_htmp <- tibble::as_tibble(
-      cor_mat[-(1:n_pars), -((n_pars+1):(2*n_pars))], rownames = NA
-    ) |>
-    dplyr::mutate(sim_var = sub("sim_mean_", "", row.names(.))) |>
-    tidyr::pivot_longer(cols = tidyselect::contains("obs"),
-                        names_to = "obs_var", names_prefix = "obs_mean_",
-                        values_to = "corr") |>
-    dplyr::mutate(sim_var = factor(sim_var, levels = order)) |>
-    dplyr::mutate(obs_var = factor(obs_var, levels = order)) |>
-    ggplot2::ggplot(ggplot2::aes(x = obs_var, y = sim_var, fill = corr)) +
-    ggplot2::geom_tile(alpha = 0.6) +
-    ggplot2::guides(fill = "none") +
-    ggplot2::geom_text(ggplot2::aes(label = round(corr, 2), family = font)) +
-    ggplot2::scale_fill_distiller(palette = "Blues", direction = 1) +
-    cowplot::theme_half_open(font_size = font_size, font_family = font) +
-    ggplot2::scale_x_discrete(
-      name = "Observed", labels = rlang::parse_exprs(labs)
-    ) +
-    ggplot2::scale_y_discrete(
-      name = "Recovered", labels = rlang::parse_exprs(labs)
-    )
-
-  pred_plots$heatmap <- corr_htmp
-  if (!plot_together) return(pred_plots)
-  else return(cowplot::plot_grid(plotlist = pred_plots, nrow = 1))
 }

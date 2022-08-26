@@ -308,11 +308,11 @@ make_par_df <- function(raw,
 #' Greek letters.
 #'
 #' @param param Parameter name.
-#' @param p Iteration number.
 #' @param test,alpha_par Booleans indicating whether the parameter is from a
 #' test data and/or is a learning rate parameter.
 #' @param alpha_par_nms Names of learning rate parameters (ignored if
 #' \code{!alpha_par}).
+#' @param mu Boolean indicating if the parameters are group-level.
 #'
 #' @returns Axis title as a character string containing an expression.
 #' @noRd
@@ -321,7 +321,9 @@ axis_title <- function(param,
                        p,
                        test,
                        alpha_par,
-                       alpha_par_nms) {
+                       alpha_par_nms,
+                       mu = FALSE) {
+  if (mu) sub("mu_", "", param)
   if (grepl("w", param, fixed = TRUE)) param <- sub("w", "w_", param)
   spl <- unlist(strsplit(param, "_"))
   s <- ifelse(test, paste0(spl[1], "*minute"), spl[1])

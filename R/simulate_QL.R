@@ -20,6 +20,8 @@
 #' of models).
 #' @param raw_df Provide the raw data used to fit the data originally, so that
 #' subject IDs can be labelled appropriately.
+#' @param sample_ql Randomly sample Q-learning parameters to avoid recovering
+#' correlated parameters?
 #' @param ... Other arguments which can be used to control the parameters of the
 #' gamma/Gaussian distributions from which parameter values are sampled.
 #'
@@ -43,12 +45,13 @@ simulate_QL <- function(summary_df = NULL,
                         affect = FALSE,
                         prev_sample = NULL,
                         raw_df = NULL,
+                        sample_ql = FALSE,
                         ...) {
 
   # to appease R CMD check
   parameter <- subjID <- value <- trial_no <- id_no <- id_all <- aff_num <-
     block <- hidden_reward <- question_response <- question_type <-
-    missing_times <- trial_block <- trial_time <- NULL
+    missing_times <- trial_block <- trial_time <- adj <- NULL
 
   l <- list(...)
 
@@ -59,7 +62,7 @@ simulate_QL <- function(summary_df = NULL,
     adj_order <- c("happy", "confident", "engaged")
   }
 
-  if (is.null(summary_df)) {
+  if (is.null(summary_df) | sample_ql) {
     if (is.null(sample_size)) sample_size <- 100
     if (is.null(l$alpha_dens)) l$alpha_dens <- c(2, 0.1) # Gamma(alpha, beta)
     if (is.null(l$alpha_pos_dens)) l$alpha_pos_dens <- l$alpha_dens
@@ -88,6 +91,7 @@ simulate_QL <- function(summary_df = NULL,
         beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
+    if (sample_ql) ql_pars <- pars_df
     # if (affect) {
     #   if (is.null(l$gamma_dens)) l$gamma_dens <- c(6, 0.07) # gamma(alpha, beta)
     #   if (is.null(l$w0_dens)) l$w0_dens <- c(0.4, 0.2) # Normal(mu, sigma)
@@ -115,7 +119,7 @@ simulate_QL <- function(summary_df = NULL,
     #     dplyr::ungroup()
     # }
   }
-  else {
+  if (!is.null(summary_df)) {
     pars_df <- clean_summary(summary_df) |>
       dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
       tidyr::pivot_wider(names_from = parameter, values_from = mean)
@@ -197,17 +201,23 @@ simulate_QL <- function(summary_df = NULL,
         dplyr::select(-trial_no)
     }
 
-    indiv_pars <- pars_df |>
-      dplyr::filter(id_no == ids_sample[id])
+    indiv_pars <- pars_df |> dplyr::filter(id_no == ids_sample[id])
+
+    if (sample_ql) {
+      ql_pars_df <- ql_pars |> dplyr::filter(id_no == num_sims + 1)
+    } else {
+      ql_pars_df <- indiv_pars |>
+        dplyr::select(tidyselect::matches("alpha|beta"))
+    }
 
     if (gain_loss) {
-      alpha_pos <- stats::na.omit(indiv_pars$alpha_pos)
-      alpha_neg <- stats::na.omit(indiv_pars$alpha_neg)
-      beta      <- stats::na.omit(indiv_pars$beta)
+      alpha_pos <- stats::na.omit(ql_pars_df$alpha_pos)
+      alpha_neg <- stats::na.omit(ql_pars_df$alpha_neg)
+      beta      <- stats::na.omit(ql_pars_df$beta)
     }
     else {
-      alpha <- indiv_pars$alpha[[1]]
-      beta <- indiv_pars$beta[[1]]
+      alpha <- ql_pars_df$alpha[[1]]
+      beta <- ql_pars_df$beta[[1]]
     }
 
     hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) |>
@@ -466,6 +476,14 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::mutate(
         id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
       # to match up with summary for plotting
+
+    if (sample_ql) {
+      ql_pars <- pars_df |>
+        dplyr::filter(!is.na(beta)) |>
+        dplyr::select(-tidyselect::matches("alpha|beta")) |>
+        dplyr::left_join(ql_pars, by = "id_no")
+      pars_df <- pars_df |> dplyr::bind_rows(ql_pars |> tidyr::drop_na(adj))
+    }
   }
   else if (!is.null(raw_df)) {
     all_res <- all_res |>

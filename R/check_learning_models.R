@@ -105,7 +105,7 @@ check_learning_models <- function(draws,
                           font_size) {
       rnge <- range(df[par])
       bin_wdth <- diff(rnge) / nbins
-      alpha <- grepl("alpha", par)
+      alpha_par <- grepl("alpha", par)
 
       plt <- df |>
         dplyr::select(tidyselect::all_of(par)) |>
@@ -126,18 +126,11 @@ check_learning_models <- function(draws,
         ggplot2::scale_x_continuous(
           name = bquote(
             .(rlang::parse_expr(
-                paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
-                       ifelse(!alpha, "",
-                              ifelse(!is.na(alpha_par_nm),
-                                     paste0("[", alpha_par_nm, "]"),
-                                     paste0("[", strsplit(par, "_")[[1]][3], "]"
-                                            )
-                                     )
-                              )
-                       )
-                )
+                axis_title(par, p, test, alpha_par, alpha_par_nms, mu = TRUE)
               )
-          )) +
+            )
+          )
+        )  +
         ggplot2::ylab("Count") +
         cowplot::theme_half_open(
           font_size = font_size,
