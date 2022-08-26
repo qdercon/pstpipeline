@@ -46,9 +46,9 @@ simulate_QL <- function(summary_df = NULL,
                         ...) {
 
   # to appease R CMD check
-  variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
-    hidden_reward <- question_response <- question_type <- missing_times <-
-    id_all <- aff_num <- trial_block <- trial_time <- NULL
+  parameter <- subjID <- value <- trial_no <- id_no <- id_all <- aff_num <-
+    block <- hidden_reward <- question_response <- question_type <-
+    missing_times <- trial_block <- trial_time <- NULL
 
   l <- list(...)
 
@@ -116,26 +116,9 @@ simulate_QL <- function(summary_df = NULL,
     # }
   }
   else {
-    pars_df <- summary_df |>
-      dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
-      dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
-      dplyr::select(variable, mean) |>
-      dplyr::mutate(
-        id_all = sub("\\].*$", "", sub(".*\\[", "", variable))
-      ) |>
-      dplyr::rowwise() |>
-      dplyr::mutate(
-        id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
-        aff_num = as.numeric(strsplit(id_all, ",")[[1]][2]),
-        adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])
-      ) |>
-      # NA unless affect model
-      dplyr::ungroup() |>
-      dplyr::select(
-        tidyselect::vars_select_helpers$where(~!all(is.na(.x))), -id_all
-      ) |>
-      dplyr::mutate(variable = sub("\\[.*$", "", variable)) |>
-      tidyr::pivot_wider(names_from = variable, values_from = mean)
+    pars_df <- clean_summary(summary_df) |>
+      dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
+      tidyr::pivot_wider(names_from = parameter, values_from = mean)
 
     if (!is.null(prev_sample)) {
       ids_sample <- prev_sample
@@ -472,13 +455,17 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::mutate(block_time = trial_time - min(trial_time)) |>
       dplyr::group_by(subjID, question_type) |>
       dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
-      dplyr::ungroup()
+      dplyr::ungroup() |>
+      dplyr::arrange(id_no)
 
     pars_df <- pars_df |>
       dplyr::inner_join(
         raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
-      dplyr::filter(id_no %in% unique(all_res$id_no))
-        # only relevant if drop_count > 1
+      dplyr::filter(id_no %in% unique(all_res$id_no)) |>
+      # only relevant if drop_count > 1
+      dplyr::mutate(
+        id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
+      # to match up with summary for plotting
   }
   else if (!is.null(raw_df)) {
     all_res <- all_res |>

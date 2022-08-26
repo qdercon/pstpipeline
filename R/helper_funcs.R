@@ -196,6 +196,38 @@ family_ch <- function(param) {
   else return(gaussian())
 }
 
+#' Clean up summary output from cmdstanr
+#'
+#' \code{clean_summary} returns a long format [tibble::tibble()] with individual
+#' parameters from learning modelsl.
+#'
+#' @param param A [cmdstanr::summary()].
+#'
+#' @returns A [tibble::tibble()].
+#' @noRd
+
+clean_summary <- function(summary) {
+  id_all <- variable <- aff_num <- NULL
+  summary |>
+    dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
+    dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
+    dplyr::select(
+      variable, mean, tidyselect::any_of(tidyselect::matches("ess|rhat"))
+    ) |>
+    dplyr::mutate(
+      id_all = sub("\\].*$", "", sub(".*\\[", "", variable))
+    ) |>
+    dplyr::rowwise() |>
+    dplyr::mutate(
+      id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
+      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2])
+    ) |>
+    # NA unless affect model
+    dplyr::ungroup() |>
+    dplyr::mutate(parameter = sub("\\[.*$", "", variable)) |>
+    dplyr::select(-variable, -id_all)
+}
+
 #' Construct a tibble containing individual-level parameter values and baseline
 #' information
 #'
@@ -234,7 +266,7 @@ make_par_df <- function(raw,
                         join_dem = TRUE,
                         adj_order = c("happy", "confident", "engaged")) {
 
-  subjID <- id_all <- variable <- matches <- aff_num <- NULL
+  subjID <- aff_num <- NULL
 
   ids <- raw |>
     dplyr::distinct(subjID) |>
@@ -242,26 +274,9 @@ make_par_df <- function(raw,
 
   n_id <- length(ids$subjID)
 
-  summ <- summary |>
-    dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
-    dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
-    dplyr::select(
-      variable, mean, tidyselect::any_of(matches("ess|rhat"))
-    ) |>
-    dplyr::mutate(
-      id_all = sub("\\].*$", "", sub(".*\\[", "", variable))
-    ) |>
-    dplyr::rowwise() |>
-    dplyr::mutate(
-      id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
-      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2]),
-      adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])
-    ) |>
-    # NA unless affect model
-    dplyr::ungroup() |>
-    dplyr::mutate(parameter = sub("\\[.*$", "", variable)) |>
-    dplyr::select(-variable, -id_all) |>
+  summ <- clean_summary(summary) |>
     dplyr::rename(posterior_mean = mean) |>
+    dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
     dplyr::right_join(ids, by = "id_no") |>
     dplyr::group_by(subjID) |>
     dplyr::filter(dplyr::if_any(

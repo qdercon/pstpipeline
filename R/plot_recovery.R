@@ -59,16 +59,7 @@ plot_recovery <- function(raw_pars,
   variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
     obs_var <- corr <- NULL
 
-  sim_pars_df <- sim_pars |>
-    dplyr::filter(grepl("alpha|beta", variable)) |>
-    dplyr::filter(!grepl("_pr", variable)) |>
-    dplyr::filter(!grepl("mu_", variable)) |>
-    dplyr::select(variable, mean) |>
-    dplyr::mutate(
-      id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
-      ) |>
-    dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) |>
-    dplyr::rename(parameter = variable) |>
+  sim_pars_df <- clean_summary(sim_pars) |>
     dplyr::rename(sim_mean = mean)
 
   pars_df <- raw_pars |>
