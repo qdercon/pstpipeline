@@ -55,8 +55,8 @@ parameters {
 
   // individual-level weights
   real w0[N, 3];
-  real w1_o[N, 3];
-  real w1_b[N, 3];
+  real<lower=-2> w1_o[N, 3];
+  real<lower=-2> w1_b[N, 3];
   real w2[N, 3];
   real w3[N, 3];
 
