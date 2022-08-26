@@ -482,7 +482,7 @@ simulate_QL <- function(summary_df = NULL,
         dplyr::filter(!is.na(beta)) |>
         dplyr::select(-tidyselect::matches("alpha|beta")) |>
         dplyr::left_join(ql_pars, by = "id_no")
-      pars_df <- pars_df |> dplyr::bind_rows(ql_pars |> tidyr::drop_na(adj))
+      pars_df <- ql_pars |> dplyr::bind_rows(pars_df |> tidyr::drop_na(adj))
     }
   }
   else if (!is.null(raw_df)) {
