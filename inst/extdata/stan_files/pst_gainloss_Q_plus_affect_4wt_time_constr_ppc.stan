@@ -18,7 +18,7 @@ data {
 
   real<lower=0, upper=1> affect[N, T];
   int<lower=0, upper=3> question[N, T];
-  real<lower=0> block_no[N, T];
+  real<lower=0> ovl_time[N, T];
 }
 
 transformed data {
@@ -54,7 +54,7 @@ parameters {
 
   // individual-level weights
   real w0[N, 3];
-  real w1_o[N, 3];
+  real<lower=-2> w1_o[N, 3];
   real w2[N, 3];
   real w3[N, 3];
 
@@ -142,7 +142,7 @@ model {
       affect[i, t] ~ student_t(
         nu,
         w0[i, question[i, t]] +
-        w1_o[i, question[i, t]] * block_no[i, t] +
+        w1_o[i, question[i, t]] * ovl_time[i, t] +
         w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
         sigma_t[i]
@@ -222,7 +222,7 @@ generated quantities {
         log_lik[i] += student_t_lpdf(affect[i, t] |
           nu,
           w0[i, question[i, t]] +
-          w1_o[i, question[i, t]] * block_no[i, t] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
           w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
           w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
@@ -231,7 +231,7 @@ generated quantities {
         y_pred[i, t] = student_t_rng(
           nu,
           w0[i, question[i, t]] +
-          w1_o[i, question[i, t]] * block_no[i, t] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
           w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
           w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]

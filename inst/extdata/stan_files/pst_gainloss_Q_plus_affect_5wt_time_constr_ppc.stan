@@ -18,7 +18,8 @@ data {
 
   real<lower=0, upper=1> affect[N, T];
   int<lower=0, upper=3> question[N, T];
-  real<lower=0> block_no[N, T];
+  real<lower=0> ovl_time[N, T];
+  real<lower=0> blk_time[N, T];
 }
 
 transformed data {
@@ -35,8 +36,8 @@ parameters {
   real<lower=2> nu; // minimum 2 df
 
   // weights
-  real mu_wt[4, 3];
-  real<lower=0> sigma_wt[4, 3];
+  real mu_wt[5, 3];
+  real<lower=0> sigma_wt[5, 3];
 
   /* decay factor (gamma)
   real<lower=0> alpha_g[3];
@@ -54,7 +55,8 @@ parameters {
 
   // individual-level weights
   real w0[N, 3];
-  real w1_o[N, 3];
+  real<lower=-2> w1_o[N, 3];
+  real<lower=-2> w1_b[N, 3];
   real w2[N, 3];
   real w3[N, 3];
 
@@ -76,8 +78,9 @@ model {
   for (p in 1:3) {
     w0[:, p]   ~ normal(mu_wt[1, p], sigma_wt[1, p]);
     w1_o[:, p] ~ normal(mu_wt[2, p], sigma_wt[2, p]);
-    w2[:, p]   ~ normal(mu_wt[3, p], sigma_wt[3, p]);
-    w3[:, p]   ~ normal(mu_wt[4, p], sigma_wt[4, p]);
+    w1_b[:, p] ~ normal(mu_wt[3, p], sigma_wt[3, p]);
+    w2[:, p]   ~ normal(mu_wt[4, p], sigma_wt[4, p]);
+    w3[:, p]   ~ normal(mu_wt[5, p], sigma_wt[5, p]);
   }
 
   // priors on the t distribution
@@ -142,7 +145,8 @@ model {
       affect[i, t] ~ student_t(
         nu,
         w0[i, question[i, t]] +
-        w1_o[i, question[i, t]] * block_no[i, t] +
+        w1_o[i, question[i, t]] * ovl_time[i, t] +
+        w1_b[i, question[i, t]] * blk_time[i, t] +
         w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
         sigma_t[i]
@@ -159,6 +163,7 @@ generated quantities {
 
   real mu_w0[3];
   real mu_w1_o[3];
+  real mu_w1_b[3];
   real mu_w2[3];
   real mu_w3[3];
   real mu_q_gamma[3];
@@ -180,8 +185,9 @@ generated quantities {
   for (p in 1:3) {
     mu_w0[p]    = Phi_approx(mu_wt[1, p]);
     mu_w1_o[p]  = Phi_approx(mu_wt[2, p]);
-    mu_w2[p]    = Phi_approx(mu_wt[3, p]);
-    mu_w3[p]    = Phi_approx(mu_wt[4, p]);
+    mu_w1_b[p]  = Phi_approx(mu_wt[3, p]);
+    mu_w2[p]    = Phi_approx(mu_wt[4, p]);
+    mu_w3[p]    = Phi_approx(mu_wt[5, p]);
     mu_q_gamma[p] = quantile(gamma[p], 0.5);
   }
 
@@ -222,7 +228,8 @@ generated quantities {
         log_lik[i] += student_t_lpdf(affect[i, t] |
           nu,
           w0[i, question[i, t]] +
-          w1_o[i, question[i, t]] * block_no[i, t] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
+          w1_b[i, question[i, t]] * blk_time[i, t] +
           w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
           w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
@@ -231,7 +238,8 @@ generated quantities {
         y_pred[i, t] = student_t_rng(
           nu,
           w0[i, question[i, t]] +
-          w1_o[i, question[i, t]] * block_no[i, t] +
+          w1_o[i, question[i, t]] * ovl_time[i, t] +
+          w1_b[i, question[i, t]] * blk_time[i, t] +
           w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
           w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t]),
           sigma_t[i]
