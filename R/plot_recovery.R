@@ -203,15 +203,44 @@ plot_recovery <- function(raw_pars,
     pred_plots$heatmaps$wts <- htmps[[2]]
     if (!plot_together) return(pred_plots)
     else {
-      ql_plots <- pred_plots$cor_plots[1:3]
+      ql_plots <- pred_plots$cor_plots[grep("alpha|beta", all_pars)]
       ql_plots$heatmap <- pred_plots$heatmap$ql
-      wt_plots <- pred_plots$cor_plots[4:length(all_pars)]
+      wt_plots <- pred_plots$cor_plots[grep("w|gamma", all_pars)]
       wt_plots$heatmap <- pred_plots$heatmap$wts
-      plot <- cowplot::plot_grid(
-        cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
-        cowplot::plot_grid(plotlist = wt_plots, nrow = 1),
-        nrow = 2
-      )
+
+      nwts <- length(grep("w", all_pars))
+
+      if (nwts == 3) {
+        plot <- cowplot::plot_grid(
+          cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
+          cowplot::plot_grid(plotlist = wt_plots, nrow = 1),
+          nrow = 2
+        )
+      } else if (nwts == 4) {
+        plot <- cowplot::plot_grid(
+          cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
+          cowplot::plot_grid(plotlist = wt_plots[c(1,2,6,3,4,5)], nrow = 2),
+          nrow = 2,
+          rel_heights = c(1,2)
+        )
+      } else if (nwts == 5) {
+        plot <- cowplot::plot_grid(
+          cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
+          cowplot::plot_grid(
+            cowplot::plot_grid(
+              plotlist = wt_plots[-length(wt_plots)], nrow = 2
+            ),
+            wt_plots$heatmap,
+            ncol = 2,
+            rel_widths = c(3, 1)
+          ),
+          nrow = 2,
+          rel_heights = c(1,2)
+        )
+      } else {
+        message("Unable to coerce plots together, returning list of plots.")
+        return(pred_plots)
+      }
       return(plot)
     }
   }

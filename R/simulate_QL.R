@@ -28,7 +28,7 @@
 #'
 #' @examples
 #' train_sim_2a <- simulate_QL(
-#'   sample_size = 10,
+#'   sample_size = 5,
 #'   alpha_pos_dens = c(shape = 2, scale = 0.1), # default
 #'   alpha_neg_dens = c(shape = 2, scale = 0.1), # default
 #'   beta_dens = c(mean = 3, sd = 1) # default
