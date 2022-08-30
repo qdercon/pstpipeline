@@ -13,7 +13,7 @@ parameter_glm(
   affect_number = NULL,
   interaction = NULL,
   recode_na = NULL,
-  factor_scores = NULL,
+  extra_data = NULL,
   rhat_upper = 1.1,
   ess_lower = 100,
   ...
@@ -44,9 +44,8 @@ both groups. This variable must be binary and only 1 interaction is allowed.}
 exist NAs. This argument allows these terms to be recoded as appropriate
 (in all binary cases, this should be set to 0).}
 
-\item{factor_scores}{Given the factor scores were derived separately, this
-argument allows the \code{data.frame} containing the factor scores to be
-supplied, so that these factors can be included in models.}
+\item{extra_data}{Option to supply a data frame with additional derived
+quantities (e.g., factor scores). Must include a \code{subjID} column.}
 
 \item{rhat_upper, ess_lower}{Same as \code{\link[=plot_raincloud]{plot_raincloud()}}.}
 
@@ -119,7 +118,7 @@ AD_affect_all <- pstpipeline::parameter_glm(
   covariates = c("age", "sex", "digit_span"),
   interaction = "distanced",
   affect_number = 1,
-  factor_scores = factor_scores
+  extra_data = factor_scores
 )
 }
 
