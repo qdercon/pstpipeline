@@ -27,9 +27,8 @@
 #' @param recode_na Some demographic questions were conditional, and so there
 #' exist NAs. This argument allows these terms to be recoded as appropriate
 #' (in all binary cases, this should be set to 0).
-#' @param factor_scores Given the factor scores were derived separately, this
-#' argument allows the \code{data.frame} containing the factor scores to be
-#' supplied, so that these factors can be included in models.
+#' @param extra_data Option to supply a data frame with additional derived
+#' quantities (e.g., factor scores). Must include a \code{subjID} column.
 #' @param rhat_upper,ess_lower Same as [plot_raincloud()].
 #' @param ... Other arguments to pass to [cmdstan_glm()] (e.g., to control
 #' number of warm-up and sampling iterations). In addition, use \code{cores} to
@@ -88,7 +87,7 @@
 #'   covariates = c("age", "sex", "digit_span"),
 #'   interaction = "distanced",
 #'   affect_number = 1,
-#'   factor_scores = factor_scores
+#'   extra_data = factor_scores
 #' )
 #' }
 #'
@@ -102,7 +101,7 @@ parameter_glm <- function(summary_df = list(),
                           affect_number = NULL,
                           interaction = NULL,
                           recode_na = NULL,
-                          factor_scores = NULL,
+                          extra_data = NULL,
                           rhat_upper = 1.1,
                           ess_lower = 100,
                           ...) {
@@ -128,9 +127,9 @@ parameter_glm <- function(summary_df = list(),
     )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
-  if (!is.null(factor_scores)) {
+  if (!is.null(extra_data)) {
     all_data <- all_data |>
-      dplyr::left_join(factor_scores, by = "subjID")
+      dplyr::left_join(extra_data, by = "subjID")
   }
   if ("aff_num" %in% colnames(all_data)) {
     if (is.null(affect_number)) {

@@ -125,10 +125,11 @@ plot_glm <- function(par_df,
     plots[[par]] <- local({ # inelegant way of making sure plots don't overwrite
       par <- pars[[p]]
       alpha_par <- grepl("alpha", par)
+      gamma_dist <- grepl("alpha|gamma", par)
       voi <- rlang::sym(plot_var)
 
       par_df_tr <- par_df |> dplyr::filter(parameter == par)
-      if (alpha_par) {
+      if (gamma_dist) {
         title <- "Estimated mean % difference in"
         plot <- par_df_tr |>
           ggplot2::ggplot(
@@ -154,7 +155,7 @@ plot_glm <- function(par_df,
             setNames(
               quantile_hdi(
                 x, c(cred_l1, cred_l2, 0.5, 1 - cred_l2, 1 - cred_l1),
-                transform = alpha_par
+                transform = gamma_dist
                 ),
               c("ymin", "lower", "middle", "upper", "ymax")
             )
