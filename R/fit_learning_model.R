@@ -126,9 +126,6 @@ fit_learning_model <- function(df_all,
   if (exp_part == "test" & affect) {
     stop("Affect models will not work for test data.")
   }
-  if (model == "1a" & affect) {
-    stop("Affect data model is dual learning rate only.")
-  }
   if (model == "affect" & !ppc) {
     warning("Separate posterior predictions after affect models not supported.")
     ppc <- TRUE
