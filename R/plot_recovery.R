@@ -117,7 +117,7 @@ plot_recovery <- function(raw_pars,
       ggplot2::ggplot(
         ggplot2::aes(x = obs_mean, y = sim_mean, fill = adj, colour = adj)
       ) +
-      ggplot2::geom_point(size= 2, alpha = 0.5) +
+      ggplot2::geom_point(size= 2, alpha = 0.25) +
       ggplot2::geom_smooth(
         method = "lm", formula = "y~x", se = FALSE, fill = line_col,
         colour = line_col
