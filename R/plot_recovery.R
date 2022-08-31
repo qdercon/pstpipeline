@@ -95,17 +95,17 @@ plot_recovery <- function(raw_pars,
   pred_plots <- list()
   pred_plots$cor_plots <- list()
   all_pars <- unique(pars_df$parameter)
+  num_ql <- sum(grepl("alpha|beta", all_pars))
 
   for (p in seq_along(all_pars)) {
     legend_pos <- "none"
-    if (!affect | p <= 3) {
+    if (!affect | p <= num_ql) {
       pars_to_plot <- pars[[1]] |> dplyr::mutate(adj = factor(parameter))
       line_col <- col_vals <- pal[[p]]
-
     } else {
       pars_to_plot <- pars[[2]]
       line_col <- "slategray"
-      col_vals <- pal[3:length(pal)]
+      col_vals <- pal[(num_ql+1):length(pal)]
       if (incl_legend) legend_pos <- "right"
     }
 

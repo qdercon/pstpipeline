@@ -52,8 +52,10 @@ simulate_QL <- function(summary_df = NULL,
 
   l <- list(...)
 
-  if (is.null(summary_df) & is.null(raw_df) & affect)
-    stop("Random samples not currently supported for affect models.")
+  if (is.null(summary_df) & affect)
+    stop("Random samples not supported for affect models.")
+  if (is.null(raw_df) & affect)
+    stop("Please specify a raw_df - required to obtain elapsed times.")
 
   if (affect & is.null(l$question_order)) {
     adj_order <- c("happy", "confident", "engaged")
@@ -180,8 +182,8 @@ simulate_QL <- function(summary_df = NULL,
       beta      <- stats::na.omit(indiv_pars$beta)
     }
     else {
-      alpha <- indiv_pars$alpha[[1]]
-      beta <- indiv_pars$beta[[1]]
+      alpha <- stats::na.omit(indiv_pars$alpha)
+      beta  <- stats::na.omit(indiv_pars$beta)
     }
 
     hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) |>
