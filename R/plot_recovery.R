@@ -161,7 +161,8 @@ plot_recovery <- function(raw_pars,
     n_pars <- length(par_nms)
     labs <- sapply(
       1:length(par_nms), function(n)
-        axis_title(par_nms[n], n, test, grepl("alpha", n), alpha_par_nms)
+        axis_title(par_nms[n], n, test = test, grepl("alpha", n),
+                   alpha_par_nms = alpha_par_nms)
     )
 
     htmps[[c]] <-
