@@ -200,9 +200,9 @@ import_single <- function(jatos_txt_file,
     dplyr::filter(questionnaire == "catch_questions") |>
     dplyr::select(question_no, catch_question_pass) |>
     dplyr::arrange(question_no) |>
-    tidyr::pivot_wider(id_cols=question_no, names_from=question_no,
-                       values_from=catch_question_pass,
-                       names_prefix="catch_question_")
+    tidyr::pivot_wider(names_from = question_no,
+                       values_from = catch_question_pass,
+                       names_prefix = "catch_question_")
 
   questionnaires_tr <- questionnaires |>
     dplyr::select(
