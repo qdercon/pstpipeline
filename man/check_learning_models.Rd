@@ -30,12 +30,28 @@ phase.}
 \pkg{bayesplot} package.}
 
 \item{alpha_par_nms}{Option to rename learning rate parameters for models
-with more than one.
-the names from \code{draws}.}
+with more than one.}
 
 \item{pal, font, font_size}{Same as \link{plot_import}.}
+}
+\value{
+Either a single or named \code{list} of \code{ggplot} objects.
 }
 \description{
 This function is called automatically by \code{\link[=fit_learning_model]{fit_learning_model()}} when
 \code{model_checks = TRUE}, but can also be run separately if desired.
+}
+\examples{
+\dontrun{
+data(example_data)
+
+fit <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+ )
+model_checks <-  check_learning_models(fit$draws)
+}
+
 }

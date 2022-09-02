@@ -5,9 +5,10 @@
 #' summary tables and raw data from [fit_learning_model()], and outputting
 #' the results of GLMs quantifying the association between the individual-level
 #' posterior means of each parameter and the independent variable(s) of
-#' interest. Gamma GLMs with log link functions are used for learning rate
-#' models, while standard Gaussian models with identity link functions are used
-#' for models with inverse temperature as the response variable.
+#' interest. Gamma GLMs with log link functions are used for learning rate and
+#' decay factor models (i.e., positively skewed and constrained between 0 and 1)
+#' while standard Gaussian models with identity link functions are used for
+#' models with inverse temperature or weights as the response variable.
 #'
 #' @param summary_df List of [cmdstanr::summary()] outputs for the fit(s) of
 #' interest.
@@ -15,6 +16,10 @@
 #' Used to correctly link subject IDs to independent variables.
 #' @param var_of_interest Variable of interest.
 #' @param covariates Vector of covariates to control for in the GLMs.
+#' @param affect_number For affect model fits, specify the number (i.e., 1, 2,
+#' or 3) of the affect noun/verb of interest. If affect parameters are found in
+#' model summaries, and this is not specified, GLMs will default to standard
+#' Q-learning parameters.
 #' @param interaction Optional variable to interact with the variable of
 #' interest. The GLMs will then be run twice with this variable reverse coded
 #' the second time to obtain posterior samples for the variable of interest in
@@ -22,17 +27,70 @@
 #' @param recode_na Some demographic questions were conditional, and so there
 #' exist NAs. This argument allows these terms to be recoded as appropriate
 #' (in all binary cases, this should be set to 0).
-#' @param factor_scores Given the factor scores were derived separately, this
-#' argument allows the \code{data.frame} containing the factor scores to be
-#' supplied, so that these factors can be included in models.
+#' @param extra_data Option to supply a data frame with additional derived
+#' quantities (e.g., factor scores). Must include a \code{subjID} column.
 #' @param rhat_upper,ess_lower Same as [plot_raincloud()].
 #' @param ... Other arguments to pass to [cmdstan_glm()] (e.g., to control
 #' number of warm-up and sampling iterations). In addition, use \code{cores} to
 #' change the number of parallel chains to sample from.
 #'
-#' @return A [posterior::draws_df()].
+#' @returns A [posterior::draws_df()].
 #'
-#' @importFrom magrittr %>%
+#' @examples \dontrun{
+#' # Comparing parameters across groups
+#'
+#' data(example_data)
+#'
+#' fit_nd <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#' fit_dis <- fit_learning_model(
+#'   example_data$dis,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#'
+#' distanced <- parameter_glm(
+#'   summary_df = list(fit_nd$summary, fit_dis$summary),
+#'   raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+#'   var_of_interest = "distanced",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   iter_warmup = 1000, iter_sampling = 1000
+#' )
+#'
+#' # Comparing affect model parameters w.r.t. anxiety/depression factor scores
+#' # with interaction on distancing
+#'
+#' factor_scores <- read.csv("data-raw/gillan_scores.csv")[-1] # from Github
+#'
+#' fit_affect_nd <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#' fit_affect_dis <- fit_learning_model(
+#'   example_data$dis,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   exp_part = "training"
+#' )
+#'
+#' AD_affect_all <- pstpipeline::parameter_glm(
+#'   summary_df = list(fit_affect_nd$summary, fit_affect_dis$summary),
+#'   raw_df = list(fit_affect_nd$raw_df, fit_affect_dis$raw_df),
+#'   var_of_interest = "AD",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   interaction = "distanced",
+#'   affect_number = 1,
+#'   extra_data = factor_scores
+#' )
+#' }
+#'
 #' @importFrom rlang !! :=
 #' @export
 
@@ -40,9 +98,10 @@ parameter_glm <- function(summary_df = list(),
                           raw_df = list(),
                           var_of_interest,
                           covariates,
+                          affect_number = NULL,
                           interaction = NULL,
                           recode_na = NULL,
-                          factor_scores = NULL,
+                          extra_data = NULL,
                           rhat_upper = 1.1,
                           ess_lower = 100,
                           ...) {
@@ -58,7 +117,7 @@ parameter_glm <- function(summary_df = list(),
 
   ## to appease R CMD check
   variable <- parameter <- . <- subjID <- value <- trial_no <-
-    id_no <- recode <- NULL
+    id_no <- recode <- aff_num <- NULL
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
@@ -68,9 +127,18 @@ parameter_glm <- function(summary_df = list(),
     )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
-  if (!is.null(factor_scores)) {
-    all_data <- all_data %>%
-      dplyr::left_join(factor_scores, by = "subjID")
+  if (!is.null(extra_data)) {
+    all_data <- all_data |>
+      dplyr::left_join(extra_data, by = "subjID")
+  }
+  if ("aff_num" %in% colnames(all_data)) {
+    if (is.null(affect_number)) {
+      warning(
+        "Affect number not specified, defaulting to Q-learning parameters."
+      )
+      all_data <- all_data |> dplyr::filter(is.na(aff_num))
+    }
+    else all_data <- all_data |> dplyr::filter(aff_num == affect_number)
   }
 
   formula <- paste0("posterior_mean ~ ",
@@ -80,7 +148,7 @@ parameter_glm <- function(summary_df = list(),
     int_term <- rlang::sym(interaction)
     formula <- paste0(formula, "+", var_of_interest, "*", interaction)
     if (!is.null(recode_na)) {
-      all_data <- all_data %>%
+      all_data <- all_data |>
         dplyr::mutate(
           !!int_term := ifelse(
             is.na(!!int_term), recode_na, !!int_term
@@ -91,7 +159,7 @@ parameter_glm <- function(summary_df = list(),
     if (length(vals) > 2) {
       stop("Interaction term is non-binary. Perhaps NAs need to be recoded?")
     }
-    all_data_recode <- all_data %>%
+    all_data_recode <- all_data |>
       dplyr::mutate(
         !!int_term := ifelse(
           !!int_term == vals[1], vals[2], vals[1]
@@ -123,7 +191,7 @@ parameter_glm <- function(summary_df = list(),
       iter_sampling = l$iter_sampling, chains = l$chains,
       refresh = l$refresh
     )
-    par_ls[[par]] <- cmdstan_fit$draws(format = "df") %>%
+    par_ls[[par]] <- cmdstan_fit$draws(format = "df") |>
       dplyr::rename_with(
         .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
         .cols = tidyselect::starts_with("beta")
@@ -139,11 +207,11 @@ parameter_glm <- function(summary_df = list(),
         iter_sampling = l$iter_sampling, chains = l$chains,
         refresh = l$refresh
       )
-      par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") %>%
+      par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") |>
         dplyr::rename_with(
           .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
           .cols = tidyselect::starts_with("beta")
-          ) %>%
+          ) |>
         dplyr::mutate(recode = TRUE)
     }
   }
@@ -151,9 +219,9 @@ parameter_glm <- function(summary_df = list(),
   pars_df <- data.table::rbindlist(par_ls, idcol = "parameter")
   if (!is.null(interaction)) {
     int_nm <- rlang::sym(paste0(interaction, "_recode"))
-    pars_df <- pars_df %>% dplyr::mutate(recode = FALSE)
+    pars_df <- pars_df |> dplyr::mutate(recode = FALSE)
     pars_df_recode <- data.table::rbindlist(par_ls_recode, idcol = "parameter")
-    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) %>%
+    pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) |>
       dplyr::rename(!!int_nm := recode)
   }
   return(pars_df)

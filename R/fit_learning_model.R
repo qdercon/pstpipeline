@@ -18,8 +18,10 @@
 #' @param model Learning model to use, choose from \code{1a} or \code{2a}.
 #' @param exp_part Fit to \code{training} or \code{test}?
 #' @param affect Fit extended Q-learning model with affect ratings?
-#' @param adj_order Numerical order of affect adjectives, defaults to 1 =
-#' "happy", 2 = "confident", and 3 = "engaged".
+#' @param affect_sfx String prefix to identify specific affect model, ignored if
+#' \code{affect == FALSE}. Defaults to model with trial-wise passage-of-time.
+#' @param adj_order Vector of affect adjectives which is used to define their
+#' numerical order in the model output.
 #' @param vb Use variational inference to get the approximate posterior? Default
 #' is \code{TRUE} for computational efficiency.
 #' @param ppc Generate quantities including mean parameters, log likelihood, and
@@ -56,39 +58,77 @@
 #' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html)
 #' for full details and defaults.
 #'
-#' @return List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC]
+#' @returns List containing a [cmdstanr::CmdStanVB] or [cmdstanr::CmdStanMCMC]
 #' fit object, plus any other outputs passed to \code{outputs}.
 #'
 #' @importFrom data.table as.data.table .N
-#' @importFrom magrittr %>%
-#' @export
 #'
+#' @examples \dontrun{
+#' # Single learning rate Q-learning model fit to training data with MCMC
+#'
+#' data(example_data)
+#' fit1 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "1a",
+#'   vb = FALSE,
+#'   exp_part = "training",
+#'   iter_warmup = 1000, # default
+#'   iter_sampling = 1000, # default
+#'   chains = 4 # default
+#' )
+#'
+#' # Dual learning rate Q-learning model fit to training plus test data with
+#' # variational inference
+#'
+#' data(example_data)
+#' fit2 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   exp_part = "test",
+#'   vb = TRUE
+#' )
+#'
+#' # Simplest affect model with three weights, fit with variational inference
+#'
+#' fit3 <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   affect = TRUE,
+#'   affect_sfx = "3wt",
+#'   exp_part = "training",
+#'   algorithm = "fullrank"
+#' )
+#' }
+#'
+#' @export
 
-fit_learning_model <-
-  function(df_all,
-           model,
-           exp_part,
-           affect = FALSE,
-           adj_order = c("happy", "confident", "engaged"),
-           vb = TRUE,
-           ppc = vb,
-           task_excl = TRUE,
-           accuracy_excl = FALSE,
-           model_checks = TRUE,
-           save_model_as = "",
-           out_dir = "outputs/cmdstan",
-           outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
-           save_outputs = TRUE,
-           cores = getOption("mc.cores", 4),
-           ...) {
+fit_learning_model <- function(df_all,
+                               model,
+                               exp_part,
+                               affect = FALSE,
+                               affect_sfx = c("3wt", "4wt_trial", "4wt_block",
+                                              "4wt_time", "5wt_time"),
+                               adj_order = c("happy", "confident", "engaged"),
+                               vb = TRUE,
+                               ppc = vb,
+                               task_excl = TRUE,
+                               accuracy_excl = FALSE,
+                               model_checks = TRUE,
+                               save_model_as = "",
+                               out_dir = "outputs/cmdstan",
+                               outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+                               save_outputs = TRUE,
+                               cores = getOption("mc.cores", 4),
+                               ...) {
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
   if (exp_part == "test" & affect) {
     stop("Affect models will not work for test data.")
   }
-  if (model == "1a" & affect) {
-    stop("Affect data model is dual learning rate only.")
+  if (model == "affect" & !ppc) {
+    warning("Separate posterior predictions after affect models not supported.")
+    ppc <- TRUE
   }
   if (ppc & !vb) {
     warning(
@@ -109,41 +149,45 @@ fit_learning_model <-
   if (vb) {
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
+    if (is.null(l$algorithm)) l$algorithm <- "meanfield"
   }
   else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
       # default (explicitly defined here for file naming)
+    if (is.null(l$iter_warmup)) l$iter_warmup <- 1000
+    # default (explicitly defined here for file naming)
     if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
       # default (explicitly defined here for file naming)
-    if (model_checks) {
-      if (is.null(l$font)) l$font <- ""
-      if (is.null(l$font_size)) l$font_size <- 11
-    }
+  }
+
+  if (model_checks) {
+    if (is.null(l$font)) l$font <- ""
+    if (is.null(l$font_size)) l$font_size <- 11
   }
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- NULL
+    question_type <- reward <- trial_time <- NULL
 
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl) {
-      ids <- df_all[["ppt_info"]] %>%
+      ids <- df_all[["ppt_info"]] |>
         dplyr::select(subjID, exclusion, final_block_AB)
-      if (accuracy_excl) ids <- ids %>% dplyr::filter(final_block_AB >= 0.6)
-      if (task_excl) ids <- ids %>% dplyr::filter(exclusion == 0)
-      ids <- ids %>% dplyr::select(subjID)
+      if (accuracy_excl) ids <- ids |> dplyr::filter(final_block_AB >= 0.6)
+      if (task_excl) ids <- ids |> dplyr::filter(exclusion == 0)
+      ids <- ids |> dplyr::select(subjID)
     }
     else {
       ids <- unique(df_all[["training"]][["subjID"]])
     }
 
-    training_df <- df_all[["training"]] %>%
-      dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
+    training_df <- df_all[["training"]] |>
+      dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
       tidyr::drop_na(choice)
 
     if (exp_part == "test") {
-      test_df <- df_all[["test"]] %>%
-        dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) %>%
+      test_df <- df_all[["test"]] |>
+        dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
         tidyr::drop_na(choice)
 
       raw_df <- list()
@@ -153,18 +197,20 @@ fit_learning_model <-
     else {
       if (!affect) raw_df <- data.table::as.data.table(training_df)
       else {
-        training_df <- training_df %>%
-          dplyr::rowwise() %>%
-          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) %>%
+        training_df <- training_df |>
+          dplyr::rowwise() |>
+          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
           dplyr::mutate(
             question =
               ifelse(question_type == adj_order[1], 1,
                      ifelse(question_type == adj_order[2], 2, 3)
               )
-          ) %>%
-          dplyr::group_by(subjID, question_type) %>%
-          dplyr::arrange(trial_no) %>%
-          dplyr::mutate(trial_no_q = dplyr::row_number()) %>%
+          ) |>
+          dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
+          dplyr::group_by(subjID, trial_block) |>
+          dplyr::mutate(block_time = trial_time - min(trial_time)) |>
+          dplyr::group_by(subjID, question_type) |>
+          dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
           dplyr::ungroup()
 
           raw_df <- data.table::as.data.table(training_df)
@@ -175,11 +221,11 @@ fit_learning_model <-
     if (exp_part == "training") raw_df <- df_all
     else {
       raw_df <- list()
-      raw_df$train <- df_all %>%
-        dplyr::filter(exp_part == "training") %>%
+      raw_df$train <- df_all |>
+        dplyr::filter(exp_part == "training") |>
         dplyr::select(-exp_part)
-      raw_df$test <- df_all %>%
-        dplyr::filter(exp_part == "test") %>%
+      raw_df$test <- df_all |>
+        dplyr::filter(exp_part == "test") |>
         dplyr::select(-exp_part)
     }
   }
@@ -224,7 +270,15 @@ fit_learning_model <-
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  label <- ifelse(!affect, exp_part, "plus_affect")
+  if (affect) {
+    aff_mod <- match.arg(affect_sfx)
+    if (!is.null(l$par_recovery) & grepl("time", aff_mod)) {
+      aff_mod <- paste0(aff_mod, "_constr") # add constraints to w1 if recovery
+    }
+  }
+  label <- ifelse(
+    !affect, exp_part, paste("plus_affect", aff_mod, sep = "_")
+  )
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
       paste0(
@@ -244,6 +298,7 @@ fit_learning_model <-
       iter = l$iter,
       refresh = l$refresh,
       output_samples = l$output_samples,
+      algorithm = l$algorithm,
       output_dir = out_dir
     )
   }
@@ -329,7 +384,8 @@ fit_learning_model <-
         "alpha_neg" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10),
         "w0" = c(-1, 0, 1),
-        "w1" = c(-5, 0, 5),
+        "w1_o" = c(-2, 0, 2),
+        "w1_b" = c(-1, 0, 1),
         "w2" = c(-1, 0, 1),
         "w3" = c(-1, 0, 1),
         "gamma" = c(0, 0.5, 1)
@@ -417,8 +473,19 @@ fit_learning_model <-
         )
     }
   }
-  if (any(outputs == "loo_obj") & !vb) {
-    ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+  if (any(outputs == "loo_obj")) {
+    if (!vb) ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+    else {
+      ll <- ret$draws[[1]][grep("log_lik", names(ret$draws[[1]]))]
+      log_lik_mat <- t(do.call(rbind, ll))
+
+      log_p <- ret$draws[[1]]$lp__
+      log_g <- ret$draws[[1]]$lp_approx__
+
+      ret$loo_obj <- loo::loo_approximate_posterior(
+        log_lik_mat, log_p, log_g, cores = cores, save_psis = TRUE
+      )
+    }
     if (save_outputs) {
       saveRDS(ret$loo_obj, file = paste0(
         out_dir, "/", save_model_as, "_loo_obj", ".RDS")

@@ -9,6 +9,7 @@ fit_learning_model(
   model,
   exp_part,
   affect = FALSE,
+  affect_sfx = c("3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time"),
   adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
   ppc = vb,
@@ -32,8 +33,11 @@ fit_learning_model(
 
 \item{affect}{Fit extended Q-learning model with affect ratings?}
 
-\item{adj_order}{Numerical order of affect adjectives, defaults to 1 =
-"happy", 2 = "confident", and 3 = "engaged".}
+\item{affect_sfx}{String prefix to identify specific affect model, ignored if
+\code{affect == FALSE}. Defaults to model with trial-wise passage-of-time.}
+
+\item{adj_order}{Vector of affect adjectives which is used to define their
+numerical order in the model output.}
 
 \item{vb}{Use variational inference to get the approximate posterior? Default
 is \code{TRUE} for computational efficiency.}
@@ -100,4 +104,43 @@ for more detail.
 \href{https://ccs-lab.github.io/hBayesDM/}{\pkg{hBayesDM}} package, and is not as
 flexible; instead it is designed primarily to be less memory-intensive for
 our specific use-case and provide only relevant output.
+}
+\examples{
+\dontrun{
+# Single learning rate Q-learning model fit to training data with MCMC
+
+data(example_data)
+fit1 <- fit_learning_model(
+  example_data$nd,
+  model = "1a",
+  vb = FALSE,
+  exp_part = "training",
+  iter_warmup = 1000, # default
+  iter_sampling = 1000, # default
+  chains = 4 # default
+)
+
+# Dual learning rate Q-learning model fit to training plus test data with
+# variational inference
+
+data(example_data)
+fit2 <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  exp_part = "test",
+  vb = TRUE
+)
+
+# Simplest affect model with three weights, fit with variational inference
+
+fit3 <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  affect_sfx = "3wt",
+  exp_part = "training",
+  algorithm = "fullrank"
+)
+}
+
 }

@@ -10,7 +10,7 @@
 
 **Full methods and results from this study can be found in the preprint:**
 
-> Q. Dercon$^†$, S. Z. Mehrhof$^†$, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord. A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
+> Q. Dercon<sup>†</sup>, S. Z. Mehrhof<sup>†</sup>, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord. A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
 
 This package, which accompanies the preprint, is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
@@ -19,6 +19,8 @@ Instead, its main aims are as follows:
 1.  To make it easier for our specific analyses to be replicated by others.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
+
+**Update (01/09/22)**: The package has been extensively updated to include a number of extended $Q$-learning models which include trial-by-trial affect ratings (participants rated either their subjective happiness, confidence, or engagement after each trial). These models are versions of a computational model of subjective happiness derived by Rutledge *et al.* (2014) [[3](#References)], with additional parameters to capture time-dependent drift (recently termed ["passage-of-time dysphoria"](https://psyarxiv.com/bwv58)). Most functions described below have been extensively updated to accomodate these models, all of which have examples (see documentation). Full details on the modelling and rationale can be found in the accompanying notebooks (```affect_model_vb_[]a.ipynb```).
 
 ### Using the package
 
@@ -77,30 +79,36 @@ The majority of the code in the notebooks is in R, so if you wish to run things 
 
 
 - **analysis and model checking**:
-    - ```fit_learning_model``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run 1-alpha and 2-alpha Q-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC. Its functionality is comparable to [```hBayesDM::hBayesDM_model()```](https://rdrr.io/cran/hBayesDM/src/R/hBayesDM_model.R), but with a [CmdStan](https://github.com/stan-dev/cmdstan) backend.
+    - ```fit_learning_model``` automates using [CmdStanR](https://mc-stan.org/cmdstanr/) to run single and dual learning-rate $Q$-learning models [[2](#References)] in a hierarchical Bayesian manner, for both the training and test blocks, using either variational inference or MCMC. It is also capable of fitting a number of extended models which are additionally fit to trial-by-trial affect ratings [[3](#References)]. Its functionality is comparable to [```hBayesDM::hBayesDM_model()```](https://github.com/CCS-Lab/hBayesDM/blob/develop/R/R/hBayesDM_model.R), but with a [CmdStan](https://github.com/stan-dev/cmdstan) backend.
     - ```generate_posterior_quantities``` enables posterior predictions for each MCMC sample to be generated in a separate session from a previously fitted model, via CmdStanR's [```$generate_quantities()```](https://mc-stan.org/cmdstanr/reference/model-method-generate-quantities.html) method.
     - ```parameter_glm``` is a wrapper for```cmdstan_glm```, a version of [```stan_glm```](https://mc-stan.org/rstanarm/reference/stan_glm.html) from the [```rstanarm```](https://github.com/stan-dev/rstanarm) package which has been modified to use [```cmdstanr```](https://mc-stan.org/cmdstanr/) rather than [```rstan```](https://cran.r-project.org/web/packages/rstan/index.html) as its backend (which greatly reduces the number of dependencies required). It is used to run adjusted Bayesian GLMs relating the individual-level posterior means of the learning parameters to outcome variable(s) of interest.
-    - ```simulate_QL``` can be used to simulate data from the various QL models, either using random samples from chosen distributions or the observed individual-level parameter estimates. The output can then be fit to the models, to check whether the parameters can be adequately recovered.
+    - ```simulate_QL``` can be used to simulate data from the various $Q$-learing models, either using random samples from chosen distributions or the observed individual-level parameter estimates. The output can then be fit to the models, to check whether the parameters can be adequately recovered.
 
 
 - **plotting**:
     - ```plot_factors``` produces a variety of plots to visually check the predictive accuracy of the lasso regression model used to predict transdiagnostic psychiatric symptom dimensions from a subset of questionnaire questions.
     - ```plot_import``` is a flexible function which enables the visualisation of various aspects of the observed data, including from the training and test phases of the PST, and the affect questions asked throughout the task. These can be presented for a single individual, or aggregated across all individuals (after applying exclusion criteria), and can also be used to compare groups based on any binary covariate.
     - ```check_learning_models``` is a simple function to output plots of the group-level means for each of the free parameters, plus some visual model checks for MCMC chains via the [```bayesplot```](https://mc-stan.org/bayesplot/) package (traces and rank histograms for each of the chains).
+    - ```plot_affect``` plots the predictions from affect models against raw observations, by adjective (i.e., happiness, confidence, or engagemtent), either at a grouped- or individual-level. It can also plot the posterior mean weights obtained from this model. 
     - ```plot_ppc``` is a flexible plotting function to compare posterior predictions for both training and test data to their observed values, across participants.
-    - ```plot_glm``` plots the results of Bayesian GLMs with both a boxplot (depicting HDIs), and a posterior density (```geom_half_violin```; adapted from the [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) repository [[3](#References)]).
-    - ```plot_recovery``` produces correlation plots for the observed and recovered QL parameters (after running of ```fit_learning_model``` on simulated data from ```simulate_QL```), as well as confusion matrices.
+    - ```plot_glm``` plots the results of Bayesian GLMs with both a boxplot (depicting HDIs), and a posterior density (```geom_half_violin```; adapted from the [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) repository [[4](#References)]).
+    - ```plot_recovery``` produces correlation plots for the observed and recovered $Q$-learning parameters (after running of ```fit_learning_model``` on simulated data from ```simulate_QL```), as well as confusion matrices.
     - ```plot_raincloud``` produces plots of the posterior mean parameter values or transdiagnostic factors, optionally by group.
 
 
 - **other helper functions**
-    - ```get_subsample``` is a function to obtain a smaller subsample of individuals from the larger dataset, which may be helpful for demonstration purposes.
+    - ```get_affect_ppc``` obtains individual-level posterior predictions and observed data for plotting from a affect model fit, plus returns model fit metrics ($R^2$, MAE, RMSE) for each individual. 
     - ```get_preds_by_chain``` automates the loading of posterior predictions obtained from running ```generate_posterior_quantities``` for plotting, by importing and summing the binary choice predictions chain-by-chain, and collating them into far smaller summaries. It also includes an optional method which can help prevent memory overload when loading large numbers of predictions.
+        - ```get_subsample``` is a function to obtain a smaller subsample of individuals from the larger dataset, which may be helpful for demonstration purposes.
+    - ```make_par_df``` creates a ```tibble::tibble()``` of model parameters by participant ID from the results of learning model fits.
+    - ```quantile_hdi``` is a function to get arbitrary quantiles of a posterior distribution, based on [```HDIofMCMC```](https://github.com/CCS-Lab/hBayesDM/blob/develop/R/R/HDIofMCMC.R) from the [hBayesDM](https://github.com/CCS-Lab/hBayesDM) package.
 
 ### References
 
-1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24 (2017).
+1.   W-Y. Ahn, N. Haines, L. Zhang, Revealing Neurocomputational Mechanisms of Reinforcement Learning and Decision-Making With the hBayesDM Package. *Comput. Psychiatry.* **1**, 24-57 (2017).
 
-2.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**, 16311–16316 (2007).
+2.   M. J. Frank, A. A. Moustafa, H. M. Haughey, T. Curran, K. E. Hutchison, Genetic triple dissociation reveals multiple roles for dopamine in reinforcement learning. *Proc. Natl. Acad. Sci. U.S.A.* **104**(41), 16311–16316 (2007).
 
-3.   M. Allen, D. Poggiali, K. Whitaker et al. Raincloud plots: a multi-platform tool for robust data visualization [version 2; peer review: 2 approved]. *Wellcome Open Res.* **4**, 63 (2021).
+3.   R. B. Rutledge, N. Skandali, P. Dayan, R. J. Dolan. A computational and neural model of momentary subjective well-being. *Proc. Natl. Acad. Sci. U.S.A.* **111**(33), 12252-12257 (2014).
+
+4.   M. Allen, D. Poggiali, K. Whitaker et al. Raincloud plots: a multi-platform tool for robust data visualization [version 2; peer review: 2 approved]. *Wellcome Open Res.* **4**, 63 (2021).

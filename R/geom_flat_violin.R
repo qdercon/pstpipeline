@@ -43,8 +43,8 @@ GeomFlatViolin <-
         params$width %||% (ggplot2::resolution(data$x, FALSE) * 0.9)
 
       # ymin, ymax, xmin, and xmax define the bounding rectangle for each group
-      data %>%
-        dplyr::group_by(group) %>%
+      data |>
+        dplyr::group_by(group) |>
         dplyr::mutate(
           ymin = min(y),
           ymax = max(y),

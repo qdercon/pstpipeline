@@ -10,9 +10,10 @@ parameter_glm(
   raw_df = list(),
   var_of_interest,
   covariates,
+  affect_number = NULL,
   interaction = NULL,
   recode_na = NULL,
-  factor_scores = NULL,
+  extra_data = NULL,
   rhat_upper = 1.1,
   ess_lower = 100,
   ...
@@ -29,6 +30,11 @@ Used to correctly link subject IDs to independent variables.}
 
 \item{covariates}{Vector of covariates to control for in the GLMs.}
 
+\item{affect_number}{For affect model fits, specify the number (i.e., 1, 2,
+or 3) of the affect noun/verb of interest. If affect parameters are found in
+model summaries, and this is not specified, GLMs will default to standard
+Q-learning parameters.}
+
 \item{interaction}{Optional variable to interact with the variable of
 interest. The GLMs will then be run twice with this variable reverse coded
 the second time to obtain posterior samples for the variable of interest in
@@ -38,9 +44,8 @@ both groups. This variable must be binary and only 1 interaction is allowed.}
 exist NAs. This argument allows these terms to be recoded as appropriate
 (in all binary cases, this should be set to 0).}
 
-\item{factor_scores}{Given the factor scores were derived separately, this
-argument allows the \code{data.frame} containing the factor scores to be
-supplied, so that these factors can be included in models.}
+\item{extra_data}{Option to supply a data frame with additional derived
+quantities (e.g., factor scores). Must include a \code{subjID} column.}
 
 \item{rhat_upper, ess_lower}{Same as \code{\link[=plot_raincloud]{plot_raincloud()}}.}
 
@@ -56,7 +61,65 @@ A \code{\link[posterior:draws_df]{posterior::draws_df()}}.
 summary tables and raw data from \code{\link[=fit_learning_model]{fit_learning_model()}}, and outputting
 the results of GLMs quantifying the association between the individual-level
 posterior means of each parameter and the independent variable(s) of
-interest. Gamma GLMs with log link functions are used for learning rate
-models, while standard Gaussian models with identity link functions are used
-for models with inverse temperature as the response variable.
+interest. Gamma GLMs with log link functions are used for learning rate and
+decay factor models (i.e., positively skewed and constrained between 0 and 1)
+while standard Gaussian models with identity link functions are used for
+models with inverse temperature or weights as the response variable.
+}
+\examples{
+\dontrun{
+# Comparing parameters across groups
+
+data(example_data)
+
+fit_nd <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+fit_dis <- fit_learning_model(
+  example_data$dis,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+
+distanced <- parameter_glm(
+  summary_df = list(fit_nd$summary, fit_dis$summary),
+  raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+  var_of_interest = "distanced",
+  covariates = c("age", "sex", "digit_span"),
+  iter_warmup = 1000, iter_sampling = 1000
+)
+
+# Comparing affect model parameters w.r.t. anxiety/depression factor scores
+# with interaction on distancing
+
+factor_scores <- read.csv("data-raw/gillan_scores.csv")[-1] # from Github
+
+fit_affect_nd <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+fit_affect_dis <- fit_learning_model(
+  example_data$dis,
+  model = "2a",
+  affect = TRUE,
+  exp_part = "training"
+)
+
+AD_affect_all <- pstpipeline::parameter_glm(
+  summary_df = list(fit_affect_nd$summary, fit_affect_dis$summary),
+  raw_df = list(fit_affect_nd$raw_df, fit_affect_dis$raw_df),
+  var_of_interest = "AD",
+  covariates = c("age", "sex", "digit_span"),
+  interaction = "distanced",
+  affect_number = 1,
+  extra_data = factor_scores
+)
+}
+
 }

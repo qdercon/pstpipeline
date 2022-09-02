@@ -66,3 +66,32 @@ overall proportion.
 loading of posterior predictions, with an optional method to help avoid
 memory overload (and crashes).
 }
+\examples{
+\dontrun{
+data(example_data)
+dir.create("outputs/cmdstan/predictions")
+
+fit <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training",
+  iter_sampling = 2000,
+  outputs = c("model_env", "raw_df", "stan_datalist")
+)
+
+pred_paths <- generate_posterior_quantities(
+  fit_mcmc = fit,
+  data_list = fit$stan_datalist,
+  return_type = "paths"
+)
+
+obs_df_preds <- get_preds_by_chain(
+  out_files = pred_paths,
+  out_dir = "outputs/cmdstan/predictions",
+  obs_df = fit$raw_df,
+  n_draws_chain = 2000
+)
+}
+
+}

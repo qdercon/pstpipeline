@@ -46,7 +46,24 @@ outputted.}
 \item{...}{Other arguments to pass to \code{\link[=fit_learning_model]{fit_learning_model()}} and/or
 \code{\link[=parameter_glm]{parameter_glm()}}.}
 }
+\value{
+A data frame with parameter values for each of the fits.
+}
 \description{
 Compare learning parameters between groups over different numbers of training
 blocks
+}
+\examples{
+\dontrun{
+data(example_data)
+dir.create("outputs/cmdstan/compare_blocks")
+
+comp_blocks <- compare_block_diffs(
+  example_data,
+  var_of_interest = "distanced",
+  covariates = c("age", "sex", "digit_span"),
+  model = "2a"
+)
+}
+
 }

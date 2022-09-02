@@ -14,21 +14,32 @@
 #' \pkg{bayesplot} package.
 #' @param alpha_par_nms Option to rename learning rate parameters for models
 #' with more than one.
-#' the names from \code{draws}.
 #' @param pal,font,font_size Same as [plot_import].
 #'
-#' @importFrom magrittr %>%
+#' @returns Either a single or named \code{list} of \code{ggplot} objects.
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#'
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#'  )
+#' model_checks <-  check_learning_models(fit$draws)
+#' }
+#'
 #' @export
 
-check_learning_models <-
-  function(draws,
-           test = FALSE,
-           mean_pars = TRUE,
-           diagnostic_plots = TRUE,
-           alpha_par_nms = NA,
-           pal = NULL,
-           font = "",
-           font_size = 11) {
+check_learning_models <- function(draws,
+                                  test = FALSE,
+                                  mean_pars = TRUE,
+                                  diagnostic_plots = TRUE,
+                                  alpha_par_nms = NA,
+                                  pal = NULL,
+                                  font = "",
+                                  font_size = 11) {
 
   ## to appease R CMD check
   value <- ..count.. <- ..density.. <- NULL
@@ -43,8 +54,8 @@ check_learning_models <-
     }
     else {
       suppressWarnings(
-        mu_pars <- draws %>%
-          dplyr::select(tidyselect::starts_with("mu_")) %>%
+        mu_pars <- draws |>
+          dplyr::select(tidyselect::starts_with("mu_")) |>
           dplyr::select(-tidyselect::contains("pr"))
         )
       mu_pars_df <- mu_pars
@@ -83,8 +94,8 @@ check_learning_models <-
   if (mean_pars) {
     if (!draws_df) {
       mu_pars_df <- suppressWarnings(
-        posterior::as_draws_df(mu_pars) %>%
-        dplyr::select(tidyselect::starts_with("mu_")) %>%
+        posterior::as_draws_df(mu_pars) |>
+        dplyr::select(tidyselect::starts_with("mu_")) |>
         dplyr::select(-tidyselect::contains("pr"))
       )
     }
@@ -94,11 +105,11 @@ check_learning_models <-
                           font_size) {
       rnge <- range(df[par])
       bin_wdth <- diff(rnge) / nbins
-      alpha <- grepl("alpha", par)
+      alpha_par <- grepl("alpha", par)
 
-      plt <- df %>%
-        dplyr::select(tidyselect::all_of(par)) %>%
-        dplyr::rename(value = 1) %>%
+      plt <- df |>
+        dplyr::select(tidyselect::all_of(par)) |>
+        dplyr::rename(value = 1) |>
         ggplot2::ggplot(ggplot2::aes(x = value)) +
         ggplot2::geom_histogram(
           ggplot2::aes(y = ..count.., fill = "value"),
@@ -115,18 +126,11 @@ check_learning_models <-
         ggplot2::scale_x_continuous(
           name = bquote(
             .(rlang::parse_expr(
-                paste0(strsplit(par, "_")[[1]][2], ifelse(test, "*minute", ""),
-                       ifelse(!alpha, "",
-                              ifelse(!is.na(alpha_par_nm),
-                                     paste0("[", alpha_par_nm, "]"),
-                                     paste0("[", strsplit(par, "_")[[1]][3], "]"
-                                            )
-                                     )
-                              )
-                       )
-                )
+                axis_title(par, p, test, alpha_par, alpha_par_nms, mu = TRUE)
               )
-          )) +
+            )
+          )
+        )  +
         ggplot2::ylab("Count") +
         cowplot::theme_half_open(
           font_size = font_size,

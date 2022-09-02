@@ -18,23 +18,35 @@
 #' @param ... Other arguments to pass to [fit_learning_model()] and/or
 #' [parameter_glm()].
 #'
-#' @importFrom magrittr %>%
+#' @returns A data frame with parameter values for each of the fits.
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#' dir.create("outputs/cmdstan/compare_blocks")
+#'
+#' comp_blocks <- compare_block_diffs(
+#'   example_data,
+#'   var_of_interest = "distanced",
+#'   covariates = c("age", "sex", "digit_span"),
+#'   model = "2a"
+#' )
+#' }
+#'
 #' @export
 
-compare_block_diffs <-
-  function(all_res,
-           var_of_interest,
-           covariates,
-           model,
-           vb = TRUE,
-           fit_together = vb,
-           out_dir = "outputs/cmdstan/compare_blocks",
-           iter_warmup_glm = 2000,
-           iter_sampling_glm = 4000,
-           min_blocks = 1,
-           max_blocks = 6,
-           save_mod_out = FALSE,
-           ...) {
+compare_block_diffs <- function(all_res,
+                                var_of_interest,
+                                covariates,
+                                model,
+                                vb = TRUE,
+                                fit_together = vb,
+                                out_dir = "outputs/cmdstan/compare_blocks",
+                                iter_warmup_glm = 2000,
+                                iter_sampling_glm = 4000,
+                                min_blocks = 1,
+                                max_blocks = 6,
+                                save_mod_out = FALSE,
+                                ...) {
 
   l <- list(...)
   if (is.null(l$task_excl)) l$task_excl <- TRUE
@@ -62,7 +74,7 @@ compare_block_diffs <-
   for (i in seq_along(iter)) {
     if (fit_together) {
       rel_data_tr <- rel_data
-      rel_data_tr$training <- rel_data_tr$training %>%
+      rel_data_tr$training <- rel_data_tr$training |>
         dplyr::filter(trial_no <= iter[i]*60)
 
       fit_typ <- ifelse(vb, "vb", "mcmc")
@@ -91,9 +103,9 @@ compare_block_diffs <-
       rel_data_gr1 <- rel_data[[1]]
       rel_data_gr2 <- rel_data[[2]]
 
-      rel_data_gr1$training <- rel_data_gr1$training %>%
+      rel_data_gr1$training <- rel_data_gr1$training |>
         dplyr::filter(trial_no <= iter[i]*60)
-      rel_data_gr2$training <- rel_data_gr2$training %>%
+      rel_data_gr2$training <- rel_data_gr2$training |>
         dplyr::filter(trial_no <= iter[i]*60)
       fit_typ <- ifelse(vb, "vb", "mcmc")
       grp_names <- names(rel_data)
@@ -136,7 +148,7 @@ compare_block_diffs <-
     )
   names(par_df_ls) <- names_all[c(min_blocks:max_blocks)]
 
-  glm_pars_df <- data.table::rbindlist(par_df_ls, idcol = "block_group") %>%
+  glm_pars_df <- data.table::rbindlist(par_df_ls, idcol = "block_group") |>
     dplyr::mutate(
       block_group = factor(block_group, levels = rev(names(par_df_ls)))
       )

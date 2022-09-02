@@ -11,13 +11,20 @@
 #' @param indiv Return individual-level data? This can then be passed to
 #' [plot_import()].
 #' and plotted for one individual at a time.
-#' @param ret_incomplete Return incomplete datasets? They may require manual parsing.
+#' @param ret_incomplete Return incomplete datasets? They may require manual
+#' parsing.
 #' @param ... Other arguments passed to [import_single()].
 #'
-#' @return \code{list} of \code{tibbles} or a single \code{tibble} if combine = TRUE
+#' @returns \code{list} of \code{tibbles} or a single \code{tibble} if
+#' \code{combine == TRUE}.
 #'
-#' @importFrom magrittr %>%
 #' @importFrom utils setTxtProgressBar txtProgressBar
+#'
+#' @examples \dontrun{
+#' # Data not included in package (as ~900MB)
+#' all_res_split <- import_multiple("data-raw/all_995_complete.txt", add_sex = TRUE)
+#' }
+#'
 #' @export
 
 import_multiple <- function(jatos_txt_file,
@@ -236,9 +243,9 @@ import_multiple <- function(jatos_txt_file,
     )
 
     if (exclusion) {
-      exclusion_list_nd <- ret$non_distanced$ppt_info %>%
+      exclusion_list_nd <- ret$non_distanced$ppt_info |>
         dplyr::select(subjID, exclusion)
-      exclusion_list_d <- ret$distanced$ppt_info %>%
+      exclusion_list_d <- ret$distanced$ppt_info |>
         dplyr::select(subjID, exclusion)
     }
 
@@ -287,11 +294,11 @@ import_multiple <- function(jatos_txt_file,
           dplyr::bind_rows(qlearning_data_d), exclusion_list_d, by="subjID"
         )
 
-        ret$non_distanced$qlearning_data <- qlearning_data_nd %>%
-          dplyr::filter(exclusion==0) %>%
+        ret$non_distanced$qlearning_data <- qlearning_data_nd |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
-        ret$distanced$qlearning_data <- qlearning_data_d %>%
-          dplyr::filter(exclusion==0) %>%
+        ret$distanced$qlearning_data <- qlearning_data_d |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
       } else {
         ret$non_distanced$qlearning_data <- dplyr::bind_rows(qlearning_data_nd)
@@ -327,14 +334,14 @@ import_multiple <- function(jatos_txt_file,
             dplyr::bind_rows(gillan_questions_d), exclusion_list_d, by="subjID"
             )
 
-        gillan_questions_nd <- gillan_questions_nd %>%
-          dplyr::filter(exclusion==0) %>%
+        gillan_questions_nd <- gillan_questions_nd |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
         gillan_questions_nd[is.na(gillan_questions_nd)] <- 0
         ret$non_distanced$gillan_questions <- gillan_questions_nd
 
-        gillan_questions_d <- gillan_questions_d %>%
-          dplyr::filter(exclusion==0) %>%
+        gillan_questions_d <- gillan_questions_d |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
         gillan_questions_d[is.na(gillan_questions_d)] <-0
         ret$distanced$gillan_questions <- gillan_questions_d
@@ -437,7 +444,7 @@ import_multiple <- function(jatos_txt_file,
     )
 
     if (exclusion) {
-      exclusion_list <- ret$ppt_info %>% dplyr::select(subjID, exclusion)
+      exclusion_list <- ret$ppt_info |> dplyr::select(subjID, exclusion)
     }
 
     training <- lapply(
@@ -459,8 +466,8 @@ import_multiple <- function(jatos_txt_file,
       if (exclusion) {
         qlearning_data <- dplyr::left_join(
           dplyr::bind_rows(qlearning_data), exclusion_list, by="subjID")
-        ret$qlearning_data <- qlearning_data %>%
-          dplyr::filter(exclusion==0) %>%
+        ret$qlearning_data <- qlearning_data |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
       } else {
         ret$qlearning_data <- dplyr::bind_rows(qlearning_data)
@@ -478,8 +485,8 @@ import_multiple <- function(jatos_txt_file,
         gillan_questions <- dplyr::left_join(
           dplyr::bind_rows(gillan_questions), exclusion_list, by="subjID"
         )
-        gillan_questions <- gillan_questions %>%
-          dplyr::filter(exclusion==0) %>%
+        gillan_questions <- gillan_questions |>
+          dplyr::filter(exclusion==0) |>
           dplyr::select(-exclusion)
 
         gillan_questions[is.na(gillan_questions)] <- 0

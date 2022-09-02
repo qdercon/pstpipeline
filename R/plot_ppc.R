@@ -11,7 +11,9 @@
 #' @param train_trials List, maximum length 3. The first element should be a
 #' trial-level \code{tibble} containing summed posterior draws and their HDIs,
 #' both overall and for each block and block group of interest (outputted
-#' from [get_preds_by_chain]).
+#' from [get_preds_by_chain]). The second and third elements are optional, but
+#' enable lagging by a certain number of trials for the cumulative and
+#' difference (i.e., observed minus predicted) plots.
 #' @param test_perf List, maximum length 3. The first element should be a
 #' individual-level \code{tibble} containing summed predictions for each trial
 #' and individual (outputted from [get_preds_by_chain]). The second and third
@@ -28,23 +30,77 @@
 #' @param ... Other rarely used arguments which set the number of trials/blocks
 #' or the name of the predicted variable.
 #'
-#' @return Either a single or named \code{list} of \code{ggplot} objects
+#' @returns Either a single or named \code{list} of \code{ggplot} objects.
 #'
-#' @importFrom magrittr %>%
+#' @examples \dontrun{
+#' data(example_data)
+#' dir.create("outputs/cmdstan/predictions")
+#'
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training",
+#'   iter_sampling = 2000,
+#'   outputs = c("model_env", "raw_df", "stan_datalist")
+#' )
+#'
+#' pred_paths <- generate_posterior_quantities(
+#'   fit_mcmc = fit$fit,
+#'   data_list = fit$stan_datalist,
+#'   return_type = "paths"
+#' )
+#'
+#' obs_df_preds <- get_preds_by_chain(
+#'   out_files = pred_paths,
+#'   out_dir = "outputs/cmdstan/predictions",
+#'   obs_df = fit$raw_df,
+#'   n_draws_chain = 2000
+#' )
+#'
+#' ind <- readRDS("outputs/cmdstan/predictions/indiv_obs_sum_ppcs_df.RDS")
+#' tri <- readRDS("outputs/cmdstan/predictions/trial_block_avg_hdi_ppcs_df.RDS")
+#'
+#' # Cumulative choice probabilities, block-lagged
+#' plot_ppc(
+#'   train_indiv = list(ind, 20),
+#'   group_title = "Cumulative choice probabilities"
+#' )
+#'
+#' # Difference between observed and predicted choice, over the whole task
+#' # i.e., 120 trials per type
+#' plot_ppc(
+#'   train_indiv = list(ind, list(), 120),
+#'   group_title = "Difference between observed and predicted choices"
+#' )
+#'
+#' # Individual-level predictions and observed choice probabilities, across task
+#'
+#' ## N.B. partial match can be used to plot the types in names(tri$types)
+#' ## e.g., using "block_6" to plot "AB_block_6", "CD_block_6", and "EF_block_6"
+#'
+#' plot_ppc(
+#'   train_trials = list(tri, "all_trials"),
+#'   group_title = "Individual-level choices against predictions"
+#' )
+#'
+#' # Test plots can be plotted similarly with test_perf - the second and third
+#' # arguments follow the same logic as plot_import(plt.test)
+#' }
+#'
 #' @importFrom rlang := !!
 #' @export
 
-plot_ppc <- function(
-  train_indiv = list(),
-  train_trials = list(),
-  test_perf = list(),
-  id = NULL,
-  group_title = "",
-  legend_pos = "right",
-  pal = NULL,
-  font = "",
-  font_size = 14,
-  ...) {
+plot_ppc <- function(train_indiv = list(),
+                     train_trials = list(),
+                     test_perf = list(),
+                     id = NULL,
+                     group_title = "",
+                     legend_pos = "right",
+                     pal = NULL,
+                     font = "",
+                     font_size = 14,
+                     ...) {
 
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80",
@@ -72,33 +128,32 @@ plot_ppc <- function(
 
   pairs <- list("AB", "CD", "EF")
   names(pairs) <- c("12", "34", "56")
-  std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(!is.na(x)))
 
   plt_list <- list()
 
   if (length(train_indiv) > 0) {
-    train_indiv_df <- train_indiv[[1]] %>%
-      dplyr::select(-tidyselect::contains("cuml_accuracy")) %>%
-      dplyr::rename(choice_obs = choice) %>%
+    train_indiv_df <- train_indiv[[1]] |>
+      dplyr::select(-tidyselect::contains("cuml_accuracy")) |>
+      dplyr::rename(choice_obs = choice) |>
       tidyr::pivot_longer(
         tidyselect::contains("choice"),
         names_to = "choice_type", values_to = "choice", names_prefix = "choice_"
-        ) %>%
-      dplyr::arrange(trial_no) %>%
+        ) |>
+      dplyr::arrange(trial_no) |>
       dplyr::mutate(
         acc_type = ifelse(grepl("obs", choice_type), "Observed", "Predicted")
-        ) %>%
-      dplyr::rowwise() %>%
+        ) |>
+      dplyr::rowwise() |>
       dplyr::mutate(
         type = paste0(pairs[[as.character(type)]], " (", acc_type, ")")
-        ) %>%
-      dplyr::select(-acc_type) %>%
+        ) |>
+      dplyr::select(-acc_type) |>
       dplyr::group_by(subjID, type, choice_type)
 
     trial_lags <- tryCatch(train_indiv[[2]], error = function(e) return(list()))
     for (lag in trial_lags) {
       col_name <- rlang::sym(paste0("cuml_accuracy_l", lag))
-      train_indiv_df <- train_indiv_df %>%
+      train_indiv_df <- train_indiv_df |>
         dplyr::mutate(
           !!col_name := runner::runner(
             x = choice,
@@ -116,22 +171,22 @@ plot_ppc <- function(
       plt_name <- paste0("training_lag", n_lag)
 
       if (!is.null(id)) {
-        train_indiv_df <- train_indiv_df %>%
+        train_indiv_df <- train_indiv_df |>
           dplyr::filter(subjID == id)
       }
 
-      tr_plot_df <- train_indiv_df %>%
-        dplyr::group_by(type, trial_no_group) %>%
-        dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = T)) %>%
-        dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) %>%
-        dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) %>%
-        dplyr::ungroup() %>%
+      tr_plot_df <- train_indiv_df |>
+        dplyr::group_by(type, trial_no_group) |>
+        dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = T)) |>
+        dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) |>
+        dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) |>
+        dplyr::ungroup() |>
         dplyr::distinct(
           trial_no_group, type, cuml_acc_mean, cuml_acc_mean_sub_se,
           cuml_acc_mean_pl_se
         )
 
-      plt_tr <- tr_plot_df %>%
+      plt_tr <- tr_plot_df |>
         ggplot2::ggplot(ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
                                  colour = factor(type), fill = factor(type))) +
         ggplot2::geom_point(alpha=0.65) +
@@ -186,27 +241,27 @@ plot_ppc <- function(
     if (length(overall_avgs) > 0) {
       avg_plts <- list()
       if (!is.null(id)) {
-        avg_overall_df <- train_indiv[[1]] %>%
+        avg_overall_df <- train_indiv[[1]] |>
           dplyr::filter(subjID == id)
       }
       else avg_overall_df <- train_indiv[[1]]
 
       for (avg_diff in overall_avgs) {
-        avg_overall_df <- train_indiv[[1]] %>%
+        avg_overall_df <- train_indiv[[1]] |>
           dplyr::select(subjID, trial_no_group, type, choice,
-                        choice_pred_prop) %>%
-          dplyr::rename(obs = choice, post_mean_pred = choice_pred_prop) %>%
-          dplyr::filter(trial_no_group >= (l$max_trials_grp - avg_diff)) %>%
-          dplyr::rowwise() %>%
-          dplyr::mutate(type = pairs[[as.character(type)]]) %>%
-          dplyr::group_by(subjID, type) %>%
-          dplyr::mutate(mean_obs_type = mean(obs)) %>%
-          dplyr::mutate(mean_pred_type = mean(post_mean_pred)) %>%
-          dplyr::mutate(diff = mean_obs_type - mean_pred_type) %>%
+                        choice_pred_prop) |>
+          dplyr::rename(obs = choice, post_mean_pred = choice_pred_prop) |>
+          dplyr::filter(trial_no_group >= (l$max_trials_grp - avg_diff)) |>
+          dplyr::rowwise() |>
+          dplyr::mutate(type = pairs[[as.character(type)]]) |>
+          dplyr::group_by(subjID, type) |>
+          dplyr::mutate(mean_obs_type = mean(obs)) |>
+          dplyr::mutate(mean_pred_type = mean(post_mean_pred)) |>
+          dplyr::mutate(diff = mean_obs_type - mean_pred_type) |>
           dplyr::distinct(type, diff)
 
         avg_nm <- paste("last", avg_diff, "trials", sep = "_")
-        avg_plt <- avg_overall_df %>%
+        avg_plt <- avg_overall_df |>
           ggplot2::ggplot(ggplot2::aes(x = diff, fill = type, colour = type)) +
           ggplot2::geom_density(ggplot2::aes(y = ..count..), alpha = 0.4) +
           ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
@@ -249,15 +304,15 @@ plot_ppc <- function(
   }
   if (length(train_trials) > 0) {
     if (!is.null(id)) {
-      avg_overall_df <- train_trials[[1]] %>%
+      avg_overall_df <- train_trials[[1]] |>
         dplyr::filter(subjID == id)
     }
     else train_trials_df <- train_trials[[1]]
 
-    train_trials_df <- train_trials[[1]] %>%
-      dplyr::rowwise() %>%
+    train_trials_df <- train_trials[[1]] |>
+      dplyr::rowwise() |>
       dplyr::mutate(avg_type = strsplit(sub("_", "\01", type),
-                                        "\01")[[1]][2]) %>%
+                                        "\01")[[1]][2]) |>
       dplyr::mutate(type = strsplit(sub("_", "\01", type), "\01")[[1]][1])
 
     trial_groups <- tryCatch(
@@ -267,11 +322,11 @@ plot_ppc <- function(
     for (trgrp in trial_groups) {
       skip_to_next <- FALSE
       tryCatch(
-        plot_trials_df <- train_trials_df %>% dplyr::filter(avg_type == trgrp),
+        plot_trials_df <- train_trials_df |> dplyr::filter(avg_type == trgrp),
         error = function(e) skip_to_next <<- TRUE
         )
       if (!skip_to_next) {
-        trial_plt_list[[trgrp]] <- plot_trials_df %>%
+        trial_plt_list[[trgrp]] <- plot_trials_df |>
           ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = pred_post_mean,
                                        colour = type)) +
           ggplot2::geom_point(size = 2, alpha = 0.25) +
@@ -314,19 +369,19 @@ plot_ppc <- function(
     pair_groups <- tryCatch(test_perf[[2]], error = function(e) return(list()))
     indiv_pairs <- tryCatch(test_perf[[3]], error = function(e) return(list()))
 
-    test_perf_df <- test_perf[[1]] %>%
-      dplyr::select(-tidyselect::contains("cuml_accuracy")) %>%
-      dplyr::rename(choice_obs = choice) %>%
+    test_perf_df <- test_perf[[1]] |>
+      dplyr::select(-tidyselect::contains("cuml_accuracy")) |>
+      dplyr::rename(choice_obs = choice) |>
       tidyr::pivot_longer(tidyselect::contains("choice"),
                           names_to = "choice_type", values_to = "choice",
-                          names_prefix = "choice_") %>%
-      dplyr::arrange(trial_no) %>%
+                          names_prefix = "choice_") |>
+      dplyr::arrange(trial_no) |>
       dplyr::mutate(
         group = ifelse(grepl("obs", choice_type), "Observed", "Predicted")
         )
 
     if (!is.null(id)) {
-      test_perf_df <- test_perf_df %>% dplyr::filter(subjID == id)
+      test_perf_df <- test_perf_df |> dplyr::filter(subjID == id)
       import_single <- TRUE
     }
     else {

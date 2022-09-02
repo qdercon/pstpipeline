@@ -18,7 +18,3 @@ StripTrailingWhitespace: Yes
 BuildType: Package
 PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source
-
-PythonType: system
-PythonVersion: 3.9.1
-PythonPath: C:/Users/qderc/AppData/Local/Programs/Python/Python39/python.exe

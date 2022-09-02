@@ -7,8 +7,8 @@
 #' interest.
 #' @param raw_df List of raw data inputs to the above fits (in the same order).
 #' Used to correctly link subject IDs to independent variables.
-#' @param type Type of plot to retunn - either separate plots for each
-#' \code{parameter}, or each transdiagnostic rlang::symptom \code{factor}.
+#' @param type Type of plot to return - either separate plots for each
+#' \code{parameter}, or each transdiagnostic symptom \code{factor}.
 #' @param test Boolean indicating whether summaries are from the test phase.
 #' @param alpha_par_nms Vector of learning rate parameter names for dual
 #' learning rate model. Defaults to "pos" and "neg" if not specified.
@@ -33,7 +33,32 @@
 #' \code{NULL} to omit the scatterplots from the plot entirely.
 #' @param pal,font_size,font Same as [plot_import()].
 #'
-#' @importFrom magrittr %>%
+#' @returns A ggplot.
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#'
+#' fit_nd <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#' fit_dis <- fit_learning_model(
+#'   example_data$dis,
+#'   model = "2a",
+#'   vb = FALSE,
+#'   exp_part = "training"
+#' )
+#'
+#' plot_raincloud(
+#'   summary_df = list(fit_nd$summary, fit_dis$summary),
+#'   raw_df = list(fit_nd$raw_df, fit_dis$raw_df),
+#'   by = "distanced",
+#'   flip = FALSE
+#' )
+#' }
+#'
 #' @importFrom rlang := !!
 #' @importFrom stats setNames
 #' @export
@@ -78,12 +103,12 @@ plot_raincloud <- function(summary_df,
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)
   if (!is.null(factor_scores)) {
-    all_data <- all_data %>%
+    all_data <- all_data |>
       dplyr::left_join(factor_scores, by = "subjID")
   }
 
   if (type == "parameter") {
-    df <- all_data %>%
+    df <- all_data |>
       dplyr::rename(value = posterior_mean)
     if (length(unique(df[[type]])) == 2) df[[type]] <- factor(df[[type]])
     else {
@@ -92,8 +117,8 @@ plot_raincloud <- function(summary_df,
     }
   }
   else if (type == "factor") {
-    df <- all_data %>%
-      tidyr::pivot_longer(cols = c("AD", "Compul", "SW"), names_to = type) %>%
+    df <- all_data |>
+      tidyr::pivot_longer(cols = c("AD", "Compul", "SW"), names_to = type) |>
       dplyr::distinct(subjID, factor, .keep_all = T)
     if (!flip) {
       df[[type]] <- factor(df[[type]], levels = c("AD", "Compul", "SW"))
@@ -104,7 +129,7 @@ plot_raincloud <- function(summary_df,
   type <- rlang::sym(type)
 
   if (is.null(by)) {
-    rain_plot <- df %>%
+    rain_plot <- df |>
       ggplot2::ggplot(ggplot2::aes(x = !!type, y = value, fill = !!type,
                                    colour = !!type)) +
       ggplot2::guides(colour = "none", fill = "none") +
@@ -114,7 +139,7 @@ plot_raincloud <- function(summary_df,
   else {
     by <- rlang::sym(by)
     by_length <- length(unique(df[[by]]))
-    rain_plot <- df %>%
+    rain_plot <- df |>
       ggplot2::ggplot(ggplot2::aes(x = !!type, y = value, fill = factor(!!by),
                                    colour = interaction(!!by, !!type))) +
       ggplot2::guides(colour = "none") +

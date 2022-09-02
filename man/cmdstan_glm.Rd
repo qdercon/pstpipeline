@@ -32,8 +32,10 @@ cmdstan_glm(
 but \emph{we strongly advise against omitting the \code{data}
 argument}.}
 
-\item{family}{Same as \code{\link[stats]{glm}}. Accepted families for this
-function are \code{gaussian()} or \code{Gamma()}, and any link function.}
+\item{family}{Same as \code{\link[stats]{glm}}. Only continuous data can be
+handled by this function, so the families are \code{gaussian()},
+\code{Gamma()}, \code{inverse.gaussian()}, and Beta regression (via
+\link[mgcv:Beta]{mgcv::betar}), with any (allowed) link function.}
 
 \item{na.action, contrasts}{Same as \code{\link[stats]{glm}}, but
 rarely specified.}
@@ -115,16 +117,11 @@ predictors (i.e., same as in \code{glm}).}
 applicable). The "auxiliary" parameter refers to a different parameter
 depending on the \code{family}. For Gaussian models \code{prior_aux}
 controls \code{"sigma"}, the error
-standard deviation. For negative binomial models \code{prior_aux} controls
-\code{"reciprocal_dispersion"}, which is similar to the
-\code{"size"} parameter of \code{\link[stats:NegBinomial]{rnbinom}}:
-smaller values of \code{"reciprocal_dispersion"} correspond to
-greater dispersion. For gamma models \code{prior_aux} sets the prior on
+standard deviation. For gamma models \code{prior_aux} sets the prior on
 to the \code{"shape"} parameter (see e.g.,
 \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it
 is the so-called \code{"lambda"} parameter (which is essentially the
-reciprocal of a scale parameter). Binomial and Poisson models do not have
-auxiliary parameters.
+reciprocal of a scale parameter).
 
 The default prior is described in the vignette
 \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
@@ -169,9 +166,23 @@ prior distributions for the coefficients, intercept, and auxiliary
 parameters.
 }
 \details{
-The \code{stan_glm} function is similar in syntax to
+The \code{cmdstan_glm} function is similar in syntax to
 \code{\link[stats]{glm}} but rather than performing maximum likelihood
 estimation of generalized linear models, full Bayesian estimation is
 performed (if \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian
 model adds priors (independent by default) on the coefficients of the GLM.
+}
+\examples{
+\dontrun{
+#' # Linear regression
+mtcars$mpg10 <- mtcars$mpg / 10
+fit <- cmdstan_glm(
+  mpg10 ~ wt + cyl + am,
+  data = mtcars,
+  # for speed of example only (default is "sampling")
+  algorithm = "fullrank",
+  refresh = 0
+ )
+}
+
 }

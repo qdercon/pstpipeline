@@ -2,7 +2,7 @@
 #' @keywords internal
 #' @importFrom stats Gamma cor dlogis dnorm gaussian is.empty.model lm median
 #' model.matrix model.offset model.response model.weights qbeta qexp rgamma
-#' rnorm rt runif sd uniroot
+#' rnorm rt runif sd uniroot inverse.gaussian
 #' @importFrom methods as is
 
 # This function is a slightly modified version of rstanarm::stan_glm.fit
@@ -43,10 +43,13 @@ cmdstan_glm.fit <-
 
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
-  supported_families <- c("gaussian", "Gamma")
+  supported_families <- c("gaussian", "Gamma", "inverse.gaussian",
+                          "Beta regression")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) {
     supported_families_err <- supported_families
+    supported_families_err[supported_families_err == "Beta regression"] <-
+      "mgcv::betar"
     stop(
       "'family' must be one of ", paste(supported_families_err, collapse = ", ")
       )
@@ -177,10 +180,11 @@ cmdstan_glm.fit <-
   }
 
   famname <- supported_families[fam]
-  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1) && is.null(trials)
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
-  is_continuous <- is_gaussian || is_gamma # always TRUE
+  is_ig <- is.ig(famname)
+  is_beta <- is.beta(famname)
+  is_continuous <- is_gaussian || is_gamma || is_ig || is_beta # always TRUE
 
   # require intercept for certain family and link combinations
   if (!has_intercept) {
@@ -306,19 +310,18 @@ cmdstan_glm.fit <-
   standata$input <- double()
   standata$Dose <- double()
 
-  if (!is_bernoulli) {
-    standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
-    standata$nnz_X <- 0L
-    standata$w_X <- double(0)
-    standata$v_X <- integer(0)
-    standata$u_X <- integer(0)
-    standata$y <- y
-    standata$weights <- weights
-    standata$offset_ <- offset
-    standata$K_smooth <- ncol(S)
-    standata$S <- S
-    standata$smooth_map <- smooth_map
-  }
+  # removed if_bernoulli as not relevant anymore
+  standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
+  standata$nnz_X <- 0L
+  standata$w_X <- double(0)
+  standata$v_X <- integer(0)
+  standata$u_X <- integer(0)
+  standata$y <- y
+  standata$weights <- weights
+  standata$offset_ <- offset
+  standata$K_smooth <- ncol(S)
+  standata$S <- S
+  standata$smooth_map <- smooth_map
 
   # call stan() to draw from posterior distribution
   if (is_continuous) {
@@ -593,6 +596,12 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
 
 # rstanarm::stan_glm.fit internal fns ------------------------------------------
 
+# Check family argument
+#
+# @param f The \code{family} argument specified by user (or the default).
+# @return If no error is thrown, then either \code{f} itself is returned (if
+#   already a family) or the family object created from \code{f} is returned (if
+#   \code{f} is a string or function).
 validate_family <- function(f) {
   if (is.character(f))
     f <- get(f, mode = "function", envir = parent.frame(2))
@@ -603,6 +612,11 @@ validate_family <- function(f) {
 
   return(f)
 }
+
+# Center a matrix x and return extra stuff
+#
+# @param x A design matrix
+# @param sparse A flag indicating whether x is to be treated as sparse
 center_x <- function(x, sparse) {
   x <- as.matrix(x)
   has_intercept <- if (ncol(x) == 0)
@@ -627,6 +641,8 @@ center_x <- function(x, sparse) {
 
   return(nlist(xtemp, xbar, has_intercept))
 }
+
+
 nlist <- function(...) {
   m <- match.call()
   out <- list(...)
@@ -643,15 +659,19 @@ nlist <- function(...) {
 
   return(out)
 }
+
 is.gaussian <- function(x) x == "gaussian"
 is.gamma <- function(x) x == "Gamma"
-is.binomial <- function(x) x == "binomial"
+is.beta <- function(x) x == "beta" || x == "Beta regression"
+is.ig <- function(x) x == "inverse.gaussian"
+
 `%ORifNULL%` <- function(a, b) {
   if (is.null(a)) b else a
 }
 `%ORifINF%` <- function(a, b) {
   if (a == Inf) b else a
 }
+
 set_prior_scale <- function(scale, default, link) {
   stopifnot(is.numeric(default), is.character(link) || is.null(link))
   if (is.null(scale))
@@ -661,11 +681,13 @@ set_prior_scale <- function(scale, default, link) {
 
   return(scale)
 }
+
 drop_redundant_dims <- function(data) {
   drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
   data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
   return(data)
 }
+
 validate_data <- function(data, if_missing = NULL) {
   if (missing(data) || is.null(data)) {
     warning("Omitting the 'data' argument is not recommended.")
@@ -679,6 +701,7 @@ validate_data <- function(data, if_missing = NULL) {
   data <- as.data.frame(data)
   drop_redundant_dims(data)
 }
+
 check_constant_vars <- function(mf) {
   mf1 <- mf
   if (NCOL(mf[, 1]) == 2 || all(mf[, 1] %in% c(0, 1))) {
@@ -696,6 +719,14 @@ check_constant_vars <- function(mf) {
   }
   return(mf)
 }
+
+# Deal with priors
+#
+# @param prior A list
+# @param nvars An integer indicating the number of variables
+# @param default_scale Default value to use to scale if not specified by user
+# @param link String naming the link function.
+# @param ok_dists A list of admissible distributions
 handle_glm_prior <- function(prior, nvars, default_scale, link,
                              ok_dists = nlist(
                                "normal", student_t = "t", "cauchy", "hs",
@@ -762,22 +793,40 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
         slab_scale,
         prior_autoscale = isTRUE(prior$autoscale))
 }
+
+# @param famname string naming the family
+# @return character vector of supported link functions for the family
 supported_glm_links <- function(famname) {
   switch(
     famname,
     gaussian = c("identity", "log", "inverse"),
     Gamma = c("identity", "log", "inverse"),
+    inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
+    "Beta regression" = c("logit", "probit", "cloglog", "cauchit"),
     stop("unsupported family")
   )
 }
+
+# Family number to pass to Stan
+# @param famname string naming the family
+# @return an integer family code
 stan_family_number <- function(famname) {
   switch(
     famname,
     "gaussian" = 1L,
     "Gamma" = 2L,
+    "inverse.gaussian" = 3L,
+    "beta" = 4L,
+    "Beta regression" = 4L,
     stop("Family not valid.")
   )
 }
+# Verify that outcome values match support implied by family object
+#
+# @param y outcome variable
+# @param family family object
+# @return y (possibly slightly modified) unless an error is thrown
+#
 validate_glm_outcome_support <- function(y, family) {
   if (is.character(y)) {
     stop("Outcome variable can't be type 'character'.", call. = FALSE)
@@ -792,30 +841,33 @@ validate_glm_outcome_support <- function(y, family) {
   }
 
   fam <- family$family
-
-  if (!is.binomial(fam)) {
-    # make sure y has ok dimensions (matrix only allowed for binomial models)
-    if (length(dim(y)) > 1) {
-      if (NCOL(y) == 1) {
-        y <- y[, 1]
-      } else {
-        stop("Except for binomial models the outcome variable ",
-             "should not have multiple columns.",
-             call. = FALSE)
-      }
-    }
-    # check that values match support for non-binomial models
-    if (is.gaussian(fam)) {
-      return(y)
-    }
-    else if (is.gamma(fam) && any(y <= 0)) {
-      stop("All outcome values must be positive for gamma models.",
+  # make sure y has ok dimensions (matrix only allowed for binomial models)
+  if (length(dim(y)) > 1) {
+    if (NCOL(y) == 1) {
+      y <- y[, 1]
+    } else {
+      stop("Except for binomial models the outcome variable ",
+           "should not have multiple columns.",
            call. = FALSE)
     }
   }
 
+  # check that values match support for non-binomial models
+  if (is.gaussian(fam)) {
+    return(y)
+  } else if (is.gamma(fam) && any(y <= 0)) {
+    stop("All outcome values must be positive for gamma models.",
+         call. = FALSE)
+  } else if (is.ig(fam) && any(y <= 0)) {
+    stop("All outcome values must be positive for inverse-Gaussian models.",
+         call. = FALSE)
+  }
   return(y)
 }
+
+# Generate fake y variable to use if prior_PD and no y is specified
+# @param N number of observations
+# @param family family object
 fake_y_for_prior_PD <- function(N, family) {
   fam <- family$family
   if (is.gaussian(fam)) {
@@ -831,6 +883,17 @@ fake_y_for_prior_PD <- function(N, family) {
 }
 
 # Create "prior.info" attribute needed for prior_summary()
+#
+# @param user_* The user's prior, prior_intercept, prior_covariance, and
+#   prior_aux specifications. For prior and prior_intercept these should be
+#   passed in after broadcasting the df/location/scale arguments if necessary.
+# @param has_intercept T/F, does model have an intercept?
+# @param has_predictors T/F, does model have predictors?
+# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
+# @param family Family object.
+# @return A named list with components 'prior', 'prior_intercept', and possibly
+#   'prior_covariance' and 'prior_aux' each of which itself is a list
+#   containing the needed values for prior_summary.
 summarize_glm_prior <-
   function(user_prior,
            user_prior_intercept,
@@ -851,8 +914,7 @@ summarize_glm_prior <-
       user_prior_intercept$prior_autoscale_for_intercept &&
       has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
-      (user_prior_intercept$prior_scale_for_intercept !=
-         adjusted_prior_intercept_scale)
+      (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
     rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
       !is.na(user_prior_aux$prior_dist_name_for_aux) &&
       (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
@@ -928,6 +990,10 @@ summarize_glm_prior <-
 
     return(prior_list)
   }
+
+# If y is a 1D array keep any names but convert to vector (used in stan_glm)
+#
+# @param y Result of calling model.response
 array1D_check <- function(y) {
   if (length(dim(y)) == 1L) {
     nms <- rownames(y)
@@ -937,12 +1003,15 @@ array1D_check <- function(y) {
   }
   return(y)
 }
+
 # rename aux parameter based on family
 .rename_aux <- function(family) {
   fam <- family$family
   if (is.gaussian(fam)) "sigma" else
-    if (is.gamma(fam)) "shape"
+    if (is.gamma(fam)) "shape" else
+      if (is.ig(fam)) "lambda" else NA
 }
+
 .sample_indices <- function(wts, n_draws) {
   ## Stratified resampling
   ##   Kitagawa, G., Monte Carlo Filter and Smoother for Non-Gaussian
@@ -971,6 +1040,14 @@ array1D_check <- function(y) {
   }
   return(idx)
 }
+
+# Maybe broadcast
+#
+# @param x A vector or scalar.
+# @param n Number of replications to possibly make.
+# @return If \code{x} has no length the \code{0} replicated \code{n} times is
+#   returned. If \code{x} has length 1, the \code{x} replicated \code{n} times
+#   is returned. Otherwise \code{x} itself is returned.
 maybe_broadcast <- function(x, n) {
   if (!length(x)) {
     rep(0, times = n)

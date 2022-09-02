@@ -2,13 +2,14 @@
 % Please edit documentation in R/simulate_QL.R
 \name{simulate_QL}
 \alias{simulate_QL}
-\title{Simulate data from 1-alpha and 2-alpha Q-learning models}
+\title{Simulate data from single and dual learning rate Q-learning models}
 \usage{
 simulate_QL(
   summary_df = NULL,
   sample_size = NULL,
   gain_loss = TRUE,
   test = FALSE,
+  affect = FALSE,
   prev_sample = NULL,
   raw_df = NULL,
   ...
@@ -23,9 +24,12 @@ of size \code{sample_size} will be taken from specified distributions.}
 the number of individuals in
 the \code{summary_df}.}
 
-\item{gain_loss}{Fit the 2-learning-rate or 1-learning-rate model?}
+\item{gain_loss}{Fit the dual learning rate model?}
 
 \item{test}{Simulate test choices in addition to training choices?}
+
+\item{affect}{Simulate subjective affect ratings (uses full passage-of-time
+model).}
 
 \item{prev_sample}{An optional previous sample of id numbers (if you wish to
 simulate data for the same subset of individual parameters across a number
@@ -46,4 +50,13 @@ previously fitted sample of parameter values.
 Q-learning models, with an experiment structure identical to that run online.
 The parameter values can be from (a sample of) those fitted previously to the
 real data, or can be randomly sampled.
+}
+\examples{
+train_sim_2a <- simulate_QL(
+  sample_size = 5,
+  alpha_pos_dens = c(shape = 2, scale = 0.1), # default
+  alpha_neg_dens = c(shape = 2, scale = 0.1), # default
+  beta_dens = c(mean = 3, sd = 1) # default
+)
+
 }

@@ -1,4 +1,4 @@
-#' Simulate data from 1-alpha and 2-alpha Q-learning models
+#' Simulate data from single and dual learning rate Q-learning models
 #'
 #' \code{simulate_QL} is a function to simulate data from 1-alpha and 2-alpha
 #' Q-learning models, with an experiment structure identical to that run online.
@@ -11,8 +11,10 @@
 #' @param sample_size How may sets of parameters to sample; defaults to 100 or
 #' the number of individuals in
 #' the \code{summary_df}.
-#' @param gain_loss Fit the 2-learning-rate or 1-learning-rate model?
+#' @param gain_loss Fit the dual learning rate model?
 #' @param test Simulate test choices in addition to training choices?
+#' @param affect Simulate subjective affect ratings (uses full passage-of-time
+#' model).
 #' @param prev_sample An optional previous sample of id numbers (if you wish to
 #' simulate data for the same subset of individual parameters across a number
 #' of models).
@@ -21,27 +23,46 @@
 #' @param ... Other arguments which can be used to control the parameters of the
 #' gamma/Gaussian distributions from which parameter values are sampled.
 #'
-#' @return Simulated training data (and test data relevant) for a random or
+#' @returns Simulated training data (and test data relevant) for a random or
 #' previously fitted sample of parameter values.
 #'
-#' @importFrom magrittr %>%
+#' @examples
+#' train_sim_2a <- simulate_QL(
+#'   sample_size = 5,
+#'   alpha_pos_dens = c(shape = 2, scale = 0.1), # default
+#'   alpha_neg_dens = c(shape = 2, scale = 0.1), # default
+#'   beta_dens = c(mean = 3, sd = 1) # default
+#' )
+#'
 #' @export
 
 simulate_QL <- function(summary_df = NULL,
                         sample_size = NULL,
                         gain_loss = TRUE,
                         test = FALSE,
+                        affect = FALSE,
                         prev_sample = NULL,
                         raw_df = NULL,
                         ...) {
 
   # to appease R CMD check
-  variable <- . <- subjID <- value <- trial_no <- id_no <- block <-
-    hidden_reward <- NULL
+  parameter <- subjID <- value <- trial_no <- id_no <- id_all <- aff_num <-
+    block <- hidden_reward <- question_response <- question_type <-
+    missing_times <- trial_block <- trial_time <- NULL
+
+  l <- list(...)
+
+  if (is.null(summary_df) & affect)
+    stop("Random samples not supported for affect models.")
+  if (is.null(raw_df) & affect)
+    stop("Please specify a raw_df - required to obtain elapsed times.")
+
+  if (affect & is.null(l$question_order)) {
+    adj_order <- c("happy", "confident", "engaged")
+  }
 
   if (is.null(summary_df)) {
     if (is.null(sample_size)) sample_size <- 100
-    l <- list(...)
     if (is.null(l$alpha_dens)) l$alpha_dens <- c(2, 0.1) # Gamma(alpha, beta)
     if (is.null(l$alpha_pos_dens)) l$alpha_pos_dens <- l$alpha_dens
     if (is.null(l$alpha_neg_dens)) l$alpha_neg_dens <- l$alpha_dens
@@ -53,10 +74,10 @@ simulate_QL <- function(summary_df = NULL,
         id_no = ids_sample,
         alpha_pos = rgamma(
           sample_size, shape = l$alpha_pos_dens[1], scale = l$alpha_pos_dens[2]
-          ),
+        ),
         alpha_neg = rgamma(
           sample_size, shape = l$alpha_neg_dens[1], scale = l$alpha_neg_dens[2]
-          ),
+        ),
         beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
@@ -65,28 +86,25 @@ simulate_QL <- function(summary_df = NULL,
         id_no = ids_sample,
         alpha = rgamma(
           sample_size, shape = l$alpha_dens[1], scale = l$alpha_dens[2]
-          ),
+        ),
         beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
   }
   else {
-    pars_df <- summary_df %>%
-      dplyr::filter(grepl("alpha|beta", variable)) %>%
-      dplyr::filter(!grepl("_pr", variable)) %>%
-      dplyr::filter(!grepl("mu_", variable)) %>%
-      dplyr::select(variable, mean) %>%
-      dplyr::mutate(
-        id_no = as.numeric(sub("\\].*$", "", sub(".*\\[", "", .[["variable"]])))
-        ) %>%
-      dplyr::mutate(variable = sub("\\[.*$", "", .[["variable"]])) %>%
-      tidyr::pivot_wider(names_from = variable, values_from = mean)
+    pars_df <- clean_summary(summary_df) |>
+      dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
+      tidyr::pivot_wider(names_from = parameter, values_from = mean)
 
     if (!is.null(prev_sample)) {
       ids_sample <- prev_sample
     }
     else if (!is.null(sample_size)) { # do we want a sample < everyone
-      ids_sample <- sample(1:dim(pars_df)[1], sample_size) %>% sort()
+      if (!affect) {
+        ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
+      } else {
+        ids_sample <- sample(1:max(pars_df$id_no)) # as there will be failures
+      }
     }
     else {
       ids_sample <- 1:dim(pars_df)[1]
@@ -94,35 +112,37 @@ simulate_QL <- function(summary_df = NULL,
 
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
-      raw_df <- raw_df %>%
-        dplyr::select(subjID) %>%
-        dplyr::distinct() %>%
-        dplyr::mutate(id_no = dplyr::row_number()) %>%
+      raw_df <- raw_df |>
+        dplyr::mutate(id_no = as.integer(
+          factor(subjID, levels = unique(raw_df$subjID)))) |>
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
-          )
+        )
     }
   }
 
   rewards <- function(i) return (
-    rbind(data.frame("block" = i, "type" = rep(12, 20),
+    rbind(data.frame("trial_block" = i, "type" = rep(12, 20),
                      "hidden_reward" = sample(c(rep(0, 4), rep(1, 16)))),
-          data.frame("block" = i, "type" = rep(34, 20),
+          data.frame("trial_block" = i, "type" = rep(34, 20),
                      "hidden_reward" = sample(c(rep(0, 6), rep(1, 14)))),
-          data.frame("block" = i, "type" = rep(56, 20),
+          data.frame("trial_block" = i, "type" = rep(56, 20),
                      "hidden_reward" = sample(c(rep(0, 8), rep(1, 12))))
-          )
+    )
   )
-    # function that returns a random series of hidden rewards the same way as in
-    # the task (i.e., in each block, there are exactly 16 rewarded "A", 14
-    # rewarded "B", and 12 rewarded "C" symbols
+  # function that returns a random series of hidden rewards the same way as in
+  # the task (i.e., in each block, there are exactly 16 rewarded "A", 14
+  # rewarded "B", and 12 rewarded "C" symbols
 
   all_res <- data.frame()
-  pb = txtProgressBar(min = 0, max = length(ids_sample), initial = 0, style = 3)
+  if (is.null(sample_size)) sample_size <- length(ids_sample)
+  pb = txtProgressBar(min = 0, max = sample_size, initial = 0, style = 3)
+  num_sims <- 0
+  drop_count <- 0
 
   for (id in seq_along(ids_sample)) {
 
-    setTxtProgressBar(pb, id)
+    if (num_sims == sample_size) break
 
     # make random sequence of trials, each condition balanced within blocks
     choice1 <- NULL
@@ -135,9 +155,9 @@ simulate_QL <- function(summary_df = NULL,
     if (test) {
       choice1_test <- tibble::as_tibble(sample(rep(c("A", "C", "D", "E", "F"),
                                                    times = c(20, 16, 4, 12, 8)))
-                                        ) %>%
-        dplyr::rename(choice1_test = value) %>%
-        dplyr::mutate(trial_no = dplyr::row_number()) %>%
+      ) |>
+        dplyr::rename(choice1_test = value) |>
+        dplyr::mutate(trial_no = dplyr::row_number()) |>
         dplyr::arrange(choice1_test)
 
       choice2_test <- c(
@@ -148,30 +168,29 @@ simulate_QL <- function(summary_df = NULL,
         sample(rep(c("B", "D"), each = 4))
       )
 
-      conds_test <- cbind(choice1_test, choice2_test) %>%
-        dplyr::arrange(trial_no) %>%
+      conds_test <- cbind(choice1_test, choice2_test) |>
+        dplyr::arrange(trial_no) |>
         dplyr::select(-trial_no)
     }
 
-    indiv_pars <- pars_df %>%
-      dplyr::filter(id_no == id)
+    indiv_pars <- pars_df |>
+      dplyr::filter(id_no == ids_sample[id])
 
     if (gain_loss) {
-      alpha_pos <- indiv_pars$alpha_pos
-      alpha_neg <- indiv_pars$alpha_neg
-      beta <- indiv_pars$beta
+      alpha_pos <- stats::na.omit(indiv_pars$alpha_pos)
+      alpha_neg <- stats::na.omit(indiv_pars$alpha_neg)
+      beta      <- stats::na.omit(indiv_pars$beta)
     }
     else {
-      alpha <- indiv_pars$alpha
-      beta <- indiv_pars$beta
+      alpha <- stats::na.omit(indiv_pars$alpha)
+      beta  <- stats::na.omit(indiv_pars$beta)
     }
 
-    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) %>%
-        # 6 blocks
-      dplyr::group_by(type) %>%
-      dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-block)
+    hidden_rewards <- dplyr::bind_rows(lapply(1:6, FUN = rewards)) |>
+      # 6 blocks
+      dplyr::group_by(type) |>
+      dplyr::mutate(trial_no_group = dplyr::row_number()) |>
+      dplyr::ungroup()
 
     training_results <- data.frame(
       "id_no" = ids_sample[id],
@@ -180,27 +199,55 @@ simulate_QL <- function(summary_df = NULL,
       "reward" = rep(NA, 360)
     )
 
-    training_results <- training_results %>%
-      dplyr::group_by(type) %>%
-      dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::left_join(hidden_rewards, by = c("type", "trial_no_group"))
+    training_results <- training_results |>
+      dplyr::group_by(type) |>
+      dplyr::mutate(trial_no_group = dplyr::row_number()) |>
+      dplyr::ungroup() |>
+      dplyr::left_join(hidden_rewards, by = c("type", "trial_no_group")) |>
+      dplyr::mutate(trial_no = dplyr::row_number())
     rm(hidden_rewards)
 
     if (test) {
-      training_results <- training_results %>%
-        dplyr::mutate(exp_part = "training") %>%
-        dplyr::mutate(test_type = NA)
+      training_results <- training_results |>
+        dplyr::mutate(exp_part = "training", test_type = NA)
+    }
+
+    if (affect) {
+      training_results <- training_results |>
+        dplyr::mutate(
+          trial_time = NA,
+          question_type = rep(sample(adj_order), 120),
+          question_response = NA
+        )
+
+      time <- raw_df |>
+        dplyr::filter(id_no == ids_sample[id]) |>
+        dplyr::select(trial_no, block_time, trial_time)
+
+      missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+
+      ev_vec <- rep(0, 360)
+      pe_vec <- rep(0, 360)
+
+      gamma <- stats::na.omit(indiv_pars$gamma)
+      w0    <- stats::na.omit(indiv_pars$w0)
+      if ("w1_o" %in% names(indiv_pars)) w1_o <- stats::na.omit(indiv_pars$w1_o)
+      else w1_o <- c(0,0,0)
+      if ("w1_b" %in% names(indiv_pars)) w1_b <- stats::na.omit(indiv_pars$w1_b)
+      else w1_b <- c(0,0,0)
+      w2    <- stats::na.omit(indiv_pars$w2)
+      w3    <- stats::na.omit(indiv_pars$w3)
     }
 
     # Initial Q values
-    Q <- data.frame("A" = 0, "B" = 0, "C" = 0,
-                    "D" = 0, "E" = 0, "F" = 0)
+    Q <- data.frame("A" = 0, "B" = 0, "C" = 0, "D" = 0, "E" = 0, "F" = 0)
 
     for (i in 1:360) {
+
+      if (affect & i %in% missing_times) next
+
       Q_t <- Q
       names(Q_t) <- c("Q_a", "Q_b", "Q_c", "Q_d", "Q_e", "Q_f")
-
       # probability to choose "correct" stimulus
       p_t <- (exp(Q[conds[i,1]] * beta)) / (exp(Q[conds[i,1]] * beta) +
                                               (exp(Q[conds[i,2]] * beta)))
@@ -210,29 +257,60 @@ simulate_QL <- function(summary_df = NULL,
       choice_idx <- ifelse(choice == 1, 1, 2)
 
       # rewarded?
-      reward <- ifelse(choice == training_results$hidden_reward[i], 1, 0)
-        # i.e. if they choose "correctly" and hidden reward == 1 or
-        # incorrectly but hidden reward == 0
+      if (affect) {
+        reward <- ifelse(choice == training_results$hidden_reward[i], 1, -1)
+      }
+      else reward <- ifelse(choice == training_results$hidden_reward[i], 1, 0)
+      # i.e. if they choose "correctly" and hidden reward == 1 or
+      # incorrectly but hidden reward == 0
+      # recoded as -1 for affect models to allow for negative EVs
+
+      ev <- Q[conds[i,choice_idx]]
+      pe <- reward - Q[conds[i,choice_idx]]
 
       # update Q values
-      if (gain_loss) {
-        if (reward - Q[conds[i,choice_idx]] >= 0) {
-            # i.e., were they rewarded?
-          Q[conds[i,choice_idx]] <- Q[conds[i,choice_idx]] +
-            alpha_pos * (reward - Q[conds[i,choice_idx]])
-        } else {
-          Q[conds[i,choice_idx]] <- Q[conds[i,choice_idx]] +
-            alpha_neg * (reward - Q[conds[i,choice_idx]])
-        }
-      } else {
-        Q[conds[i,choice_idx]] <- Q[conds[i,choice_idx]] +
-          alpha * (reward - Q[conds[i,choice_idx]])
-          # single learning rate model
+      if (gain_loss) { # i.e., were they rewarded?
+        if (pe >= 0) Q[conds[i,choice_idx]] <- ev + alpha_pos * pe
+        else Q[conds[i,choice_idx]] <- ev + alpha_neg * pe
       }
+      else Q[conds[i,choice_idx]] <- ev + alpha * pe
 
       training_results$choice[i] <- choice
       training_results$reward[i] <- reward
 
+      if (affect) {
+        ev_vec[i] <- ev
+        pe_vec[i] <- pe
+
+        q <- grep(training_results$question_type[i], adj_order)
+        trial_time <- time[time$trial_no == i,]$trial_time / 60
+        block_time <- time[time$trial_no == i,]$block_time / 60
+
+        rating <-
+          w0[q] +
+          w1_o[q] * trial_time +
+          w1_b[q] * block_time +
+          w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
+          w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
+
+        training_results$question_response[i] <- rating * 100
+        training_results$trial_time[i]        <- trial_time * 60 ## in mins
+      }
+    }
+
+    if (affect) {
+      training_results <- training_results |> tidyr::drop_na(choice)
+      if (any(training_results$question_response > 100) |
+          any(training_results$question_response < 0)) {
+        # strict, but models won't work otherwise.
+        training_results <- NULL
+        drop_count <- drop_count + 1
+      } else {
+        num_sims <- num_sims + 1
+        setTxtProgressBar(pb, num_sims)
+      }
+    } else {
+      setTxtProgressBar(pb, id)
     }
 
     all_res <- dplyr::bind_rows(all_res, training_results)
@@ -251,9 +329,9 @@ simulate_QL <- function(summary_df = NULL,
       for (j in 1:60) {
         p_t_test <- (exp(Q[conds_test[j,1]] * beta)) /
           (exp(Q[conds_test[j,1]] * beta) + (exp(Q[conds_test[j,2]] * beta)))
-          # probability to choose "correct" stimulus
+        # probability to choose "correct" stimulus
         choice_test <- sample(c(1, 0), 1, prob = c(p_t_test, 1-p_t_test))
-          # make choice
+        # make choice
 
         type <- as.numeric(
           paste0(
@@ -261,7 +339,7 @@ simulate_QL <- function(summary_df = NULL,
               tolower(conds_test[j, 1]), letters[1:6]),
             match(
               tolower(conds_test[j, 2]), letters[1:6])
-            )
+          )
         )
 
         if (grepl("12|34|56", type)) {
@@ -282,35 +360,69 @@ simulate_QL <- function(summary_df = NULL,
         test_results$test_type[j] <- test_type
       }
 
-      test_results <- test_results %>%
-        dplyr::group_by(type) %>%
-        dplyr::mutate(trial_no_group = dplyr::row_number()) %>%
+      test_results <- test_results |>
+        dplyr::group_by(type) |>
+        dplyr::mutate(trial_no_group = dplyr::row_number()) |>
         dplyr::ungroup()
       all_res <- dplyr::bind_rows(all_res, test_results)
     }
+
   }
 
-  all_res <- tibble::as_tibble(all_res) %>%
+  all_res <- tibble::as_tibble(all_res) |>
     dplyr::select(-hidden_reward)
 
-  if (!is.null(raw_df)) {
-    all_res <- all_res %>%
-      dplyr::left_join(raw_df, by = "id_no")
-    pars_df <- pars_df %>%
-      dplyr::inner_join(raw_df, by = "id_no")
+  if (affect) {
+    all_res <- all_res |>
+      dplyr::left_join(
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
+      dplyr::rowwise() |>
+      dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
+      dplyr::mutate(
+        question =
+          ifelse(question_type == adj_order[1], 1,
+                 ifelse(question_type == adj_order[2], 2, 3)
+          )
+      ) |>
+      dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
+      dplyr::group_by(subjID, trial_block) |>
+      dplyr::mutate(block_time = trial_time - min(trial_time)) |>
+      dplyr::group_by(subjID, question_type) |>
+      dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
+      dplyr::ungroup() |>
+      dplyr::arrange(id_no)
+
+    pars_df <- pars_df |>
+      dplyr::inner_join(
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
+      dplyr::filter(id_no %in% unique(all_res$id_no)) |>
+      # only relevant if drop_count > 1
+      dplyr::mutate(
+        id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
+    # to match up with summary for plotting
+  }
+  else if (!is.null(raw_df)) {
+    all_res <- all_res |>
+      dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
+    pars_df <- pars_df |>
+      dplyr::inner_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
   }
   else {
-    all_res <- all_res %>%
+    all_res <- all_res |>
       dplyr::mutate(subjID = id_no)
-    pars_df <- pars_df %>%
+    pars_df <- pars_df |>
       dplyr::inner_join(
         tibble::as_tibble(ids_sample), by = c("id_no" = "value")
-        ) %>%
+      ) |>
       dplyr::mutate(subjID = id_no)
   }
 
   ret <- list()
   ret$sim <- data.table::as.data.table(all_res)
   ret$pars <- data.table::as.data.table(pars_df)
+
+  if (num_sims > 0 & num_sims < sample_size) {
+    message(paste0("Only able to obtain ", num_sims, " samples."))
+  }
   return(ret)
 }

@@ -49,7 +49,7 @@ input defines how these options are plotted - either "grouped" or
 
 \item{plt.affect}{List of length <= 2 indicating (1) how many trials to lag
 (only a single value accepted), and (2) the nouns to plot (can be any of
-"happy", "confident", "engaged", or "fatigue").}
+"happy", "confident", "engaged", or "fatigue"; defaults to all types).}
 
 \item{grp_compare}{Group to compare on which is found from the participant
 info. Note that if \code{parsed_list} is split into 2 (i.e., distanced and
@@ -80,10 +80,35 @@ defaults.}
 one.}
 }
 \value{
-Either a single or named \code{list} of \code{ggplot} objects
+Either a single or named \code{list} of \code{ggplot} objects.
 }
 \description{
 \code{plot_import} plots a single participant's data from \code{\link[=import_single]{import_single()}},
 or a single participant (if \code{!is.null(id)}), or all participants' data
 from \code{\link[=import_multiple]{import_multiple()}}.
+}
+\examples{
+# Plot twenty-trial lagged training data, by distancing group
+plot_import(
+  example_data,
+  types = "train",
+  plt.train = list(20),
+  grp_compare = "distanced"
+)
+
+# Plot test data for training and novel types, by sex
+plot_import(
+  example_data,
+  types = "test",
+  plt.test = list(c("training", "novel"), "individual"),
+  grp_compare = "sex"
+)
+
+# Block end-of-block fatigue ratings in the non-distanced group only
+plot_import(
+  example_data$nd,
+  types = "affect",
+  plt.affect = list(20, "fatigue")
+)
+
 }

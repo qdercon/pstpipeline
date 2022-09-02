@@ -9,7 +9,7 @@ generate_posterior_quantities(
   data_list,
   out_dir = "outputs/cmdstan",
   save_model_as = "",
-  return_type = "",
+  return_type = c("paths", "draws_list"),
   par_chains = getOption("mc.cores", 4)
 )
 }
@@ -41,4 +41,23 @@ Either file paths or a \link[posterior:draws_list]{posterior::draws_list}.
 block of a Stan model to be sampled from after a model is fit. This vastly
 reduces memory requirements, particularly if per-sample posterior predictions
 are desired.
+}
+\examples{
+\dontrun{
+data(example_data)
+
+fit <- fit_learning_model(
+  example_data$nd,
+  model = "2a",
+  vb = FALSE,
+  exp_part = "training"
+)
+
+posterior_preds <- generate_posterior_quantities(
+  fit_mcmc = fit,
+  data_list = fit$stan_datalist,
+  return_type = "draws_list"
+)
+}
+
 }

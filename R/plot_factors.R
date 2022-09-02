@@ -21,7 +21,9 @@
 #'
 #' @return A single or \code{list} of \code{ggplot} object(s).
 #'
-#' @importFrom magrittr %>%
+#' @examples
+#' # Please this notebook for usage (examples would require Python input):
+#' # https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb
 #' @export
 
 plot_factors <- function(df,
@@ -49,7 +51,7 @@ plot_factors <- function(df,
     if (grouped) {
       all_datasets <- list()
       for (d in seq_along(df)) {
-        all_datasets[[d]] <- df[[d]] %>%
+        all_datasets[[d]] <- df[[d]] |>
           dplyr::mutate(dataset = paste0("group_", d))
       }
       df <- data.table::rbindlist(all_datasets, use.names = TRUE)
@@ -61,12 +63,12 @@ plot_factors <- function(df,
     }
     hist_factors <- list()
     for (f in seq_along(colnames)) {
-      hist_plot <- df %>%
+      hist_plot <- df |>
         tidyr::pivot_longer(
           cols = tidyselect::all_of(colnames), names_to = "Factor",
           values_to = "Score"
-          ) %>%
-        dplyr::filter(Factor == colnames[f]) %>%
+          ) |>
+        dplyr::filter(Factor == colnames[f]) |>
         ggplot2::ggplot(ggplot2::aes(x = Score)) +
         ggplot2::geom_histogram(
           ggplot2::aes(y = ..count.., fill = !!group),
@@ -93,18 +95,18 @@ plot_factors <- function(df,
       )
   }
   if (any(plot_type == "r2_plot")) {
-    df <- as.data.frame(df) %>%
-      tibble::rownames_to_column(var = "Factor") %>%
+    df <- as.data.frame(df) |>
+      tibble::rownames_to_column(var = "Factor") |>
       tidyr::pivot_longer(-Factor, names_to = c("alpha", "n_items"),
-                          names_sep = "_", values_to = "R2") %>%
-      dplyr::mutate(alpha = as.numeric(alpha)) %>%
+                          names_sep = "_", values_to = "R2") |>
+      dplyr::mutate(alpha = as.numeric(alpha)) |>
       dplyr::mutate(n_items = as.numeric(n_items))
 
     n_item_vec <- unique(sort(df$n_items, decreasing = F))
     alphas <- unique(sort(df$alpha, decreasing = T))
     index_alph <- which(alphas == hyp_alph)
 
-    r2_plot <- df %>%
+    r2_plot <- df |>
       ggplot2::ggplot(ggplot2::aes(x = n_items, y = R2, colour = Factor)) +
       ggplot2::geom_line(size = 0.8) +
       ggplot2::scale_colour_manual(values = unlist(pal)) +
@@ -131,22 +133,22 @@ plot_factors <- function(df,
     if (!is.list(df)) stop("Need 'preds' and 'scores' in a named list.")
     r2_col <- round(r2[, grep(qn, colnames(r2))],3)
     pred_plots <- list()
-    scores <- tibble::as_tibble(df[["scores"]]) %>%
+    scores <- tibble::as_tibble(df[["scores"]]) |>
       dplyr::mutate(value = "obs")
     df_all <-
       dplyr::bind_cols(
         scores$id, as.data.frame(df[["preds"]]),
         .name_repair = ~make.names(c("id", colnames), unique = TRUE)
-      ) %>%
-      dplyr::mutate(value = "predicted") %>%
-      dplyr::bind_rows(scores) %>%
+      ) |>
+      dplyr::mutate(value = "predicted") |>
+      dplyr::bind_rows(scores) |>
       tidyr::pivot_longer(cols = c(-id, -value),
-                          values_to = "Score", names_to = "Factor") %>%
+                          values_to = "Score", names_to = "Factor") |>
       tidyr::pivot_wider(names_from = value, values_from = Score)
 
     for (f in seq_along(colnames)) {
-      pred_plots[[f]] <- df_all %>%
-        dplyr::filter(Factor == colnames[f]) %>%
+      pred_plots[[f]] <- df_all |>
+        dplyr::filter(Factor == colnames[f]) |>
         ggplot2::ggplot(ggplot2::aes(x = obs, y = predicted)) +
         ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[f]],
                             colour = pal[[f]]) +
@@ -166,11 +168,11 @@ plot_factors <- function(df,
     heatmap <-
       tibble::as_tibble(
         df[["coefs"]], .name_repair = ~make.names(colnames, unique = TRUE)
-        ) %>%
-      dplyr::mutate(question = names) %>%
-      dplyr::filter(!dplyr::if_all(.cols = 1:3, ~ . == 0)) %>%
+        ) |>
+      dplyr::mutate(question = names) |>
+      dplyr::filter(!dplyr::if_all(.cols = 1:3, ~ . == 0)) |>
       tidyr::pivot_longer(cols = 1:3, names_to = "Factor",
-                          values_to = "Weight") %>%
+                          values_to = "Weight") |>
       ggplot2::ggplot(ggplot2::aes(x = factor(question, levels = names),
                                    y = factor(Factor, levels = rev(colnames)),
                                    fill = Weight)) +
