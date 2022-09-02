@@ -1,7 +1,7 @@
 Package: pstpipeline
 Type: Package
 Title: Probabilistic Selection Task (PST) pipeline: parsing, analysis, simulation, and plotting
-Version: 0.1.0
+Version: 0.2.0
 Author: Quentin Dercon
 Maintainer: <quentindercon@gmail.com>
 Description: A high-level hierarchical Bayesian analysis pipeline for the PST with memory optimisations.
