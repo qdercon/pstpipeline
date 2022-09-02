@@ -1,6 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 .gitignore
+data-raw
 notebooks
 outputs
 .ipynb_checkpoints
