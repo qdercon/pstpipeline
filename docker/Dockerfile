@@ -6,7 +6,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends  build-esse
 
 RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc > /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
 RUN add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
-RUN apt-get update && apt-get install -y --no-install-recommends r-base r-base-dev
+RUN apt-get update && apt-get install -y --no-install-recommends r-base-core=4.1.2-1ubuntu2 r-base-dev=4.1.2-1ubuntu2
 
 WORKDIR /root
 
