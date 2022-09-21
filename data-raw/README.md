@@ -38,11 +38,11 @@ from rpy2.robjects.conversion import localconverter
 
 ## download data from GitHub
 url = "https://github.com/qdercon/pstpipeline/blob/main/data-raw/all_res_split.RDS?raw=true"
-urllib.request.urlretrieve(url, "data_parsed.RDS")
+urllib.request.urlretrieve(url, "all_res_split.RDS")
 
 ## load RDS file
 readRDS = ro.r['readRDS']
-r_df = readRDS('data_parsed.RDS')
+r_df = readRDS('all_res_split.RDS')
 
 ## convert to rpy2 ListVector that pandas can read
 with localconverter(ro.default_converter + pandas2ri.converter):
