@@ -57,5 +57,5 @@ with localconverter(ro.default_converter + pandas2ri.converter):
   non_dis_train = ro.conversion.rpy2py(non_distanced.rx('training')[0])
   dis_train = ro.conversion.rpy2py(distanced.rx('training')[0])
 
-non_dis_train
+non_dis_train.head()
 ```
