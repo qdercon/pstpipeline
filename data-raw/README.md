@@ -13,7 +13,7 @@ The ```.RDS``` file can be easily loaded into R using the following code:
 ```
 all_res_split <- readRDS("data-raw/all_res_split.RDS")
 ```
-Then, the various data frames can be accessed using ```$``` or ```[[ ]]``` syntax. For example, to access the ```ppt_info``` data frame for the ```non-distanced``` group, you would call:
+Then, the various data frames can be accessed using ```$``` or ```[[ ]]``` syntax. For example, to access the ```training``` data frame for the ```non-distanced``` group, you would call:
 
 ```
 training_data <- all_res_split$non_distanced$training
