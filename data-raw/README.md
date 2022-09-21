@@ -4,7 +4,10 @@ The task data is stored here as an R data object (```all_res_split.RDS```) The r
 
 The data object is structured as a nested list.  As analyses were done separately in distancing participants, it is first separated by group (```non-distanced``` and ```distanced```). Within each group, there are then four data frames: ```ppt_info``` (demographic and exclusion info); ```training``` (training phase data); ```test``` (test phase data); and ```gillan_questions``` (psychiatric questionnaire question answers).
 
-Note that with the exception of questionnaire questions, the data includes all 995 participants, so you may want to filter out excluded participants. The ```ppt_info``` data frame includes a column called ```excluded``` which is ```TRUE``` for excluded participants and ```FALSE``` for non-excluded participants. Information on exclusion can be found in the [pre-print](https://psyarxiv.com/jmnek).
+Note that with the exception of questionnaire questions, the data includes all 995 participants, so you may want to filter out excluded participants. The ```ppt_info``` data frame includes a column called ```excluded``` which is ```TRUE``` for excluded participants and ```FALSE``` for non-excluded participants (see the [preprint](https://psyarxiv.com/jmnek) for more information on exclusion criteria).
+
+If you use the data for any published work, please consider citing the preprint:
+> Q. Dercon<sup>†</sup>, S. Z. Mehrhof<sup>†</sup>, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord. A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
 
 ## In R
 
