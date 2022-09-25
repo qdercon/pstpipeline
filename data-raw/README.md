@@ -50,7 +50,7 @@ r_df = readRDS('all_res_split.RDS')
 ## convert to rpy2 ListVector that pandas can read
 with localconverter(ro.default_converter + pandas2ri.converter):
   non_distanced = ro.conversion.rpy2py(r_df[0])
-  distanced = ro.conversion.rpy2py(r_df[0])
+  distanced = ro.conversion.rpy2py(r_df[1])
 
 ## convert training data to pandas data frames
 with localconverter(ro.default_converter + pandas2ri.converter):
