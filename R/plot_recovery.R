@@ -69,9 +69,7 @@ plot_recovery <- function(raw_pars,
     dplyr::rename(sim_mean = mean)
 
   pars_df <- raw_pars |>
-    dplyr::select(
-      -tidyselect::any_of(c("subjID", "rhat", "ess_bulk", "ess_tail"))
-    ) |>
+    dplyr::select(-tidyselect::any_of("subjID")) |>
     tidyr::pivot_longer(
       cols = c(tidyselect::matches("alpha|beta|gamma|w")),
       names_to = "parameter", values_to = "obs_mean"
