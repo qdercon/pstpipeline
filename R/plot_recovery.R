@@ -75,7 +75,8 @@ plot_recovery <- function(raw_pars,
       names_to = "parameter", values_to = "obs_mean"
       ) |>
     dplyr::left_join(sim_pars_df) |>
-    suppressMessages()
+    suppressMessages() |>
+    dplyr::select(-tidyselect::any_of(c("rhat", "ess_bulk", "ess_tail")))
 
   pars <- list()
 
