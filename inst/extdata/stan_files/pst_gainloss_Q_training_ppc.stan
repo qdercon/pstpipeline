@@ -39,7 +39,7 @@ transformed parameters {
 
 model {
   // Priors for group-level parameters
-  mu_pr    ~ normal(0, 1);
+  mu_pr ~ normal(0, 1);
   sigma ~ normal(0, 0.2);
 
   // Priors for subject-level parameters

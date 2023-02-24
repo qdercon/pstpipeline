@@ -272,9 +272,9 @@ fit_learning_model <- function(df_all,
   ## write relevant stan model to memory and preprocess data
   if (affect) {
     aff_mod <- match.arg(affect_sfx)
-    if (!is.null(l$par_recovery) & grepl("time", aff_mod)) {
-      aff_mod <- paste0(aff_mod, "_constr") # add constraints to w1 if recovery
-    }
+    # if (!is.null(l$par_recovery) & grepl("time", aff_mod)) {
+    #   aff_mod <- paste0(aff_mod, "_constr") # add constraints to w1 if recovery
+    # }
   }
   label <- ifelse(
     !affect, exp_part, paste("plus_affect", aff_mod, sep = "_")
