@@ -70,8 +70,8 @@ transformed parameters {
   vector<lower=0,upper=1>[N] alpha;
   vector<lower=0,upper=10>[N] beta;
 
-  alpha = Phi_approx(mu_pr[1] + sigma[1] * alpha_pr);
-  beta  = Phi_approx(mu_pr[2] + sigma[2] * beta_pr) * 10;
+  alpha = Phi_approx(mu_ql[1] + sigma_ql[1] * alpha_pr);
+  beta  = Phi_approx(mu_ql[2] + sigma_ql[2] * beta_pr) * 10;
 
   matrix[N, 3] w0;
   matrix[N, 3] w1_o;
