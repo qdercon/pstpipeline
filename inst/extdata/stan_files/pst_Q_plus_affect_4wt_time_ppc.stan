@@ -24,11 +24,12 @@ data {
 
 transformed data {
   // Default values to initialize the vector of expected values
-  int s;
   vector[6] initial_values;
+  initial_values = rep_vector(0, 6);
+
+  int s;
   matrix[N, T] affect_tr;
   s = N*T;
-  initial_values = rep_vector(0, 6);
   for (t in 1:T) {
     affect_tr[:, t] = ((affect[:, t]*(s-1))+0.5)/s; // Smith & Verkuilen, 2006
   }
@@ -125,11 +126,15 @@ model {
 
   for (i in 1:N) {
     int co;                       // Chosen option
-    real delta;                   // Difference between two options
     real pe;                      // Prediction error
-    real aff_mu_cond;             // Conditional mean of the beta distribution
     vector[6] ev;                 // Expected values per symbol
-    vector[Tsubj[i]] decayvec;
+    vector[Tsubj[i]] delta_vec;   // Difference between two options
+    vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
+
+    real aff_mu_cond;             // Conditional mean of the beta distribution
+    vector[Tsubj[i]] shape_a;     // Beta distribution shape parameter alpha
+    vector[Tsubj[i]] shape_b;     // Beta distribution shape parameter beta
+
     row_vector[Tsubj[i]] ev_vec;
     row_vector[Tsubj[i]] pe_vec;
 
@@ -143,8 +148,7 @@ model {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
       // Luce choice rule
-      delta = ev[option1[i, t]] - ev[option2[i, t]];
-      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
+      delta_vec[t] = ev[option1[i, t]] - ev[option2[i, t]];
 
       pe = reward[i, t] - ev[co];
       pe_vec[t] = pe;
@@ -152,7 +156,7 @@ model {
       ev[co] += alpha[i] * pe;
       ev_vec[t] = ev[co];
 
-      decayvec[t] = pow(gamma[i, question[i, t]], t - 1);
+      decay_vec[t] = pow(gamma[i, question[i, t]], t - 1);
 
       aff_mu_cond = inv_logit(
         w0[i, question[i, t]] +
@@ -161,11 +165,13 @@ model {
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
       );
 
-      affect_tr[i, t] ~ beta(
-        aff_mu_cond * phi[i, question[i, t]] + machine_precision(), // phi*mu
-        phi[i, question[i, t]] * (1 - aff_mu_cond) + machine_precision() // phi*(1-mu)
-      ); // parameterisation following Smithson & Verkuilen, 2006
+      shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b[t] = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
     }
+
+    choice[i, :Tsubj[i]]    ~ bernoulli_logit(beta[i] * delta_vec);
+    affect_tr[i, :Tsubj[i]] ~ beta(shape_a , shape_b);
+      // parameterisation following Smithson & Verkuilen, 2006
   }
 }
 
@@ -201,56 +207,57 @@ generated quantities {
     mu_gamma[p] = Phi_approx(mu_gm[p]);
   }
 
-  {
-    for (i in 1:N) {
-      int co;                       // Chosen option
-      int aff_num;
-      real delta;                   // Difference between two options
-      real pe;                      // Prediction error
-      real aff_mu_cond;             // Conditional mean of the beta distribution
-      vector[6] ev;                 // Expected values per symbol
-      vector[Tsubj[i]] decayvec;
-      row_vector[Tsubj[i]] ev_vec;
-      row_vector[Tsubj[i]] pe_vec;
+  for (i in 1:N) {
+    int co;                       // Chosen option
+    real pe;                      // Prediction error
+    vector[6] ev;                 // Expected values per symbol
+    vector[Tsubj[i]] delta_vec;   // Difference between two options
+    vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
 
-      ev         = initial_values;
-      ev_vec     = rep_row_vector(0, Tsubj[i]);
-      pe_vec     = rep_row_vector(0, Tsubj[i]);
-      log_lik[i] = 0;
+    real aff_mu_cond;             // Conditional mean of the beta distribution
+    vector[Tsubj[i]] shape_a;     // Beta distribution shape parameter alpha
+    vector[Tsubj[i]] shape_b;     // Beta distribution shape parameter beta
 
-      // Acquisition Phase
-      for (t in 1:Tsubj[i]) {
-        co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+    row_vector[Tsubj[i]] ev_vec;
+    row_vector[Tsubj[i]] pe_vec;
 
-        // Luce choice rule
-        delta = ev[option1[i, t]] - ev[option2[i, t]];
-        log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
+    ev     = initial_values;
+    ev_vec = rep_row_vector(0, Tsubj[i]);
+    pe_vec = rep_row_vector(0, Tsubj[i]);
 
-        pe = reward[i, t] - ev[co];
-        pe_vec[t] = pe;
+    log_lik[i] = 0;
 
-        ev[co] += alpha[i] * pe;
-        ev_vec[t] = ev[co];
+    // Acquisition Phase
+    for (t in 1:Tsubj[i]) {
+      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
-        decayvec[t] = pow(gamma[i, question[i, t]], t - 1);
+      // Luce choice rule
+      delta = ev[option1[i, t]] - ev[option2[i, t]];
+      log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
 
-        aff_mu_cond = inv_logit(
-          w0[i, question[i, t]] +
-          w1_o[i, question[i, t]] * ovl_time[i, t] +
-          w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-          w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
-        );
+      pe = reward[i, t] - ev[co];
+      pe_vec[t] = pe;
 
-        log_lik[i] += beta_lpdf(affect_tr[i, t] |
-          aff_mu_cond * phi[i, question[i, t]] + machine_precision(), // phi*mu
-          phi[i, question[i, t]] * (1 - aff_mu_cond) + machine_precision() // phi*(1-mu)
-        );
+      ev[co] += alpha[i] * pe;
+      ev_vec[t] = ev[co];
 
-        y_pred[i, t] = beta_rng(
-          aff_mu_cond * phi[i, question[i, t]] + machine_precision(), // phi*mu
-          phi[i, question[i, t]] * (1 - aff_mu_cond) + machine_precision() // phi*(1-mu)
-        );
-      }
+      decay_vec[t] = pow(gamma[i, question[i, t]], t - 1);
+
+      aff_mu_cond = inv_logit(
+        w0[i, question[i, t]] +
+        w1_o[i, question[i, t]] * ovl_time[i, t] +
+        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
+        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
+      );
+
+      shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b[t] = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+
+      // generate posterior predictions
+      y_pred[i, t] = beta_rng(shape_a[t], shape_b[t]);
     }
+    // increment log density
+    log_lik[i] += bernoulli_logit_lpmf(choice[i, :Tsubj[i]] | beta[i] * delta_vec);
+    log_lik[i] += beta_lpdf(affect_tr[i, :Tsubj[i]] | shape_a, shape_b);
   }
 }
