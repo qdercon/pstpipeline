@@ -167,8 +167,8 @@ model {
         w0[i, question[i, t]] +
         w1_o[i, question[i, t]] * ovl_time[i, t] +
         w1_b[i, question[i, t]] * blk_time[i, t] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
+        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
+        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
       shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
@@ -255,8 +255,8 @@ generated quantities {
         w0[i, question[i, t]] +
         w1_o[i, question[i, t]] * ovl_time[i, t] +
         w1_b[i, question[i, t]] * blk_time[i, t] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
+        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
+        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
       shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();

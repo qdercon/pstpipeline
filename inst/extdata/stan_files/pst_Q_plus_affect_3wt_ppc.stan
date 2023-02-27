@@ -155,8 +155,8 @@ model {
 
       aff_mu_cond = inv_logit(
         w0[i, question[i, t]] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
+        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
+        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
       shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
@@ -237,8 +237,8 @@ generated quantities {
 
       aff_mu_cond = inv_logit(
         w0[i, question[i, t]] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decayvec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decayvec[:t])
+        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
+        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
       shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
