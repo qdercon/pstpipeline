@@ -132,8 +132,8 @@ model {
     int co;                       // Chosen option
     real pe;                      // Prediction error
     real alpha;                   // Learning rate (positive or negative)
+    real delta;                   // Difference between two options
     vector[6] ev;                 // Expected values per symbol
-    vector[Tsubj[i]] delta_vec;   // Difference between two options
     vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
 
     real aff_mu_cond;             // Conditional mean of the beta distribution
@@ -152,7 +152,8 @@ model {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
       // Luce choice rule
-      delta_vec[t] = ev[option1[i, t]] - ev[option2[i, t]];
+      delta = ev[option1[i, t]] - ev[option2[i, t]];
+      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
 
       pe = reward[i, t] - ev[co];
       pe_vec[t] = pe;
@@ -170,13 +171,15 @@ model {
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
-      shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+      // add machine precision to ensure shape parameters > 0
+      shape_a[t] =
+        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b[t] =
+        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
     }
 
-    choice[i, :Tsubj[i]]    ~ bernoulli_logit(beta[i] * delta_vec);
-    affect_tr[i, :Tsubj[i]] ~ beta(shape_a , shape_b);
-      // parameterisation following Smithson & Verkuilen, 2006
+    // increment log density (vectorised)
+    affect_tr[i, :Tsubj[i]] ~ beta(shape_a, shape_b);
   }
 }
 
@@ -218,8 +221,8 @@ generated quantities {
     int co;                       // Chosen option
     real pe;                      // Prediction error
     real alpha;                   // Learning rate (positive or negative)
+    real delta;                   // Difference between two options
     vector[6] ev;                 // Expected values per symbol
-    vector[Tsubj[i]] delta_vec;   // Difference between two options
     vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
 
     real aff_mu_cond;             // Conditional mean of the beta distribution
@@ -240,7 +243,8 @@ generated quantities {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
       // Luce choice rule
-      delta_vec[t] = ev[option1[i, t]] - ev[option2[i, t]];
+      delta = ev[option1[i, t]] - ev[option2[i, t]];
+      log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
 
       pe = reward[i, t] - ev[co];
       pe_vec[t] = pe;
@@ -258,14 +262,16 @@ generated quantities {
         w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
       );
 
-      shape_a[t] = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+      // add machine precision to ensure shape parameters > 0
+      shape_a[t] =
+        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b[t] =
+        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
 
       // generate posterior predictions
       y_pred[i, t] = beta_rng(shape_a[t], shape_b[t]);
     }
-    // increment log density
-    log_lik[i] += bernoulli_logit_lpmf(choice[i, :Tsubj[i]] | beta[i] * delta_vec);
+     // increment log likelihood with affect model
     log_lik[i] += beta_lpdf(affect_tr[i, :Tsubj[i]] | shape_a, shape_b);
   }
 }
