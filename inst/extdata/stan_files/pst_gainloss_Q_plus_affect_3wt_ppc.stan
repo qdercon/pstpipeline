@@ -232,7 +232,7 @@ generated quantities {
 
     // Acquisition Phase
     for (t in 1:Tsubj[i]) {
-      co = (choice[i, ] > 0) ? option1[i, t] : option2[i, t];
+      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
       // Luce choice rule
       delta = ev[option1[i, t]] - ev[option2[i, t]];
