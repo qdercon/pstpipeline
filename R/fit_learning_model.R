@@ -173,7 +173,7 @@ fit_learning_model <- function(df_all,
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- reward <- trial_time <- NULL
+    question_type <- reward <- trial_time <- distanced <- NULL
 
   if (is.null(l$par_recovery)) {
     if (task_excl | accuracy_excl | group) {
