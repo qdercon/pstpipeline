@@ -11,7 +11,8 @@
 data {
   int<lower=1> N, T;          // # participants, max # of trials
   array[N] int Tsubj;         // # of trials for acquisition phase
-  vector[N] grp;              // whether or not participant was distanced
+  vector[N] grp1;              // whether or not participant was non-distanced
+  vector[N] grp2;              // whether or not participant was distanced
 
   array[N,T] int option1;
   array[N,T] int option2;
@@ -39,26 +40,26 @@ parameters {
   // group-level RL parameters (for each group)
   vector[3] mu_ql_g1;
   vector<lower=0>[3] sigma_ql_g1;
-  vector[3] mu_ql_d2;
-  vector<lower=0>[3] sigma_ql_d2;
+  vector[3] mu_ql_g2;
+  vector<lower=0>[3] sigma_ql_g2;
 
   // group-level weights
   matrix[3, 3] mu_wt_g1;
   matrix<lower=0>[3, 3] sigma_wt_g1;
-  matrix[3, 3] mu_wt_d2;
-  matrix<lower=0>[3, 3] sigma_wt_d2;
+  matrix[3, 3] mu_wt_g2;
+  matrix<lower=0>[3, 3] sigma_wt_g2;
 
   // group-level parameters for decay factor (gamma)
   vector[3] mu_gm_g1;
   vector<lower=0>[3] sigma_gm_g1;
-  vector[3] mu_gm_d2;
-  vector<lower=0>[3] sigma_gm_d2;
+  vector[3] mu_gm_g2;
+  vector<lower=0>[3] sigma_gm_g2;
 
   // group-level beta distribution precision (phi)
   vector[3] mu_phi_g1;
   vector<lower=0>[3] sigma_phi_g1;
-  vector[3] mu_phi_d2;
-  vector<lower=0>[3] sigma_phi_d2;
+  vector[3] mu_phi_g2;
+  vector<lower=0>[3] sigma_phi_g2;
 
   // individual-level RL parameters
   vector[N] alpha_pos_pr;
@@ -82,16 +83,16 @@ transformed parameters {
   vector<lower=0, upper=10>[N] beta;
 
   alpha_pos = Phi_approx(
-    (mu_ql_g1[1] + sigma_ql_g1[1] * alpha_pos_pr) +
-    (mu_ql_d2[1] * grp + sigma_ql_d2[1] * (alpha_pos_pr .* grp))
+    (mu_ql_g1[1] * grp1 + sigma_ql_g1[1] * (alpha_pos_pr .* grp1)) +
+    (mu_ql_g2[1] * grp2 + sigma_ql_g2[1] * (alpha_pos_pr .* grp2))
   );
   alpha_neg = Phi_approx(
-    (mu_ql_g1[2] + sigma_ql_g1[2] * alpha_neg_pr) +
-    (mu_ql_d2[2] * grp + sigma_ql_d2[2] * (alpha_neg_pr .* grp))
+    (mu_ql_g1[2] * grp1 + sigma_ql_g1[2] * (alpha_neg_pr .* grp1)) +
+    (mu_ql_g2[2] * grp2 + sigma_ql_g2[2] * (alpha_neg_pr .* grp2))
   );
   beta = Phi_approx(
-    (mu_ql_g1[3] + sigma_ql_g1[3] * beta_pr) +
-    (mu_ql_d2[3] * grp + sigma_ql_d2[3] * (beta_pr .* grp))
+    (mu_ql_g1[3] * grp1 + sigma_ql_g1[3] * (beta_pr .* grp1)) +
+    (mu_ql_g2[3] * grp2 + sigma_ql_g2[3] * (beta_pr .* grp2))
   ) * 10;
 
   matrix[N, 3] w0;
@@ -102,22 +103,22 @@ transformed parameters {
 
   for (p in 1:3) {
     w0[:, p] =
-      (mu_wt_g1[1, p] + sigma_wt_g1[1, p] * w0_pr[:, p]) +
-      (mu_wt_d2[1, p] * grp + sigma_wt_d2[1, p] * (w0_pr[:, p] .* grp));
+      (mu_wt_g1[1, p] * grp1 + sigma_wt_g1[1, p] * (w0_pr[:, p] .* grp1)) +
+      (mu_wt_g2[1, p] * grp2 + sigma_wt_g2[1, p] * (w0_pr[:, p] .* grp2));
     w2[:, p] =
-      (mu_wt_g1[2, p] + sigma_wt_g1[2, p] * w2_pr[:, p]) +
-      (mu_wt_d2[2, p] * grp + sigma_wt_d2[2, p] * (w2_pr[:, p] .* grp));
+      (mu_wt_g1[2, p] * grp1 + sigma_wt_g1[2, p] * (w2_pr[:, p] .* grp1)) +
+      (mu_wt_g2[2, p] * grp2 + sigma_wt_g2[2, p] * (w2_pr[:, p] .* grp2));
     w3[:, p] =
-      (mu_wt_g1[3, p] + sigma_wt_g1[3, p] * w3_pr[:, p]) +
-      (mu_wt_d2[3, p] * grp + sigma_wt_d2[3, p] * (w3_pr[:, p] .* grp));
+      (mu_wt_g1[3, p] * grp1 + sigma_wt_g1[3, p] * (w3_pr[:, p] .* grp1)) +
+      (mu_wt_g2[3, p] * grp2 + sigma_wt_g2[3, p] * (w3_pr[:, p] .* grp2));
 
     gamma[:, p] = Phi_approx(
-      (mu_gm_g1[p] + sigma_gm_g1[p] * gm_pr[:, p]) +
-      (mu_gm_d2[p] * grp + sigma_gm_d2[p] * (gm_pr[:, p] .* grp))
+      (mu_gm_g1[p] * grp1 + sigma_gm_g1[p] * (gm_pr[:, p] .* grp1)) +
+      (mu_gm_g2[p] * grp2 + sigma_gm_g2[p] * (gm_pr[:, p] .* grp2))
     );
     phi[:, p] = exp(
-      (mu_phi_g1[p] + sigma_phi_g1[p] * phi_pr[:, p]) +
-      (mu_phi_d2[p] * grp + sigma_phi_d2[p] * (phi_pr[:, p] .* grp))
+      (mu_phi_g1[p] * grp1 + sigma_phi_g1[p] * (phi_pr[:, p] .* grp1)) +
+      (mu_phi_g2[p] * grp2 + sigma_phi_g2[p] * (phi_pr[:, p] .* grp2))
     );
   }
 }
@@ -125,29 +126,29 @@ transformed parameters {
 model {
   // hyperpriors on QL parameters
   mu_ql_g1    ~ normal(0, 1);
-  mu_ql_d2    ~ normal(0, 1);
+  mu_ql_g2    ~ normal(0, 1);
   sigma_ql_g1 ~ normal(0, 0.2);
-  sigma_ql_d2 ~ normal(0, 0.2);
+  sigma_ql_g2 ~ normal(0, 0.2);
 
   // hyperpriors on the weights
   for (p in 1:3) {
     mu_wt_g1[:, p]    ~ normal(0, 1);
-    mu_wt_d2[:, p]    ~ normal(0, 1);
+    mu_wt_g2[:, p]    ~ normal(0, 1);
     sigma_wt_g1[:, p] ~ exponential(0.1);
-    sigma_wt_d2[:, p] ~ exponential(0.1);
+    sigma_wt_g2[:, p] ~ exponential(0.1);
   }
 
   // hyperpriors on gamma
   mu_gm_g1     ~ normal(0, 1);
-  mu_gm_d2     ~ normal(0, 1);
+  mu_gm_g2     ~ normal(0, 1);
   sigma_gm_g1  ~ exponential(0.1);
-  sigma_gm_d2  ~ exponential(0.1);
+  sigma_gm_g2  ~ exponential(0.1);
 
   // hyperpriors on the beta distribution precision
   mu_phi_g1    ~ normal(0, 1);
-  mu_phi_d2    ~ normal(0, 1);
+  mu_phi_g2    ~ normal(0, 1);
   sigma_phi_g1 ~ exponential(0.1);
-  sigma_phi_d2 ~ exponential(0.1);
+  sigma_phi_g2 ~ exponential(0.1);
 
   // priors on QL parameters
   alpha_pos_pr ~ normal(0, 1);
@@ -239,33 +240,33 @@ generated quantities {
   };
 
   mu_alpha_pos[1] = Phi_approx(mu_ql_g1[1]);
-  mu_alpha_pos[2] = Phi_approx(mu_ql_g1[1] + mu_ql_d2[1]);
-  mu_alpha_pos[3] = Phi_approx(mu_ql_d2[1]);
+  mu_alpha_pos[2] = Phi_approx(mu_ql_g2[1]);
+  mu_alpha_pos[3] = Phi_approx(mu_ql_g2[1] - mu_ql_g1[1]);
 
   mu_alpha_neg[1] = Phi_approx(mu_ql_g1[2]);
-  mu_alpha_neg[2] = Phi_approx(mu_ql_g1[2] + mu_ql_d2[2]);
-  mu_alpha_neg[3] = Phi_approx(mu_ql_d2[2]);
+  mu_alpha_neg[2] = Phi_approx(mu_ql_g2[2]);
+  mu_alpha_neg[3] = Phi_approx(mu_ql_g2[2] - mu_ql_g1[2]);
 
   mu_beta[1]      = Phi_approx(mu_ql_g1[3]) * 10;
-  mu_beta[2]      = Phi_approx(mu_ql_g1[3] + mu_ql_d2[3]) * 10;
-  mu_beta[3]      = Phi_approx(mu_ql_d2[3]) * 10;
+  mu_beta[2]      = Phi_approx(mu_ql_g2[3]) * 10;
+  mu_beta[3]      = Phi_approx(mu_ql_g2[3] - mu_ql_g1[3]) * 10;
 
   for (p in 1:3) {
     mu_w0[1, p] = mu_wt_g1[1, p];
-    mu_w0[2, p] = mu_wt_g1[1, p] + mu_wt_d2[1, p];
-    mu_w0[3, p] = mu_wt_d2[1, p];
+    mu_w0[2, p] = mu_wt_g2[1, p];
+    mu_w0[3, p] = mu_wt_g2[1, p] - mu_wt_g1[1, p];
 
     mu_w2[1, p] = mu_wt_g1[2, p];
-    mu_w2[2, p] = mu_wt_g1[2, p] + mu_wt_d2[2, p];
-    mu_w2[3, p] = mu_wt_d2[2, p];
+    mu_w2[2, p] = mu_wt_g2[2, p];
+    mu_w2[3, p] = mu_wt_g2[2, p] - mu_wt_g1[2, p];
 
     mu_w3[1, p] = mu_wt_g1[3, p];
-    mu_w3[2, p] = mu_wt_g1[3, p] + mu_wt_d2[3, p];
-    mu_w3[3, p] = mu_wt_d2[3, p];
+    mu_w3[2, p] = mu_wt_g2[3, p];
+    mu_w3[3, p] = mu_wt_g2[3, p] - mu_wt_g1[3, p];
 
     mu_gamma[1, p] = Phi_approx(mu_gm_g1[p]);
-    mu_gamma[2, p] = Phi_approx(mu_gm_g1[p] + mu_gm_d2[p]);
-    mu_gamma[3, p] = Phi_approx(mu_gm_d2[p]);
+    mu_gamma[2, p] = Phi_approx(mu_gm_g2[p]);
+    mu_gamma[3, p] = Phi_approx(mu_gm_g2[p] - mu_gm_g1[p]);
   }
 
   for (i in 1:N) {

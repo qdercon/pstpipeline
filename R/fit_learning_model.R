@@ -250,7 +250,9 @@ fit_learning_model <- function(df_all,
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max")
 
     if (group) {
-      general_info$grp <-
+      general_info$grp1 <-
+        as.numeric(!raw_df[,.SD[!duplicated(distanced)],subjID][,distanced])
+      general_info$grp2 <-
         as.numeric(raw_df[,.SD[!duplicated(distanced)],subjID][,distanced])
     }
   }
