@@ -15,6 +15,7 @@ fit_learning_model(
   ppc = vb,
   task_excl = TRUE,
   accuracy_excl = FALSE,
+  group = FALSE,
   model_checks = TRUE,
   save_model_as = "",
   out_dir = "outputs/cmdstan",
@@ -52,6 +53,9 @@ digit span = 0)?}
 
 \item{accuracy_excl}{Apply accuracy-based exclusion criteria (final block AB
 accuracy >= 0.6)?}
+
+\item{group}{Are both groups being fit together? Model then assumes different
+group-level distributions for both groups.}
 
 \item{model_checks}{Runs \code{\link[=check_learning_models]{check_learning_models()}}, returning plots of the
 group-level posterior densities for the free parameters, and some visual

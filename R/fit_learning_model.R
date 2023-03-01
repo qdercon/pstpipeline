@@ -32,6 +32,8 @@
 #' digit span = 0)?
 #' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB
 #' accuracy >= 0.6)?
+#' @param group Are both groups being fit together? Model then assumes different
+#' group-level distributions for both groups.
 #' @param model_checks Runs [check_learning_models()], returning plots of the
 #' group-level posterior densities for the free parameters, and some visual
 #' model checks (traceplots of the chains, and rank histograms). Note the visual
@@ -113,6 +115,7 @@ fit_learning_model <- function(df_all,
                                ppc = vb,
                                task_excl = TRUE,
                                accuracy_excl = FALSE,
+                               group = FALSE,
                                model_checks = TRUE,
                                save_model_as = "",
                                out_dir = "outputs/cmdstan",
@@ -126,9 +129,12 @@ fit_learning_model <- function(df_all,
   if (exp_part == "test" & affect) {
     stop("Affect models will not work for test data.")
   }
-  if (model == "affect" & !ppc) {
+  if (affect & !ppc) {
     warning("Separate posterior predictions after affect models not supported.")
     ppc <- TRUE
+  }
+  if (group & !affect) {
+    stop("Grouping currently only works for affect models.")
   }
   if (ppc & !vb) {
     warning(
@@ -170,12 +176,13 @@ fit_learning_model <- function(df_all,
     question_type <- reward <- trial_time <- NULL
 
   if (is.null(l$par_recovery)) {
-    if (task_excl | accuracy_excl) {
+    if (task_excl | accuracy_excl | group) {
       ids <- df_all[["ppt_info"]] |>
-        dplyr::select(subjID, exclusion, final_block_AB)
+        dplyr::select(subjID, exclusion, final_block_AB, distanced)
       if (accuracy_excl) ids <- ids |> dplyr::filter(final_block_AB >= 0.6)
       if (task_excl) ids <- ids |> dplyr::filter(exclusion == 0)
-      ids <- ids |> dplyr::select(subjID)
+      if (!group) ids <- ids |> dplyr::select(subjID)
+      else ids <- ids |> dplyr::select(subjID, distanced)
     }
     else {
       ids <- unique(df_all[["training"]][["subjID"]])
@@ -241,6 +248,11 @@ fit_learning_model <- function(df_all,
 
     general_info <- list(subjs, n_subj, t_subjs, t_max)
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max")
+
+    if (group) {
+      general_info$grp <-
+        as.numeric(raw_df[,.SD[!duplicated(distanced)],subjID][,distanced])
+    }
   }
   else {
     DT_train  <- raw_df$train[, .N, by = "subjID"]
@@ -253,17 +265,19 @@ fit_learning_model <- function(df_all,
     t_max_t   <- max(t_subjs_t)
 
     general_info <- list(subjs, n_subj, t_subjs, t_max, t_subjs_t, t_max_t)
-    names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max", "t_subjs_t",
-                             "t_max_t")
+    names(general_info) <-
+      c("subjs", "n_subj", "t_subjs", "t_max", "t_subjs_t", "t_max_t")
   }
 
   if (exp_part == "test") {
-    data_cmdstan <- preprocess_func_test(
-      raw_df$train, raw_df$test, general_info
-      )
+    data_cmdstan <-
+      preprocess_func_test(raw_df$train, raw_df$test, general_info)
   }
   else {
-    if (affect) data_cmdstan <- preprocess_func_affect(raw_df, general_info)
+    if (affect) {
+      data_cmdstan <-
+        preprocess_func_affect(raw_df, general_info, group = group)
+    }
     else data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
@@ -282,8 +296,11 @@ fit_learning_model <- function(df_all,
   stan_model <- cmdstanr::cmdstan_model(
     system.file(
       paste0(
-        paste("extdata/stan_files/pst",
-              ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"),
+        paste(
+          "extdata/stan_files/pst",
+          ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"
+        ),
+        ifelse(group, "_grp", ""),
         ifelse(ppc, "_ppc.stan", ".stan")
       ),
       package = "pstpipeline"

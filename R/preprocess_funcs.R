@@ -105,7 +105,7 @@ preprocess_func_test <- function(raw_data_train,
   return(data_list)
 }
 
-preprocess_func_affect <- function(raw_data, general_info) {
+preprocess_func_affect <- function(raw_data, general_info, group) {
   # Currently class(raw_data) == "data.table"
   # Use general_info of raw_data
   subjs   <- general_info$subjs
@@ -159,6 +159,7 @@ preprocess_func_affect <- function(raw_data, general_info) {
     blk_time  = blk_time,
     question  = question
   )
+  if (group) data_list$grp <- general_info$grp
   # Returned data_list will directly be passed to Stan
   return(data_list)
 }
