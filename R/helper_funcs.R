@@ -388,7 +388,8 @@ get_affect_ppc <- function(draws,
     type <- se_pred <- aff_tr <- variable <- "patterns" <- "..aff_tr" <- NULL
 
   n_id <- length(unique(raw$subjID))
-  grps <- raw |> dplyr::distinct(subjID, tidyselect::any_of("distanced"))
+  grps <- raw |>
+    dplyr::distinct(dplyr::pick(subjID, tidyselect::any_of("distanced")))
   fit_df <- as.data.frame(
     matrix(nrow = n_id, ncol = 5,
            dimnames = list(1:n_id, c("subjID", "id_no", "R2", "MAE", "RMSE")))
