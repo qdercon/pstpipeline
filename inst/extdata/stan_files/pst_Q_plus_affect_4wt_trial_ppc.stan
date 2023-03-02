@@ -12,10 +12,10 @@ data {
   int<lower=1> N, T;          // # participants, max # of trials
   array[N] int Tsubj;         // # of trials for acquisition phase
 
-  array[N,T] int option1;
-  array[N,T] int option2;
-  array[N,T] int choice;
-  matrix[N,T] reward;         // coded as 1 (reward) or -1 (no reward)
+  array[N, T] int option1;
+  array[N, T] int option2;
+  array[N, T] int choice;
+  matrix[N, T] reward;        // coded as 1 (reward) or -1 (no reward)
 
   matrix[N, T] affect;        // includes 0 and 1, needs to be transformed
   array[N, T] int question;   // from 1 to 3 (happy, confident, engaged)
@@ -167,10 +167,8 @@ model {
       );
 
       // add machine precision to ensure shape parameters > 0
-      shape_a[t] =
-        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] =
-        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+      shape_a = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
 
       // increment log density
       affect_tr[i, t] ~ beta(shape_a, shape_b);
@@ -254,10 +252,8 @@ generated quantities {
       );
 
       // add machine precision to ensure shape parameters > 0
-      shape_a[t] =
-        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] =
-        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+      shape_a = aff_mu_cond * phi[i, question[i, t]] + machine_precision();
+      shape_b = phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
 
       // increment log likelihood
       log_lik[i] += beta_lpdf(affect_tr[i, t] | shape_a, shape_b);
