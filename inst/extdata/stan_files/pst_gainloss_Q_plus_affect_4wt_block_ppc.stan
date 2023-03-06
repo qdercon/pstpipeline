@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Gain-loss Q-learning model for PST training data with affect data extension
+// Gain-loss Q-learning model for PST training data + affect + block number
 //------------------------------------------------------------------------------
 // References:
 //// https://www.pnas.org/doi/10.1073/pnas.1407535111
@@ -12,10 +12,10 @@ data {
   int<lower=1> N, T;          // # participants, max # of trials
   array[N] int Tsubj;         // # of trials for acquisition phase
 
-  array[N,T] int option1;
-  array[N,T] int option2;
-  array[N,T] int choice;
-  matrix[N,T] reward;         // coded as 1 (reward) or -1 (no reward)
+  array[N, T] int option1;    // LHS option (1-6)
+  array[N, T] int option2;    // RHS option (1-6)
+  array[N, T] int choice;     // choice (1 = chose option 1, 3, or 5)
+  matrix[N, T] reward;        // coded as 1 (reward) or -1 (no reward)
 
   matrix[N, T] affect;        // includes 0 and 1, needs to be transformed
   array[N, T] int question;   // from 1 to 3 (happy, confident, engaged)
@@ -96,7 +96,7 @@ transformed parameters {
 
 model {
   // hyperpriors on QL parameters
-  mu_ql ~ normal(0, 1);
+  mu_ql    ~ normal(0, 1);
   sigma_ql ~ normal(0, 0.2);
 
   // hyperpriors on the weights
