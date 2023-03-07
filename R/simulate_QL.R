@@ -100,11 +100,7 @@ simulate_QL <- function(summary_df = NULL,
       ids_sample <- prev_sample
     }
     else if (!is.null(sample_size)) { # do we want a sample < everyone
-      if (!affect) {
-        ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
-      } else {
-        ids_sample <- sample(1:max(pars_df$id_no)) # as there will be failures
-      }
+      ids_sample <- sample(1:max(pars_df$id_no), sample_size) |> sort()
     }
     else {
       ids_sample <- 1:dim(pars_df)[1]
@@ -137,13 +133,8 @@ simulate_QL <- function(summary_df = NULL,
   all_res <- data.frame()
   if (is.null(sample_size)) sample_size <- length(ids_sample)
   pb = txtProgressBar(min = 0, max = sample_size, initial = 0, style = 3)
-  num_sims <- 0
-  drop_count <- 0
 
   for (id in seq_along(ids_sample)) {
-
-    if (num_sims == sample_size) break
-
     # make random sequence of trials, each condition balanced within blocks
     choice1 <- NULL
     for (i in 1:6) {
@@ -293,26 +284,12 @@ simulate_QL <- function(summary_df = NULL,
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
-        training_results$question_response[i] <- rating * 100
+        training_results$question_response[i] <- plogis(rating) * 100
         training_results$trial_time[i]        <- trial_time * 60 ## in mins
       }
     }
 
-    if (affect) {
-      training_results <- training_results |> tidyr::drop_na(choice)
-      if (any(training_results$question_response > 100) |
-          any(training_results$question_response < 0)) {
-        # strict, but models won't work otherwise.
-        training_results <- NULL
-        drop_count <- drop_count + 1
-      } else {
-        num_sims <- num_sims + 1
-        setTxtProgressBar(pb, num_sims)
-      }
-    } else {
-      setTxtProgressBar(pb, id)
-    }
-
+    training_results <- training_results |> tidyr::drop_na(choice)
     all_res <- dplyr::bind_rows(all_res, training_results)
 
     if (test) {
@@ -366,7 +343,7 @@ simulate_QL <- function(summary_df = NULL,
         dplyr::ungroup()
       all_res <- dplyr::bind_rows(all_res, test_results)
     }
-
+    setTxtProgressBar(pb, id)
   }
 
   all_res <- tibble::as_tibble(all_res) |>
@@ -394,9 +371,8 @@ simulate_QL <- function(summary_df = NULL,
 
     pars_df <- pars_df |>
       dplyr::inner_join(
-        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
-      dplyr::filter(id_no %in% unique(all_res$id_no)) |>
-      # only relevant if drop_count > 1
+        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no"
+      ) |>
       dplyr::mutate(
         id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
     # to match up with summary for plotting
@@ -421,8 +397,5 @@ simulate_QL <- function(summary_df = NULL,
   ret$sim <- data.table::as.data.table(all_res)
   ret$pars <- data.table::as.data.table(pars_df)
 
-  if (num_sims > 0 & num_sims < sample_size) {
-    message(paste0("Only able to obtain ", num_sims, " samples."))
-  }
   return(ret)
 }
