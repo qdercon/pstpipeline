@@ -26,6 +26,8 @@
 #' @returns Simulated training data (and test data relevant) for a random or
 #' previously fitted sample of parameter values.
 #'
+#' @importFrom stats plogis rbeta
+#'
 #' @examples
 #' train_sim_2a <- simulate_QL(
 #'   sample_size = 5,
@@ -48,7 +50,7 @@ simulate_QL <- function(summary_df = NULL,
   # to appease R CMD check
   parameter <- subjID <- value <- trial_no <- id_no <- id_all <- aff_num <-
     block <- hidden_reward <- question_response <- question_type <-
-    missing_times <- trial_block <- sample_time <- NULL
+    missing_times <- trial_block <- adj <- NULL
 
   l <- list(...)
 
@@ -262,7 +264,9 @@ simulate_QL <- function(summary_df = NULL,
 
     for (i in 1:360) {
 
-      if (affect & !sample_time & i %in% missing_times) next
+      if (affect) {
+        if (!sample_time & i %in% missing_times) next
+      }
 
       Q_t <- Q
       names(Q_t) <- c("Q_a", "Q_b", "Q_c", "Q_d", "Q_e", "Q_f")
