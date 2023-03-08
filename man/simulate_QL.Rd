@@ -39,7 +39,7 @@ of models).}
 subject IDs can be labelled appropriately.}
 
 \item{...}{Other arguments which can be used to control the parameters of the
-gamma/Gaussian distributions from which parameter values are sampled.}
+Beta/Gaussian distributions from which parameter values are sampled.}
 }
 \value{
 Simulated training data (and test data relevant) for a random or

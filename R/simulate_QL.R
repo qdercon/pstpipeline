@@ -58,7 +58,11 @@ simulate_QL <- function(summary_df = NULL,
     if (is.null(l$question_order)) {
       adj_order <- c("happy", "confident", "engaged")
     }
-    if (is.null(l$raw_df)) sample_time <- TRUE
+    if (is.null(l$raw_df)) {
+      sample_time <- TRUE
+      if (is.null(l$time_pars)) l$time_pars <- c("block", "overall")
+      time_prm <- match.arg(l$time_pars, c("none", "overall", "block"), TRUE)
+    }
   }
 
   if (is.null(summary_df)) {
@@ -112,6 +116,9 @@ simulate_QL <- function(summary_df = NULL,
           w3 = rnorm(1, l$w3_dens[1], l$w3_dens[2])
         ) |>
         dplyr::ungroup()
+
+      if (!("block" %in% time_prm)) pars_df  <- pars_df |> dplyr::select(-w1_b)
+      if (!("overall" %in% time_prm)) pars_df <- pars_df |> dplyr::select(-w1_o)
     }
   }
   else {
