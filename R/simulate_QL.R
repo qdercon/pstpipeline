@@ -21,7 +21,7 @@
 #' @param raw_df Provide the raw data used to fit the data originally, so that
 #' subject IDs can be labelled appropriately.
 #' @param ... Other arguments which can be used to control the parameters of the
-#' gamma/Gaussian distributions from which parameter values are sampled.
+#' Beta/Gaussian distributions from which parameter values are sampled.
 #'
 #' @returns Simulated training data (and test data relevant) for a random or
 #' previously fitted sample of parameter values.
@@ -63,31 +63,29 @@ simulate_QL <- function(summary_df = NULL,
 
   if (is.null(summary_df)) {
     if (is.null(sample_size)) sample_size <- 100
-    if (is.null(l$alpha_dens)) l$alpha_dens <- c(2, 0.1) # Gamma(alpha, beta)
+    if (is.null(l$alpha_dens)) l$alpha_dens <- c(1.5, 3) # Beta(alpha, beta)
     if (is.null(l$alpha_pos_dens)) l$alpha_pos_dens <- l$alpha_dens
     if (is.null(l$alpha_neg_dens)) l$alpha_neg_dens <- l$alpha_dens
-    if (is.null(l$beta_dens)) l$beta_dens <- c(3, 1) # Normal(mu, sigma)
+    if (is.null(l$beta_dens)) l$beta_dens <- c(3, 4) # Beta(alpha, beta) * 10
     ids_sample <- 1:sample_size
 
     if (gain_loss) {
       pars_df <- tibble::tibble(
         id_no = ids_sample,
-        alpha_pos = rgamma(
-          sample_size, shape = l$alpha_pos_dens[1], scale = l$alpha_pos_dens[2]
+        alpha_pos = rbeta(
+          sample_size, l$alpha_pos_dens[1], l$alpha_pos_dens[2]
         ),
-        alpha_neg = rgamma(
-          sample_size, shape = l$alpha_neg_dens[1], scale = l$alpha_neg_dens[2]
+        alpha_neg = rbeta(
+          sample_size, l$alpha_neg_dens[1], l$alpha_neg_dens[2]
         ),
-        beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
+        beta = rbeta(sample_size, l$beta_dens[1], l$beta_dens[2])*10
       )
     }
     else {
       pars_df <- tibble::tibble(
         id_no = ids_sample,
-        alpha = rgamma(
-          sample_size, shape = l$alpha_dens[1], scale = l$alpha_dens[2]
-        ),
-        beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
+        alpha = rbeta(sample_size, l$alpha_dens[1], l$alpha_dens[2]),
+        beta = rbeta(sample_size, l$beta_dens[1], l$beta_dens[2])*10
       )
     }
     if (affect) {
