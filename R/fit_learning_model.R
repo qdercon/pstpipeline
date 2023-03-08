@@ -150,6 +150,7 @@ fit_learning_model <- function(df_all,
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
     if (is.null(l$algorithm)) l$algorithm <- "meanfield"
+    if (is.null(l$tol_rel_obj)) l$tol_rel_obj <- 0.01
   }
   else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
@@ -302,6 +303,7 @@ fit_learning_model <- function(df_all,
       refresh = l$refresh,
       output_samples = l$output_samples,
       algorithm = l$algorithm,
+      tol_rel_obj = l$tol_rel_obj,
       output_dir = out_dir
     )
   }
