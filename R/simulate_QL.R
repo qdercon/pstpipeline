@@ -48,17 +48,15 @@ simulate_QL <- function(summary_df = NULL,
   # to appease R CMD check
   parameter <- subjID <- value <- trial_no <- id_no <- id_all <- aff_num <-
     block <- hidden_reward <- question_response <- question_type <-
-    missing_times <- trial_block <- trial_time <- NULL
+    missing_times <- trial_block <- sample_time <- NULL
 
   l <- list(...)
 
-  if (is.null(summary_df) & affect)
-    stop("Random samples not supported for affect models.")
-  if (is.null(raw_df) & affect)
-    stop("Please specify a raw_df - required to obtain elapsed times.")
-
-  if (affect & is.null(l$question_order)) {
-    adj_order <- c("happy", "confident", "engaged")
+  if (affect) {
+    if (is.null(l$question_order)) {
+      adj_order <- c("happy", "confident", "engaged")
+    }
+    if (is.null(l$raw_df)) sample_time <- TRUE
   }
 
   if (is.null(summary_df)) {
@@ -90,6 +88,31 @@ simulate_QL <- function(summary_df = NULL,
         beta = rnorm(sample_size, mean = l$beta_dens[1], sd = l$beta_dens[2])
       )
     }
+    if (affect) {
+      if (is.null(l$gamma_dens)) l$gamma_dens <- c(2, 2) # Beta(alpha, beta)
+      if (is.null(l$w0_dens)) l$w0_dens <- c(0, 0.5) # Normal(mu, sigma)
+      if (is.null(l$w1_o_dens)) l$w1_o_dens <- c(-0.5, 1) # Normal(mu, sigma)
+      if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.2, 0.5) # Normal(mu, sigma)
+      if (is.null(l$w2_dens)) l$w2_dens <- c(0.2, 0.1)
+      if (is.null(l$w3_dens)) l$w3_dens <- c(0.2, 0.1)
+
+      pars_df <-
+        dplyr::bind_rows(
+          list("happy" = pars_df, "confident" = pars_df, "engaged" = pars_df),
+          .id = "adj"
+        ) |>
+        dplyr::rowwise() |>
+        dplyr::mutate(
+          aff_num = grep(adj, adj_order),
+          gamma = rbeta(1, l$gamma_dens[1], l$gamma_dens[2]),
+          w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
+          w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
+          w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
+          w2 = rnorm(1, l$w2_dens[1], l$w2_dens[2]),
+          w3 = rnorm(1, l$w3_dens[1], l$w3_dens[2])
+        ) |>
+        dplyr::ungroup()
+    }
   }
   else {
     pars_df <- clean_summary(summary_df) |>
@@ -114,6 +137,7 @@ simulate_QL <- function(summary_df = NULL,
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
         )
+      if (affect) sample_time <- FALSE
     }
   }
 
@@ -211,14 +235,17 @@ simulate_QL <- function(summary_df = NULL,
           question_response = NA
         )
 
-      time <- raw_df |>
-        dplyr::filter(id_no == ids_sample[id]) |>
-        dplyr::select(trial_no, block_time, trial_time)
-
-      missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+      if (!sample_time) {
+        time <- raw_df |>
+          dplyr::filter(id_no == ids_sample[id]) |>
+          dplyr::select(trial_no, block_time, trial_time)
+        missing_times <- grep(FALSE, 1:360 %in% time$trial_no)
+      }
 
       ev_vec <- rep(0, 360)
       pe_vec <- rep(0, 360)
+      trial_time <- rep(0, 360)
+      block_time <- rep(0, 360)
 
       gamma <- stats::na.omit(indiv_pars$gamma)
       w0    <- stats::na.omit(indiv_pars$w0)
@@ -235,7 +262,7 @@ simulate_QL <- function(summary_df = NULL,
 
     for (i in 1:360) {
 
-      if (affect & i %in% missing_times) next
+      if (affect & !sample_time & i %in% missing_times) next
 
       Q_t <- Q
       names(Q_t) <- c("Q_a", "Q_b", "Q_c", "Q_d", "Q_e", "Q_f")
@@ -273,19 +300,33 @@ simulate_QL <- function(summary_df = NULL,
         ev_vec[i] <- ev
         pe_vec[i] <- pe
 
+        if (i > 1 & sample_time) {
+          if ((i-1) %% 60 == 0) {
+            elapsed <- 5 + rgamma(1, shape = 3, scale = 2) # after trial
+            trial_time[i] <- trial_time[i-1] + (elapsed / 3600)
+            block_time[i] <- 0
+          }
+          else {
+            elapsed <- 5 + rgamma(1, shape = 5, scale = 5) # after block
+            trial_time[i] <- trial_time[i-1] + (elapsed / 3600)
+            block_time[i] <- block_time[i-1] + (elapsed / 3600)
+          }
+        } else if (!sample_time) {
+          trial_time[i] <- time[time$trial_no == i,]$trial_time / 60
+          block_time[i] <- time[time$trial_no == i,]$block_time / 60
+        }
+
         q <- grep(training_results$question_type[i], adj_order)
-        trial_time <- time[time$trial_no == i,]$trial_time / 60
-        block_time <- time[time$trial_no == i,]$block_time / 60
 
         rating <-
           w0[q] +
-          w1_o[q] * trial_time +
-          w1_b[q] * block_time +
+          w1_o[q] * trial_time[i] +
+          w1_b[q] * block_time[i] +
           w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * ev_vec[[j]])) +
           w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i-j) * pe_vec[[j]]))
 
         training_results$question_response[i] <- plogis(rating) * 100
-        training_results$trial_time[i]        <- trial_time * 60 ## in mins
+        training_results$trial_time[i]        <- trial_time[i] * 60 ## in mins
       }
     }
 
@@ -350,9 +391,21 @@ simulate_QL <- function(summary_df = NULL,
     dplyr::select(-hidden_reward)
 
   if (affect) {
+    if (!sample_time) {
+      pars_df <- pars_df |>
+        dplyr::inner_join(
+          raw_df |> dplyr::distinct(subjID, id_no), by = "id_no"
+        ) |>
+        dplyr::mutate(
+          id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
+      # to match up with summary for plotting
+
+      all_res <- all_res |>
+        dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")
+    }
+    else all_res <- all_res |> dplyr::mutate(subjID = id_no)
+
     all_res <- all_res |>
-      dplyr::left_join(
-        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no") |>
       dplyr::rowwise() |>
       dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
       dplyr::mutate(
@@ -368,14 +421,6 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
       dplyr::ungroup() |>
       dplyr::arrange(id_no)
-
-    pars_df <- pars_df |>
-      dplyr::inner_join(
-        raw_df |> dplyr::distinct(subjID, id_no), by = "id_no"
-      ) |>
-      dplyr::mutate(
-        id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
-    # to match up with summary for plotting
   }
   else if (!is.null(raw_df)) {
     all_res <- all_res |>
