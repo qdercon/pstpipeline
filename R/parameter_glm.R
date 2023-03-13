@@ -116,8 +116,7 @@ parameter_glm <- function(summary_df = list(),
   if (is.null(getOption("mc.cores"))) options(mc.cores = l$cores)
 
   ## to appease R CMD check
-  variable <- parameter <- . <- subjID <- value <- trial_no <-
-    id_no <- recode <- aff_num <- NULL
+  parameter <- recode <- aff_num <- NULL
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
@@ -137,8 +136,9 @@ parameter_glm <- function(summary_df = list(),
         "Affect number not specified, defaulting to Q-learning parameters."
       )
       all_data <- all_data |> dplyr::filter(is.na(aff_num))
+    } else {
+      all_data <- all_data |> dplyr::filter(aff_num == affect_number)
     }
-    else all_data <- all_data |> dplyr::filter(aff_num == affect_number)
   }
 
   formula <- paste0("posterior_mean ~ ",
@@ -173,13 +173,13 @@ parameter_glm <- function(summary_df = list(),
     # used to get the correct names for betas (as ordering may change e.g.,
     # with interactions)
   if (is.factor(all_data[[var_of_interest]])) {
-    cov_names <- setdiff(attr(mod$terms , "term.labels"), var_of_interest)
+    cov_names <- setdiff(attr(mod$terms, "term.labels"), var_of_interest)
     beta_names <-
       c(names(mod$coefficients)[grep(var_of_interest, names(mod$coefficients))],
         cov_names)
 
   } else {
-    beta_names <- attr(mod$terms , "term.labels")
+    beta_names <- attr(mod$terms, "term.labels")
   }
 
   for (par in unique(all_data$parameter)) {

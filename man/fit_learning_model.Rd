@@ -13,12 +13,13 @@ fit_learning_model(
   adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
   ppc = vb,
+  par_recovery = FALSE,
   task_excl = TRUE,
   accuracy_excl = FALSE,
   model_checks = !vb,
   save_model_as = "",
   out_dir = "outputs/cmdstan",
-  outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+  outputs = c("raw_df", "summary", "draws_list"),
   save_outputs = TRUE,
   cores = getOption("mc.cores", 4),
   ...
@@ -47,11 +48,14 @@ posterior predictions? Intended for use with variational algorithm; for MCMC
 it is recommended to run the separate \code{\link[=generate_posterior_quantities]{generate_posterior_quantities()}}
 function, as this is far less memory intensive.}
 
+\item{par_recovery}{Method to fit model to simulated data (i.e., from
+\code{\link[=simulate_QL]{simulate_QL()}}).}
+
 \item{task_excl}{Apply task-related exclusion criteria (catch questions,
 digit span = 0)?}
 
 \item{accuracy_excl}{Apply accuracy-based exclusion criteria (final block AB
-accuracy >= 0.6)?}
+accuracy >= 0.6)? This is not recommended and is deprecated.}
 
 \item{model_checks}{Runs \code{\link[=check_learning_models]{check_learning_models()}}, returning plots of the
 group-level posterior densities for the free parameters, and some visual

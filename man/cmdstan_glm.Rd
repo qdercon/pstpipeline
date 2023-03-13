@@ -68,14 +68,16 @@ coefficients can be grouped into several "families":
 
 \tabular{ll}{
 \strong{Family} \tab \strong{Functions} \cr
-\emph{Student t family} \tab \code{normal}, \code{student_t}, \code{cauchy} \cr
+\emph{Student t family} \tab \code{normal}, \code{student_t},
+\code{cauchy} \cr
 \emph{Hierarchical shrinkage family} \tab \code{hs}, \code{hs_plus} \cr
 \emph{Laplace family} \tab \code{laplace}, \code{lasso} \cr
 \emph{Product normal family} \tab \code{product_normal} \cr
 }
 
-See [http://mc-stan.org/rstanarm/reference/priors.html](here) for details on the
-families and how to specify the arguments for all of the functions in the table above.
+See [http://mc-stan.org/rstanarm/reference/priors.html](here) for details
+on the families and how to specify the arguments for all of the functions
+in the table above.
 To omit a prior ---i.e., to use a flat (improper) uniform prior---
 \code{prior} can be set to \code{NULL}, although this is rarely a good
 idea.

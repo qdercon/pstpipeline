@@ -99,8 +99,7 @@ plot_import <- function(parsed_list,
 
     if (is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
-    }
-    else if (!is.null(pal) & length(pal) < 6) {
+    } else if (!is.null(pal) && length(pal) < 6) {
       message("Need at least 6 colours, reverting to defaults.")
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
@@ -117,11 +116,10 @@ plot_import <- function(parsed_list,
 
     l <- list(...)
 
-    if (import_single & is.null(l$test_df)) {
+    if (import_single && is.null(l$test_df)) {
       training <- parsed_list$training
       test <- parsed_list$test
-    }
-    else if (!import_single & !is.null(id)) {
+    } else if (!import_single && !is.null(id)) {
       if (!is.null(parsed_list$individual_results)) {
         if (is.numeric(id)) id <- names(parsed_list$individual_results)[[id]]
         else id <- paste0("ID", as.character(id))
@@ -137,9 +135,8 @@ plot_import <- function(parsed_list,
           dplyr::right_join(tibble::as_tibble(id), by = c("subjID" = "value"))
         import_single <- TRUE
       }
-    }
-    else if (!is.null(parsed_list)) {
-      if (length(parsed_list) == 2 & is.null(grp_compare)) {
+    } else if (!is.null(parsed_list)) {
+      if (length(parsed_list) == 2 && is.null(grp_compare)) {
         ids_vec <- parsed_list[[1]]$ppt_info |>
           dplyr::bind_rows(parsed_list[[2]]$ppt_info) |>
           dplyr::select(subjID, exclusion) |>
@@ -167,8 +164,7 @@ plot_import <- function(parsed_list,
           dplyr::mutate(
             group = ifelse(!is.null(recode_na) & is.na(group), recode_na, group)
           )
-      }
-      else if (is.null(grp_compare)) {
+      } else if (is.null(grp_compare)) {
         ids_vec <- parsed_list$ppt_info |>
           dplyr::select(subjID, exclusion) |>
           dplyr::filter(exclusion == 0) |>
@@ -177,13 +173,11 @@ plot_import <- function(parsed_list,
           dplyr::right_join(ids_vec, by = "subjID")
         test <- parsed_list$test |>
           dplyr::right_join(ids_vec, by = "subjID")
-      }
-      else {
+      } else {
         if (length(parsed_list) == 2) {
           ids_vec <- parsed_list[[1]]$ppt_info |>
             dplyr::bind_rows(parsed_list[[2]]$ppt_info)
-        }
-        else {
+        } else {
           ids_vec <- parsed_list$ppt_info
         }
         ids_vec <- ids_vec |>
@@ -216,7 +210,7 @@ plot_import <- function(parsed_list,
     if (any(types == "train")) {
       pairs <- list("AB", "CD", "EF")
       names(pairs) <- c("12", "34", "56")
-      if (!is.null(grp_compare) | length(parsed_list) == 2) {
+      if (!is.null(grp_compare) || length(parsed_list) == 2) {
         if (length(grp_names) == 0) {
           training <- training |>
             dplyr::rowwise() |>
@@ -224,8 +218,7 @@ plot_import <- function(parsed_list,
               type = paste0(pairs[[as.character(type)]], " (", group, ")")
               ) |>
             dplyr::ungroup()
-        }
-        else {
+        } else {
           names(grp_names) <- as.character(unique(training$group))
           training <- training |>
             dplyr::rowwise() |>
@@ -235,8 +228,7 @@ plot_import <- function(parsed_list,
             dplyr::mutate(group = grp_names[[as.character(group)]]) |>
             dplyr::ungroup()
         }
-      }
-      else {
+      } else {
         training <- training |>
           dplyr::rowwise() |>
           dplyr::mutate(type = pairs[[as.character(type)]]) |>
@@ -248,15 +240,14 @@ plot_import <- function(parsed_list,
             dplyr::mutate(value = as.character(value))
           train_df <- training |>
             dplyr::inner_join(train_types, by = c("type" = "value"))
-      }
-      else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
+      } else if (tryCatch(length(plt.train[[1]]), error = function(e) FALSE)) {
           trial_lags <- plt.train[[1]][is.numeric(plt.train[[1]])]
           train_df <- training |>
             dplyr::select(-tidyselect::contains("cum_prob")) |>
             tidyr::drop_na(choice) |>
             dplyr::arrange(trial_no) |>
             dplyr::group_by(subjID, type)
-          if (!is.null(grp_compare) | length(parsed_list) == 2) {
+          if (!is.null(grp_compare) || length(parsed_list) == 2) {
             train_df <- train_df |>
               dplyr::group_by(group, .add = TRUE)
           }
@@ -268,15 +259,14 @@ plot_import <- function(parsed_list,
               dplyr::mutate(
                 !!col_name := runner::runner(
                   x = choice,
-                  f = function(x) {sum(x, na.rm = T)/sum(!is.na(x))},
+                  f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
                   k = lag
-                  )
                 )
+              )
           }
           train_df <- train_df |>
             dplyr::ungroup()
-      }
-      else {
+      } else {
         train_df <- training
       }
       if (!exists("trial_lags")) {
@@ -311,7 +301,7 @@ plot_import <- function(parsed_list,
             ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
                          colour = factor(type), fill = factor(type))
             ) +
-          ggplot2::geom_point(alpha=0.65) +
+          ggplot2::geom_point(alpha = 0.65) +
           ggplot2::geom_line() +
           ggplot2::scale_x_continuous(breaks = seq(0, 120, 20)) +
           ggplot2::geom_vline(
@@ -348,12 +338,14 @@ plot_import <- function(parsed_list,
     if (any(types == "affect")) {
       if (tryCatch(length(plt.affect[[1]]), error = function(e) FALSE)) {
         a_lag <- plt.affect[[1]]
+      } else {
+        a_lag <- 1
       }
-      else a_lag <- 1
       if (tryCatch(length(plt.affect[[2]]), error = function(e) FALSE)) {
         af_types <- plt.affect[[2]]
+      } else {
+        af_types <- c("happy", "confident", "engaged", "fatigue")
       }
-      else af_types <- c("happy", "confident", "engaged", "fatigue")
 
       if (any(af_types == "fatigue")) {
         fatigue_qs <- training |>
@@ -378,9 +370,9 @@ plot_import <- function(parsed_list,
           cum_resp_l =
             runner::runner(
               x = question_response,
-              f = function(x) {sum(x, na.rm=T)/sum(!is.na(x))},
+              f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
               k = a_lag
-              )
+            )
         ) |>
         dplyr::mutate(question_no_group = dplyr::row_number()) |>
         dplyr::group_by(question_no_group, question_type)
@@ -388,10 +380,10 @@ plot_import <- function(parsed_list,
       if (aff_by_reward) {
         affect_df <- affect_df |>
           dplyr::mutate(
-            group = ifelse(reward==1, "Rewarded", "Not rewarded")
+            group = ifelse(reward == 1, "Rewarded", "Not rewarded")
             ) |>
           dplyr::group_by(group, .add = TRUE)
-      } else if (!is.null(grp_compare) | length(parsed_list) == 2) {
+      } else if (!is.null(grp_compare) || length(parsed_list) == 2) {
         affect_df <- affect_df |>
           dplyr::group_by(group, .add = TRUE)
       } else {
@@ -432,23 +424,23 @@ plot_import <- function(parsed_list,
               color = factor(question_type), fill = factor(question_type)
               )
             ) +
-          ggplot2::geom_point(alpha=0.65) +
+          ggplot2::geom_point(alpha = 0.65) +
           ggplot2::geom_line()
 
         if (noun == "fatigue") {
           af_plt <- af_plt +
-            ggplot2::scale_x_continuous(breaks=seq(0,6,1)) +
+            ggplot2::scale_x_continuous(breaks = seq(0, 6, 1)) +
             ggplot2::geom_vline(
-              xintercept=c(seq(1, 5, 1)), linetype="dashed", alpha=0.5
+              xintercept = c(seq(1, 5, 1)), linetype = "dashed", alpha = 0.5
               ) +
             ggplot2::xlab("Block number")
 
         } else {
           af_plt <- af_plt +
-            ggplot2::scale_x_continuous(breaks=seq(0,120,20)) +
+            ggplot2::scale_x_continuous(breaks = seq(0, 120, 20)) +
             ggplot2::geom_vline(
-              xintercept=c(seq(20, 100, 20)), linetype="dashed", alpha=0.5
-              ) +
+              xintercept = c(seq(20, 100, 20)), linetype = "dashed", alpha = 0.5
+            ) +
             ggplot2::xlab("Trial number")
         }
 
@@ -495,12 +487,14 @@ plot_import <- function(parsed_list,
 
       if (tryCatch(length(plt.test[[2]]), error = function(e) FALSE)) {
         tt_grp <- plt.test[[2]]
+      } else {
+        tt_grp <- "grouped"
       }
-      else tt_grp <- "grouped"
       if (tryCatch(length(plt.test[[1]]), error = function(e) FALSE)) {
         test_types_plt <- plt.test[[1]]
+      } else {
+        test_types_plt <- c("chooseA", "avoidB", "novel", "training")
       }
-      else test_types_plt <- c("chooseA", "avoidB", "novel", "training")
 
       known_grps <- c("chooseA", "avoidB", "novel", "training")
 
@@ -508,7 +502,7 @@ plot_import <- function(parsed_list,
         test <- l$test_df
       }
 
-      if (tt_grp == "grouped" &
+      if (tt_grp == "grouped" &&
           (length(setdiff(test_types_plt, known_grps)) == 0)) {
         test <- test |>
           dplyr::filter(test_type %in% test_types_plt) |>
@@ -516,13 +510,11 @@ plot_import <- function(parsed_list,
             test_type = factor(test_type, levels = test_types_plt)
             ) |>
           dplyr::group_by(subjID, test_type)
-      }
-      else {
+      } else {
         to_keep <- vector(mode = "character")
         if (any(test_types_plt == "all")) {
           to_keep <- unlist(all_pairs)
-        }
-        else {
+        } else {
           known_types <- intersect(test_types_plt, known_grps)
           for (t in known_types) {
             to_keep <- c(to_keep, test_grps[[t]])
@@ -539,17 +531,18 @@ plot_import <- function(parsed_list,
         dplyr::group_by(subjID, test_type)
       }
 
-      if (!is.null(grp_compare) | length(parsed_list) == 2) {
+      if (!is.null(grp_compare) || length(parsed_list) == 2) {
         test <- test |>
           dplyr::group_by(group, .add = TRUE)
       }
 
       test_plot_df <- test |>
         dplyr::mutate(
-          test_type_perf = sum(choice, na.rm = TRUE)/length(!is.na(choice))
+          test_type_perf = sum(choice, na.rm = TRUE) / length(!is.na(choice))
           ) |>
-        dplyr::select(subjID, choice, test_type, test_type_perf,
-                      dplyr::any_of("group")) |>
+        dplyr::select(
+          subjID, choice, test_type, test_type_perf, dplyr::any_of("group")
+        ) |>
         dplyr::ungroup(subjID)
 
       if (import_single) {
@@ -557,7 +550,7 @@ plot_import <- function(parsed_list,
           dplyr::ungroup() |>
           dplyr::mutate(choice = ifelse(is.na(choice), 2, choice)) |>
           ggplot2::ggplot(ggplot2::aes(
-            x = test_type, fill = factor(choice, levels=c(1, 0, 2)))
+            x = test_type, fill = factor(choice, levels = c(1, 0, 2)))
           ) +
           ggplot2::geom_bar(alpha = 0.7) +
           ggplot2::geom_text(
@@ -566,7 +559,7 @@ plot_import <- function(parsed_list,
               label = ggplot2::after_stat(count),
               colour = factor(choice, levels = c(1, 0, 2))
             ),
-            position = ggplot2::position_stack(vjust=0.5)
+            position = ggplot2::position_stack(vjust = 0.5)
           ) +
           ggplot2::xlab("Test type") +
           ggplot2::ylab("Count") +
@@ -582,13 +575,11 @@ plot_import <- function(parsed_list,
             font_family = font
           ) +
           ggplot2::ggtitle("Test performance")
-      }
-      else {
-        if (!is.null(grp_compare) | length(parsed_list) == 2) {
+      } else {
+        if (!is.null(grp_compare) || length(parsed_list) == 2) {
           test_plot_df <- test_plot_df |>
             dplyr::distinct(subjID, test_type, test_type_perf, group)
-        }
-        else {
+        } else {
           test_plot_df <- test_plot_df |>
             dplyr::distinct(subjID, test_type, test_type_perf)
         }
@@ -606,11 +597,10 @@ plot_import <- function(parsed_list,
           dplyr::select(-subjID) |>
           dplyr::distinct()
 
-        if (!is.null(grp_compare) | length(parsed_list) == 2) {
+        if (!is.null(grp_compare) || length(parsed_list) == 2) {
           test_plot_df <- test_plot_df |>
             dplyr::mutate(colour_stim = factor(group))
-        }
-        else {
+        } else {
           n_types <- length(unique(test_plot_df$test_type))
           if (length(pal) < n_types) {
             test_plot_df <- test_plot_df |>
@@ -628,17 +618,20 @@ plot_import <- function(parsed_list,
         }
 
         plot_test <- test_plot_df |>
-          dplyr::distinct(test_type, colour_stim, .keep_all = T) |>
+          dplyr::distinct(test_type, colour_stim, .keep_all = TRUE) |>
           ggplot2::ggplot(
-            ggplot2::aes(x = test_type, y = mean_prop_correct*100,
-                         fill = colour_stim)
-            ) +
-          ggplot2::geom_bar(stat="identity", alpha = 0.7, color = "black",
-                            position = ggplot2::position_dodge()) +
+            ggplot2::aes(
+              x = test_type, y = mean_prop_correct * 100, fill = colour_stim
+            )
+          ) +
+          ggplot2::geom_bar(
+            stat = "identity", alpha = 0.7, color = "black",
+            position = ggplot2::position_dodge()
+          ) +
           ggplot2::geom_errorbar(
             ggplot2::aes(
-              ymin = mean_prop_correct_sub_se*100,
-              ymax = mean_prop_correct_pl_se*100
+              ymin = mean_prop_correct_sub_se * 100,
+              ymax = mean_prop_correct_pl_se * 100
               ),
             width = .2, position = ggplot2::position_dodge(.9)
           ) +
@@ -651,7 +644,7 @@ plot_import <- function(parsed_list,
           ggplot2::theme(legend.position = legend_pos) +
           ggplot2::ggtitle("Test performance")
 
-        if (is.null(grp_compare) & length(parsed_list) != 2) {
+        if (is.null(grp_compare) && length(parsed_list) != 2) {
             plot_test <- plot_test +
               ggplot2::scale_fill_manual(name = NULL, values = pal) +
               ggplot2::guides(fill = "none")
@@ -669,7 +662,7 @@ plot_import <- function(parsed_list,
       ret$test$test_perf <- plot_test
     }
 
-  if (length(ret) == 1 & length(ret[[1]]) == 1) ret <- ret[[1]][[1]]
+  if (length(ret) == 1 && length(ret[[1]]) == 1) ret <- ret[[1]][[1]]
   else if (length(ret) == 1) ret <- ret[[1]]
   return(ret)
 }

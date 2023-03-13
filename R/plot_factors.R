@@ -23,7 +23,7 @@
 #'
 #' @examples
 #' # Please this notebook for usage (examples would require Python input):
-#' # https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb
+#' # https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb # nolint
 #' @export
 
 plot_factors <- function(df,
@@ -43,8 +43,8 @@ plot_factors <- function(df,
   ret <- list()
 
   ## to appease R CMD check
-  Factor <- Score <- Weight <- ..count.. <- ..density.. <- alpha <- n_items <-
-    id <- value <- obs <- predicted <- question <- size <- NULL
+  Factor <- Score <- Weight <- ..count.. <- alpha <- n_items <- id <- value <-
+  obs <- predicted <- question <- NULL
 
   if (any(plot_type == "factor_hist")) {
 
@@ -55,10 +55,11 @@ plot_factors <- function(df,
           dplyr::mutate(dataset = paste0("group_", d))
       }
       df <- data.table::rbindlist(all_datasets, use.names = TRUE)
-      pal <- split(pal, ceiling(seq_along(pal)/length(unique(df[["dataset"]]))))
+      pal <- split(
+        pal, ceiling(seq_along(pal) / length(unique(df[["dataset"]])))
+      )
       group <- rlang::sym("dataset")
-    }
-    else {
+    } else {
       group <- rlang::sym("Factor")
     }
     hist_factors <- list()
@@ -76,7 +77,7 @@ plot_factors <- function(df,
           )  +
         ggplot2::geom_line(
           ggplot2::aes(y = ..count.., colour = !!group),
-          binwidth = 0.2, stat = 'bin'
+          binwidth = 0.2, stat = "bin"
         ) +
         ggplot2::scale_colour_manual(values = unlist(pal[[f]])) +
         ggplot2::scale_fill_manual(values = unlist(pal[[f]])) +
@@ -102,8 +103,8 @@ plot_factors <- function(df,
       dplyr::mutate(alpha = as.numeric(alpha)) |>
       dplyr::mutate(n_items = as.numeric(n_items))
 
-    n_item_vec <- unique(sort(df$n_items, decreasing = F))
-    alphas <- unique(sort(df$alpha, decreasing = T))
+    n_item_vec <- unique(sort(df$n_items, decreasing = FALSE))
+    alphas <- unique(sort(df$alpha, decreasing = TRUE))
     index_alph <- which(alphas == hyp_alph)
 
     r2_plot <- df |>
@@ -131,7 +132,7 @@ plot_factors <- function(df,
   }
   if (any(plot_type == "predictive")) {
     if (!is.list(df)) stop("Need 'preds' and 'scores' in a named list.")
-    r2_col <- round(r2[, grep(qn, colnames(r2))],3)
+    r2_col <- round(r2[, grep(qn, colnames(r2))], 3)
     pred_plots <- list()
     scores <- tibble::as_tibble(df[["scores"]]) |>
       dplyr::mutate(value = "obs")
@@ -150,7 +151,7 @@ plot_factors <- function(df,
       pred_plots[[f]] <- df_all |>
         dplyr::filter(Factor == colnames[f]) |>
         ggplot2::ggplot(ggplot2::aes(x = obs, y = predicted)) +
-        ggplot2::geom_point(size= 2, alpha = 0.5, fill = pal[[f]],
+        ggplot2::geom_point(size = 2, alpha = 0.5, fill = pal[[f]],
                             colour = pal[[f]]) +
         ggplot2::geom_smooth(method = "lm", formula = "y~x", se = FALSE,
                              fill = pal[[f]], colour = pal[[f]]) +
@@ -158,13 +159,15 @@ plot_factors <- function(df,
         cowplot::theme_half_open(font_size = font_size, font_family = font) +
         ggplot2::xlab("True score") +
         ggplot2::ylab("Predicted score") +
-        ggplot2::ggtitle(titles[f], subtitle = bquote(R^2~"="~.(r2_col[[f]])))
+        ggplot2::ggtitle(
+          titles[f], subtitle = bquote(R^2 ~ "=" ~ .(r2_col[[f]]))
+        )
     }
     ret$pred_plot <- cowplot::plot_grid(plotlist = pred_plots, nrow = 1)
   }
   if (any(plot_type == "factor_htmp")) {
     if (!is.list(df)) stop("Need 'qns' and 'coefs' in a named list.")
-    names = names(df[["qns"]][-1])
+    names <- names(df[["qns"]][-1])
     heatmap <-
       tibble::as_tibble(
         df[["coefs"]], .name_repair = ~make.names(colnames, unique = TRUE)
@@ -187,6 +190,6 @@ plot_factors <- function(df,
     ret$heatmap <- heatmap
   }
 
-  if (length(ret)==1) return(ret[[1]])
+  if (length(ret) == 1) return(ret[[1]])
   else return(ret)
 }

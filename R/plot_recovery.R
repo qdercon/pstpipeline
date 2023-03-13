@@ -62,7 +62,7 @@ plot_recovery <- function(raw_pars,
   }
 
   # to appease R CMD check
-  variable <- . <- parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
+  parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
     obs_var <- corr <- aff_num <- adj <- NULL
 
   sim_pars_df <- clean_summary(sim_pars) |>
@@ -73,7 +73,7 @@ plot_recovery <- function(raw_pars,
     tidyr::pivot_longer(
       cols = c(tidyselect::matches("alpha|beta|gamma|w")),
       names_to = "parameter", values_to = "obs_mean"
-      ) |>
+    ) |>
     dplyr::left_join(sim_pars_df) |>
     suppressMessages() |>
     dplyr::select(-tidyselect::any_of(c("rhat", "ess_bulk", "ess_tail")))
@@ -100,13 +100,13 @@ plot_recovery <- function(raw_pars,
 
   for (p in seq_along(all_pars)) {
     legend_pos <- "none"
-    if (!affect | p <= num_ql) {
+    if (!affect || p <= num_ql) {
       pars_to_plot <- pars[[1]] |> dplyr::mutate(adj = factor(parameter))
       line_col <- col_vals <- pal[[p]]
     } else {
       pars_to_plot <- pars[[2]]
       line_col <- "slategray"
-      col_vals <- pal[(num_ql+1):length(pal)]
+      col_vals <- pal[(num_ql + 1):length(pal)]
       if (incl_legend) legend_pos <- "right"
     }
 
@@ -118,7 +118,7 @@ plot_recovery <- function(raw_pars,
       ggplot2::ggplot(
         ggplot2::aes(x = obs_mean, y = sim_mean, fill = adj, colour = adj)
       ) +
-      ggplot2::geom_point(size= 2, alpha = 0.5) +
+      ggplot2::geom_point(size = 2, alpha = 0.5) +
       ggplot2::geom_smooth(
         method = "lm", formula = "y~x", se = FALSE, fill = line_col,
         colour = line_col
@@ -132,9 +132,9 @@ plot_recovery <- function(raw_pars,
             ))
         ),
         subtitle = bquote(
-          r~"="~.(round(
-            cor(pars_to_plot[pars_to_plot$parameter == par,]$obs_mean,
-                pars_to_plot[pars_to_plot$parameter == par,]$sim_mean), 2))
+          r ~ "=" ~ .(round(
+            cor(pars_to_plot[pars_to_plot$parameter == par, ]$obs_mean,
+                pars_to_plot[pars_to_plot$parameter == par, ]$sim_mean), 2))
         )
       ) +
       ggplot2::xlab("Observed") +
@@ -159,9 +159,8 @@ plot_recovery <- function(raw_pars,
       cor()
 
     par_nms <- unique(pars[[c]]$parameter)
-    n_pars <- length(par_nms)
     labs <- sapply(
-      1:length(par_nms),
+      seq_along(par_nms),
       function(n) {
         axis_title(
           par_nms[n], n, test, grepl("alpha", par_nms[n]), alpha_par_nms
@@ -195,8 +194,9 @@ plot_recovery <- function(raw_pars,
 
   if (!affect) {
     pred_plots$heatmap <- htmps[[1]]
-    if (!plot_together) return(pred_plots)
-    else {
+    if (!plot_together) {
+      return(pred_plots)
+    } else {
       ql_plots <- pred_plots$cor_plots
       ql_plots$heatmap <- pred_plots$heatmap
       plot <- cowplot::plot_grid(plotlist = ql_plots, nrow = 1)
@@ -206,8 +206,9 @@ plot_recovery <- function(raw_pars,
     pred_plots$heatmaps <- list()
     pred_plots$heatmaps$ql <- htmps[[1]]
     pred_plots$heatmaps$wts <- htmps[[2]]
-    if (!plot_together) return(pred_plots)
-    else {
+    if (!plot_together) {
+      return(pred_plots)
+    } else {
       ql_plots <- pred_plots$cor_plots[grep("alpha|beta", all_pars)]
       ql_plots$heatmap <- pred_plots$heatmap$ql
       wt_plots <- pred_plots$cor_plots[grep("w|gamma", all_pars)]
@@ -224,9 +225,11 @@ plot_recovery <- function(raw_pars,
       } else if (nwts == 4) {
         plot <- cowplot::plot_grid(
           cowplot::plot_grid(plotlist = ql_plots, nrow = 1),
-          cowplot::plot_grid(plotlist = wt_plots[c(1,2,6,3,4,5)], nrow = 2),
+          cowplot::plot_grid(
+            plotlist = wt_plots[c(1, 2, 6, 3, 4, 5)], nrow = 2
+          ),
           nrow = 2,
-          rel_heights = c(1,2)
+          rel_heights = c(1, 2)
         )
       } else if (nwts == 5) {
         plot <- cowplot::plot_grid(
@@ -240,7 +243,7 @@ plot_recovery <- function(raw_pars,
             rel_widths = c(3, 1)
           ),
           nrow = 2,
-          rel_heights = c(1,2)
+          rel_heights = c(1, 2)
         )
       } else {
         message("Unable to coerce plots together, returning list of plots.")

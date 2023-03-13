@@ -37,31 +37,6 @@ take_subsample <- function(parsed_list,
   return(subsample)
 }
 
-#' Draws a random sample of size n from a truncated Normal distribution
-#'
-#' \code{rnormt} computes the standard error of a mean.
-#'
-#' @param n Number of samples to draw.
-#' @param mu,sd Mean and standard deviation of underlying distrubtion.
-#' @param min,max Determines the truncation.
-#'
-#' @returns A numeric value.
-#' @importFrom stats pnorm qnorm
-#' @noRd
-
-# credit:
-# https://www.r-bloggers.com/2020/08/generating-data-from-a-truncated-distribution/
-
-rnormt <- function(n, mu, s, min, max) {
-
-  F.a <- pnorm(min, mean = mu, sd = s)
-  F.b <- pnorm(max, mean = mu, sd = s)
-
-  u <- runif(n, min = F.a, max = F.b)
-
-  qnorm(u, mean = mu, sd = s)
-}
-
 #' Example probabilistic selection task data
 #'
 #' An example dataset with data from ten individuals from each group.
@@ -85,7 +60,7 @@ NULL
 #' @returns A numeric value.
 #' @noRd
 
-std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
+std <- function(x) sd(x, na.rm = TRUE) / sqrt(length(x))
 
 #' Compute a single highest posterior density interval (HDI)
 #'
@@ -104,18 +79,17 @@ std <- function(x) sd(x, na.rm = TRUE)/sqrt(length(x))
 
 single_hdi <- function(vals,
                        cred) {
-  # adapted from
   sampleVec <- as.vector(t(vals))
-  sortedPts = sort(sampleVec)
-  ciIdxInc = floor(cred * length(sortedPts))
-  nCIs = length(sortedPts) - ciIdxInc
-  ciWidth = rep(0 , nCIs)
+  sortedPts <- sort(sampleVec)
+  ciIdxInc <- floor(cred * length(sortedPts))
+  nCIs <- length(sortedPts) - ciIdxInc
+  ciWidth <- rep(0, nCIs)
   for (i in 1:nCIs) {
-    ciWidth[i] = sortedPts[i + ciIdxInc] - sortedPts[i]
+    ciWidth[i] <- sortedPts[i + ciIdxInc] - sortedPts[i]
   }
-  HDImin = sortedPts[which.min(ciWidth)]
-  HDImax = sortedPts[which.min(ciWidth) + ciIdxInc]
-  HDIlim = c(HDImin , HDImax)
+  HDImin <- sortedPts[which.min(ciWidth)]
+  HDImax <- sortedPts[which.min(ciWidth) + ciIdxInc]
+  HDIlim <- c(HDImin, HDImax)
   return(as.vector(t(HDIlim)))
 }
 
@@ -145,26 +119,25 @@ quantile_hdi <- function(var,
 
   l <- list(...)
   if (is.null(l$transform)) l$transform <- FALSE
-
   if (l$transform) { # fixes issues calling function from within ggplot with
                      # exponentiated coefficients
-    var <- log(var/100 + 1)
+    var <- log(var / 100 + 1)
   }
-
   returns <- vector(mode = "numeric")
+
   for (q in quantile) {
     if (q == 0.5) {
       returns <- cbind(returns, median(var))
     } else if (q == 0) {
       returns <- cbind(returns, min(var))
-    } else if (q == 1){
+    } else if (q == 1) {
       returns <- cbind(returns, max(var))
     } else if (q < 0.5) {
-      cred_mass = 1 - 2*q
+      cred_mass <- 1 - 2 * q
       HDI_lower <- single_hdi(vals = var, cred = cred_mass)[1]
       returns <- cbind(returns, HDI_lower)
     } else {
-      cred_mass = 2*q - 1
+      cred_mass <- 2 * q - 1
       HDI_upper <- single_hdi(vals = var, cred = cred_mass)[2]
       returns <- cbind(returns, HDI_upper)
     }
@@ -172,10 +145,11 @@ quantile_hdi <- function(var,
 
   ret <- sort(returns)
   if (l$transform) {
-    ret <- (exp(ret) - 1) *100
+    ret <- (exp(ret) - 1) * 100
   }
-  names(ret) <- sapply(1:length(quantile),
-                       FUN = function (x) paste0(quantile[x] * 100, "%"))
+  names(ret) <- sapply(
+    seq_along(quantile), FUN = function(x) paste0(quantile[x] * 100, "%")
+  )
 
   return(ret)
 }
@@ -207,7 +181,7 @@ family_ch <- function(param) {
 #' @noRd
 
 clean_summary <- function(summary) {
-  id_all <- variable <- aff_num <- NULL
+  id_all <- variable <- NULL
   summary |>
     dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
     dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
@@ -328,14 +302,17 @@ axis_title <- function(param,
   spl <- unlist(strsplit(param, "_"))
   s <- ifelse(test, paste0(spl[1], "*minute"), spl[1])
   if (length(spl) != 1) {
-    if (alpha_par & !is.null(alpha_par_nms)) {
+    if (alpha_par && !is.null(alpha_par_nms)) {
       a <- paste0("[", alpha_par_nms[p], "]")
+    } else {
+      a <- paste0("[", spl[2], "]")
     }
-    else a <- paste0("[", spl[2], "]")
     if (length(spl) == 3) {
       a <- paste0(a, "^", spl[3])
     }
-  } else a <- ""
+  } else {
+    a <- ""
+  }
   return(paste0(s, a))
 }
 
@@ -384,8 +361,8 @@ get_affect_ppc <- function(draws,
   indiv_ppcs <- list()
 
   ## to appease R CMD check
-  question_type <- subjID <- trial_no_q <- question_response <- value <-
-    type <- se_pred <- aff_tr <- variable <- "patterns" <- "..aff_tr" <- NULL
+  question_type <- trial_no_q <- question_response <- type <- se_pred <-
+  "patterns" <- "..aff_tr" <- subjID <- NULL
 
   n_id <- length(unique(raw$subjID))
   grps <- raw |>
@@ -394,7 +371,7 @@ get_affect_ppc <- function(draws,
     matrix(nrow = n_id, ncol = 5,
            dimnames = list(1:n_id, c("subjID", "id_no", "R2", "MAE", "RMSE")))
   )
-  pb = txtProgressBar(min = 0, max = n_id, initial = 0, style = 3)
+  pb <- txtProgressBar(min = 0, max = n_id, initial = 0, style = 3)
 
   for (i in 1:n_id) {
     setTxtProgressBar(pb, i)
@@ -405,15 +382,15 @@ get_affect_ppc <- function(draws,
       dplyr::select(trial_no_q, question_response) |>
       dplyr::rename(mean_raw = question_response)
 
-    aff_tr <- which(raw[raw$subjID == id,]$question_type == adj)
+    aff_tr <- which(raw[raw$subjID == id,]$question_type == adj) #nolint
 
     affect_pred <-
       draws[, .SD, .SDcols = patterns(paste0("^y_pred\\[", i, ","))]
     affect_pred <- suppressWarnings(affect_pred[, ..aff_tr])
       # https://github.com/Rdatatable/data.table/issues/2988
 
-    means <- colMeans(affect_pred)*100
-    se <- sapply(affect_pred, function(x) sd(x*100)/sqrt(length(x)))
+    means <- colMeans(affect_pred) * 100
+    se <- sapply(affect_pred, function(x) sd(x * 100) / sqrt(length(x)))
 
     pred_df <- tibble::tibble(
       mean_pred = means, se_pred = se
@@ -431,11 +408,11 @@ get_affect_ppc <- function(draws,
       ) |>
       dplyr::mutate(se_pred = ifelse(type == "raw", 0, se_pred))
 
-    fit_df[i,1] <- id
-    fit_df[i,2] <- i
-    fit_df[i,3] <- suppressWarnings(cor(obs, pred)^2) # some have variation = 0
-    fit_df[i,4] <- mean(abs(pred-obs))
-    fit_df[i,5] <- sqrt(mean((pred-obs)^2))
+    fit_df[i, 1] <- id
+    fit_df[i, 2] <- i
+    fit_df[i, 3] <- suppressWarnings(cor(obs, pred)^2) # some have variation = 0
+    fit_df[i, 4] <- mean(abs(pred - obs))
+    fit_df[i, 5] <- sqrt(mean((pred - obs)^2))
 
     indiv_ppcs[[i]] <- res_df
   }

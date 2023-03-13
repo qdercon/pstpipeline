@@ -61,7 +61,9 @@ fit_affect <- fit_learning_model(
 
 fit_dfs <- list()
 for (adj in c("happy", "confident", "engaged")) {
-  fits_dfs[[adj]] <- get_affect_ppc(fit_affect$draws, fit_affect$raw_df, adj = adj)
+  fits_dfs[[adj]] <- get_affect_ppc(
+    fit_affect$draws, fit_affect$raw_df, adj = adj
+  )
 }
 
 # Grouped plot

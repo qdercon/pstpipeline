@@ -61,7 +61,6 @@ cmdstan_glm.fit <-
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
 
   y <- validate_glm_outcome_support(y, family)
-  trials <- NULL
 
   # useless assignments to pass R CMD check
   has_intercept <-
@@ -70,9 +69,8 @@ cmdstan_glm.fit <-
     prior_dist_for_aux <- prior_dist_for_smooth <- prior_mean <-
     prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
     prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <-
-    prior_scale_for_smooth <- prior_autoscale <-
-    prior_autoscale_for_intercept <- prior_autoscale_for_aux <-
-    prior_autoscale_for_smooth <- global_prior_scale <- global_prior_df <-
+    prior_scale_for_smooth <- prior_autoscale <- prior_autoscale_for_aux <-
+    prior_autoscale_for_intercept <- global_prior_scale <- global_prior_df <-
     slab_df <- slab_scale <- xtemp <- xbar <- NULL
 
   if (is.list(x)) {
@@ -81,8 +79,7 @@ cmdstan_glm.fit <-
       rep(j, NCOL(x[[j + 1L]]))
     }))
     S <- do.call(cbind, x[-1L])
-  }
-  else {
+  } else {
     x_stuff <- center_x(x, sparse)
     S <- matrix(NA_real_, nrow = nrow(x), ncol = 0L)
     smooth_map <- integer()
@@ -283,7 +280,7 @@ cmdstan_glm.fit <-
     prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth,
     prior_df_for_smooth,
     slab_df_z = 0, slab_scale_z = 0,
-    num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
+    num_normals = if (prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0),
     clogit = 0L, J = 0L, strata = integer()
     # mean,df,scale for aux added below depending on family
@@ -291,7 +288,6 @@ cmdstan_glm.fit <-
 
   # make a copy of user specification before modifying 'group' (used for keeping
   # track of priors)
-  user_covariance <- NULL
   standata$t <- 0L
   standata$p <- integer(0)
   standata$l <- integer(0)
@@ -331,7 +327,7 @@ cmdstan_glm.fit <-
     standata$prior_df_for_aux <- c(prior_df_for_aux)
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
     standata$len_y <- length(y)
-    if(.Platform$OS.type == "windows") {
+    if (.Platform$OS.type == "windows") {
       stan_model <- cmdstanr::cmdstan_model(
         system.file("extdata/stan_files/from_rstanarm/continuous.stan",
                     package = "pstpipeline"),
@@ -349,38 +345,15 @@ cmdstan_glm.fit <-
         ) ## this will fail if path has spaces!
       )
     }
-  }
-  else {
+  } else {
     stop(paste(famname, "is not supported in this version of the function."))
   }
-
-  prior_info <- summarize_glm_prior(
-    user_prior = prior_stuff,
-    user_prior_intercept = prior_intercept_stuff,
-    user_prior_aux = prior_aux_stuff,
-    user_prior_covariance = user_covariance,
-    has_intercept = has_intercept,
-    has_predictors = nvars > 0,
-    adjusted_prior_scale = prior_scale,
-    adjusted_prior_intercept_scale = prior_scale_for_intercept,
-    adjusted_prior_aux_scale = prior_scale_for_aux,
-    family = family
-  )
-
-  pars <- c(if (has_intercept) "alpha",
-            "beta",
-            if (ncol(S)) "beta_smooth",
-            if (is_continuous) "aux",
-            if (ncol(S)) "smooth_sd",
-            if (standata$len_theta_L) "theta_L",
-            if (mean_PPD) "mean_PPD")
 
   l <- list(...)
   if (algorithm != "sampling") {
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
-  }
-  else {
+  } else {
       # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
       # default (explicitly defined here for file naming)
@@ -405,8 +378,7 @@ cmdstan_glm.fit <-
       output_samples = l$output_samples,
       output_dir = out_dir
     )
-  }
-  else {
+  } else {
     # MCMC
     fit <- stan_model$sample(
       data = standata,
@@ -479,7 +451,7 @@ exponential <- function(rate = 1, autoscale = FALSE) {
   stopifnot(length(rate) == 1)
   validate_parameter_value(rate)
   nlist(dist = "exponential",
-        df = NA, location = NA, scale = 1/rate,
+        df = NA, location = NA, scale = 1 / rate,
         autoscale)
 }
 decov <- function(regularization = 1, concentration = 1,
@@ -505,7 +477,7 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   validate_R2_location(location, what)
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
-default_prior_intercept = function(family) {
+default_prior_intercept <- function(family) {
   # family arg not used, but we can use in the future to do different things
   # based on family if necessary
   out <- normal(0, 2.5, autoscale = TRUE)
@@ -513,7 +485,7 @@ default_prior_intercept = function(family) {
   out$default <- TRUE
   out
 }
-default_prior_coef = function(family) {
+default_prior_coef <- function(family) {
   # family arg not used, but we can use in the future to do different things
   # based on family if necessary
   out <- normal(0, 2.5, autoscale = TRUE)
@@ -585,7 +557,9 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
     eta <- qexp(uniroot(FUN, interval = 0:1)$root)
   } else { # what == "log"
     stopifnot(location < 0)
-    FUN <- function(eta) digamma(half_K)-digamma(half_K + qexp(eta)) - location
+    FUN <- function(eta) {
+      digamma(half_K) - digamma(half_K + qexp(eta)) - location
+    }
     eta <- qexp(uniroot(FUN, interval = 0:1,
                         f.lower = -location,
                         f.upper = -.Machine$double.xmax)$root)
@@ -622,12 +596,13 @@ center_x <- function(x, sparse) {
   has_intercept <- if (ncol(x) == 0)
     FALSE else grepl("(Intercept", colnames(x)[1L], fixed = TRUE)
 
-  xtemp <- if (has_intercept) x[, -1L, drop=FALSE] else x
+  xtemp <- if (has_intercept) x[, -1L, drop = FALSE] else x
   if (has_intercept && !sparse) {
     xbar <- colMeans(xtemp)
     xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
+  } else {
+    xbar <- rep(0, ncol(xtemp))
   }
-  else xbar <- rep(0, ncol(xtemp))
 
   sel <- apply(xtemp, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   if (any(sel)) {
@@ -684,7 +659,7 @@ set_prior_scale <- function(scale, default, link) {
 
 drop_redundant_dims <- function(data) {
   drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
-  data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
+  data[, drop_dim] <- lapply(data[, drop_dim, drop = FALSE], drop)
   return(data)
 }
 
@@ -705,13 +680,13 @@ validate_data <- function(data, if_missing = NULL) {
 check_constant_vars <- function(mf) {
   mf1 <- mf
   if (NCOL(mf[, 1]) == 2 || all(mf[, 1] %in% c(0, 1))) {
-    mf1 <- mf[, -1, drop=FALSE]
+    mf1 <- mf[, -1, drop = FALSE]
   }
 
   lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
-  is_constant <- apply(mf1[, sel, drop=FALSE], 2, lu1)
+  is_constant <- apply(mf1[, sel, drop = FALSE], 2, lu1)
   if (any(is_constant)) {
     stop("Constant variable(s) found: ",
          paste(names(is_constant)[is_constant], collapse = ", "),
@@ -836,10 +811,6 @@ validate_glm_outcome_support <- function(y, family) {
     return(y)
   }
 
-  .is_count <- function(x) {
-    all(x >= 0) && all(abs(x - round(x)) < .Machine$double.eps^0.5)
-  }
-
   fam <- family$family
   # make sure y has ok dimensions (matrix only allowed for binomial models)
   if (length(dim(y)) > 1) {
@@ -874,8 +845,7 @@ fake_y_for_prior_PD <- function(N, family) {
     # if prior autoscaling is on then the value of sd(y) matters
     # generate a fake y so that sd(y) is 1
     fake_y <- as.vector(scale(rnorm(N)))
-  }
-  else {
+  } else {
     # valid for gamma, inverse gaussian, beta
     fake_y <- runif(N)
   }
@@ -889,7 +859,8 @@ fake_y_for_prior_PD <- function(N, family) {
 #   passed in after broadcasting the df/location/scale arguments if necessary.
 # @param has_intercept T/F, does model have an intercept?
 # @param has_predictors T/F, does model have predictors?
-# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled priors
+# @param adjusted_prior_*_scale adjusted scales computed if using autoscaled
+# priors
 # @param family Family object.
 # @return A named list with components 'prior', 'prior_intercept', and possibly
 #   'prior_covariance' and 'prior_aux' each of which itself is a list
@@ -905,6 +876,11 @@ summarize_glm_prior <-
            adjusted_prior_intercept_scale,
            adjusted_prior_aux_scale,
            family) {
+    prior_dist_name <- prior_mean <- prior_scale <- prior_df <-
+    prior_dist_name_for_intercept <- prior_mean_for_intercept <-
+    prior_scale_for_intercept <- prior_df_for_intercept <-
+    prior_dist_name_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
+    prior_df_for_aux <- NULL
     rescaled_coef <-
       user_prior$prior_autoscale &&
       has_predictors &&
@@ -914,7 +890,8 @@ summarize_glm_prior <-
       user_prior_intercept$prior_autoscale_for_intercept &&
       has_intercept &&
       !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
-      (user_prior_intercept$prior_scale_for_intercept != adjusted_prior_intercept_scale)
+      (user_prior_intercept$prior_scale_for_intercept !=
+      adjusted_prior_intercept_scale)
     rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
       !is.na(user_prior_aux$prior_dist_name_for_aux) &&
       (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
@@ -949,9 +926,10 @@ summarize_glm_prior <-
           scale = prior_scale,
           adjusted_scale = if (rescaled_coef)
             adjusted_prior_scale else NULL,
-          df = if (prior_dist_name %in% c
-                   ("student_t", "hs", "hs_plus", "lasso", "product_normal"))
-            prior_df else NULL
+          df = if (
+            prior_dist_name %in%
+            c("student_t", "hs", "hs_plus", "lasso", "product_normal")
+          ) prior_df else NULL
         )),
       prior_intercept =
         if (!has_intercept) NULL else with(user_prior_intercept, list(

@@ -31,7 +31,7 @@
 #' \code{plot_together == FALSE}.
 #' @param plt_rows,plt_rel_widths Number of rows, and relative widths for the
 #' plotted grid (passed to [cowplot::plot_grid()]). Defaults to \code{1}
-#' (i.e. single row, all equal widths). Ignored if \code{plot_together == FALSE}.
+#' (i.e. single row, all equal widths). Ignored if \code{!plot_together}.
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot
 #' boxes and lines respectively.
 #' @param coord_flip Plot horizontal (\code{TRUE}) or vertical (\code{FALSE})
@@ -102,8 +102,8 @@ plot_glm <- function(par_df,
   }
 
   cred <- sort(cred)
-  cred_l1 <- (1-cred[2])/2
-  cred_l2 <- (1-cred[1])/2
+  cred_l1 <- (1 - cred[2]) / 2
+  cred_l2 <- (1 - cred[1]) / 2
 
   parameter <- value <- NULL ## appease R CMD check
 
@@ -126,25 +126,23 @@ plot_glm <- function(par_df,
       par <- pars[[p]]
       alpha_par <- grepl("alpha", par)
       gamma_dist <- grepl("alpha|gamma", par)
-      voi <- rlang::sym(plot_var)
 
       par_df_tr <- par_df |> dplyr::filter(parameter == par)
       if (gamma_dist) {
         title <- "Estimated mean % difference in"
         plot <- par_df_tr |>
           ggplot2::ggplot(
-            ggplot2::aes(x = !!grp, y = (exp(value) - 1)*100, fill = id.col,
+            ggplot2::aes(x = !!grp, y = (exp(value) - 1) * 100, fill = id.col,
                          colour = id.col)
           )
-      }
-      else {
+      } else {
         title <- "Estimated mean difference in"
         plot <- par_df_tr |>
           ggplot2::ggplot(
             ggplot2::aes(x = !!grp, y = value, fill = id.col, colour = id.col)
           )
       }
-      if (p==1 | !coord_flip) y_labels <- grp_labs
+      if (p == 1 | !coord_flip) y_labels <- grp_labs
       else y_labels <- NULL
 
       plot <- plot +
@@ -187,8 +185,9 @@ plot_glm <- function(par_df,
     })
   }
 
-  if (!plot_together) return(plots)
-  else {
+  if (!plot_together) {
+    return(plots)
+  } else {
     plot_panel <- cowplot::plot_grid(
       plotlist = plots, rel_widths = plt_rel_widths, nrow = plt_rows
     )

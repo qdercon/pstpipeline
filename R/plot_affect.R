@@ -34,7 +34,9 @@
 #'
 #' fit_dfs <- list()
 #' for (adj in c("happy", "confident", "engaged")) {
-#'   fits_dfs[[adj]] <- get_affect_ppc(fit_affect$draws, fit_affect$raw_df, adj = adj)
+#'   fits_dfs[[adj]] <- get_affect_ppc(
+#'     fit_affect$draws, fit_affect$raw_df, adj = adj
+#'   )
 #' }
 #'
 #' # Grouped plot
@@ -68,10 +70,9 @@ plot_affect <- function(data,
     posterior_mean <- NULL
 
   if (plt_type == "weights") {
-
     cred <- sort(cred)
-    cred_l1 <- (1-cred[2])/2
-    cred_l2 <- (1-cred[1])/2
+    cred_l1 <- (1 - cred[2]) / 2
+    cred_l2 <- (1 - cred[1]) / 2
 
     data <- data |> dplyr::filter(!is.na(adj))
 
@@ -79,10 +80,10 @@ plot_affect <- function(data,
     labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^o),
               expression(w[1]^b), expression(w[2]), expression(w[3]))
 
-    if (any(grepl("w1_o", p)) & !any(grepl("w1_b", p)))
-      labs <- labs[c(1,2,3,6,7)]
-    else if (!any(grepl("w1_o", p))) labs <- labs[c(1,2,6,7)]
-    else labs <- labs[c(1,2,4,5,6,7)]
+    if (any(grepl("w1_o", p)) && !any(grepl("w1_b", p)))
+      labs <- labs[c(1, 2, 3, 6, 7)]
+    else if (!any(grepl("w1_o", p))) labs <- labs[c(1, 2, 6, 7)]
+    else labs <- labs[c(1, 2, 4, 5, 6, 7)]
 
     weight_plot <- data |>
       dplyr::mutate(
@@ -126,12 +127,11 @@ plot_affect <- function(data,
       ggplot2::scale_y_continuous(name = "Posterior mean") +
       cowplot::theme_half_open(font_family = font, font_size = font_size) +
       ggplot2::theme(legend.position = legend_pos)
-
-  }
-  else if (plt_type == "grouped") {
-    if(is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
+    return(weight_plot)
+  } else if (plt_type == "grouped") {
+    if (is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     ppc_list <- lapply(
-      1:length(adj_order),
+      seq_along(adj_order),
       function(f) {
         dplyr::mutate(
           data.table::rbindlist(
@@ -141,7 +141,6 @@ plot_affect <- function(data,
         )
       }
     )
-
     grouped_plot <-
       data.table::rbindlist(ppc_list) |>
       dplyr::group_by(adj, type, trial_no_q) |>
@@ -178,18 +177,19 @@ plot_affect <- function(data,
       ) +
       ggplot2::theme(legend.position = c(0.85, 0.85))
     return(grouped_plot)
-  }
-  else if (plt_type == "individual") {
-    if(is.null(pal)) {
+  } else if (plt_type == "individual") {
+    if (is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
     median_id <- function(df, kind, id = id_no) {
       if (kind == "num") {
-        med <- subset(df, round(R2,2) == round(median(df$R2, na.rm=T), 2))$id_no
+        med <- subset(
+          df, round(R2, 2) == round(median(df$R2, na.rm = TRUE), 2)
+        )$id_no
         if (length(med) > 1) sample(med, 1)
         # takes someone with approx. median R2, so can show diff. ppts
         else med
-      } else if (kind == "id" & !is.null(id)) {
+      } else if (kind == "id" && !is.null(id)) {
         subset(df, id_no == id)$subjID
       }
     }
@@ -206,7 +206,7 @@ plot_affect <- function(data,
 
     indiv_ppc_plots <- list()
 
-    for (a in 1:length(adj_order)) {
+    for (a in seq_along(adj_order)) {
       adj <- adj_order[a]
       r2 <- subset(data[[a]]$fit_df, id_no == id_vec[a])$R2
 
@@ -224,18 +224,18 @@ plot_affect <- function(data,
         ) +
         ggplot2::scale_color_manual(
           name = "Data type", labels = c("Predicted", "Real"),
-          values = c(pal[a*2-1], pal[a*2])
+          values = c(pal[a * 2 - 1], pal[a * 2])
         ) +
         ggplot2::scale_fill_manual(
           name = "Data type", labels = c("Predicted", "Real"),
-          values = c(pal[a*2-1], pal[a*2])
+          values = c(pal[a * 2 - 1], pal[a * 2])
         ) +
         ggplot2::xlab("Trial number") +
         ggplot2::ylab(paste0(nouns[a], " rating /100")) +
         cowplot::theme_half_open(font_size = font_size, font = font) +
         ggplot2::annotation_custom(
           grid::textGrob(
-            bquote(R^2~"="~.(round(r2, 2))),
+            bquote(R^2 ~ "=" ~ .(round(r2, 2))),
             gp = grid::gpar(fontsize = 16, col = "steelblue4"),
             x = r2_coords[1], y = r2_coords[2]
           )

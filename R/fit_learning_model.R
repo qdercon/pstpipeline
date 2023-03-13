@@ -28,10 +28,12 @@
 #' posterior predictions? Intended for use with variational algorithm; for MCMC
 #' it is recommended to run the separate [generate_posterior_quantities()]
 #' function, as this is far less memory intensive.
+#' @param par_recovery Method to fit model to simulated data (i.e., from
+#' [simulate_QL()]).
 #' @param task_excl Apply task-related exclusion criteria (catch questions,
 #' digit span = 0)?
 #' @param accuracy_excl Apply accuracy-based exclusion criteria (final block AB
-#' accuracy >= 0.6)?
+#' accuracy >= 0.6)? This is not recommended and is deprecated.
 #' @param model_checks Runs [check_learning_models()], returning plots of the
 #' group-level posterior densities for the free parameters, and some visual
 #' model checks (traceplots of the chains, and rank histograms). Note the visual
@@ -111,26 +113,27 @@ fit_learning_model <- function(df_all,
                                adj_order = c("happy", "confident", "engaged"),
                                vb = TRUE,
                                ppc = vb,
+                               par_recovery = FALSE,
                                task_excl = TRUE,
                                accuracy_excl = FALSE,
                                model_checks = !vb,
                                save_model_as = "",
                                out_dir = "outputs/cmdstan",
-                               outputs = c("raw_df", "stan_datalist", "summary", "draws_list"),
+                               outputs = c("raw_df", "summary", "draws_list"),
                                save_outputs = TRUE,
                                cores = getOption("mc.cores", 4),
                                ...) {
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
 
-  if (exp_part == "test" & affect) {
+  if (exp_part == "test" && affect) {
     stop("Affect models will not work for test data.")
   }
-  if (affect & !ppc) {
+  if (affect && !ppc) {
     warning("Separate posterior predictions after affect models not supported.")
     ppc <- TRUE
   }
-  if (ppc & !vb) {
+  if (ppc && !vb) {
     warning(
       strwrap(
         "Loading posterior predictions following MCMC is memory intensive, and
@@ -138,7 +141,7 @@ fit_learning_model <- function(df_all,
         )
       )
   }
-  if (any(outputs == "diagnostics") & vb) {
+  if (any(outputs == "diagnostics") && vb) {
     warning("Diagnostics are for MCMC only.")
   }
 
@@ -151,8 +154,7 @@ fit_learning_model <- function(df_all,
     if (is.null(l$output_samples)) l$output_samples <- 1000
     if (is.null(l$algorithm)) l$algorithm <- "meanfield"
     if (is.null(l$tol_rel_obj)) l$tol_rel_obj <- 0.01
-  }
-  else { # clearly nothing is being changed, given here just to show defaults
+  } else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
       # default (explicitly defined here for file naming)
     if (is.null(l$iter_warmup)) l$iter_warmup <- 1000
@@ -170,16 +172,15 @@ fit_learning_model <- function(df_all,
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
     question_type <- reward <- trial_time <- NULL
 
-  if (is.null(l$par_recovery)) {
-    if (task_excl | accuracy_excl) {
+  if (!par_recovery) {
+    if (task_excl || accuracy_excl) {
       ids <- df_all[["ppt_info"]] |>
         dplyr::select(
           subjID, exclusion, final_block_AB, tidyselect::any_of("distanced"))
       if (accuracy_excl) ids <- ids |> dplyr::filter(final_block_AB >= 0.6)
       if (task_excl) ids <- ids |> dplyr::filter(exclusion == 0)
       ids <- ids |> dplyr::select(subjID, tidyselect::any_of("distanced"))
-    }
-    else {
+    } else {
       ids <- df_all[["training"]] |>
         dplyr::distinct(subjID, tidyselect::any_of("distanced"))
     }
@@ -196,13 +197,13 @@ fit_learning_model <- function(df_all,
       raw_df <- list()
       raw_df$train <- data.table::as.data.table(training_df)
       raw_df$test <- data.table::as.data.table(test_df)
-    }
-    else {
-      if (!affect) raw_df <- data.table::as.data.table(training_df)
-      else {
+    } else {
+      if (!affect) {
+        raw_df <- data.table::as.data.table(training_df)
+      } else {
         training_df <- training_df |>
           dplyr::rowwise() |>
-          dplyr::mutate(trial_no_block = trial_no - (trial_block-1)*60) |>
+          dplyr::mutate(trial_no_block = trial_no - (trial_block - 1) * 60) |>
           dplyr::mutate(
             question =
               ifelse(question_type == adj_order[1], 1,
@@ -219,10 +220,10 @@ fit_learning_model <- function(df_all,
           raw_df <- data.table::as.data.table(training_df)
       }
     }
-  }
-  else {
-    if (exp_part == "training") raw_df <- df_all
-    else {
+  } else {
+    if (exp_part == "training") {
+      raw_df <- df_all
+    } else {
       raw_df <- list()
       raw_df$train <- df_all |>
         dplyr::filter(exp_part == "training") |>
@@ -244,8 +245,7 @@ fit_learning_model <- function(df_all,
 
     general_info <- list(subjs, n_subj, t_subjs, t_max)
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max")
-  }
-  else {
+  } else {
     DT_train  <- raw_df$train[, .N, by = "subjID"]
     DT_test   <- raw_df$test[, .N, by = "subjID"]
     subjs     <- DT_train$subjID
@@ -263,20 +263,18 @@ fit_learning_model <- function(df_all,
   if (exp_part == "test") {
     data_cmdstan <-
       preprocess_func_test(raw_df$train, raw_df$test, general_info)
-  }
-  else {
+  } else {
     if (affect) data_cmdstan <- preprocess_func_affect(raw_df, general_info)
     else data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
+
+  if (outputs == "stan_datalist") return(data_cmdstan)
 
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
   if (affect) {
     aff_mod <- match.arg(affect_sfx)
-    # if (!is.null(l$par_recovery) & grepl("time", aff_mod)) {
-    #   aff_mod <- paste0(aff_mod, "_constr") # add constraints to w1 if recovery
-    # }
   }
   label <- ifelse(
     !affect, exp_part, paste("plus_affect", aff_mod, sep = "_")
@@ -306,8 +304,7 @@ fit_learning_model <- function(df_all,
       tol_rel_obj = l$tol_rel_obj,
       output_dir = out_dir
     )
-  }
-  else if (is.null(l$init)) {
+  } else if (is.null(l$init)) {
     message("Getting initial values from variational inference...")
     gen_init_vb <- function(model, data_list, parameters, affect) {
       fit_vb <- model$variational(
@@ -375,15 +372,13 @@ fit_learning_model <- function(df_all,
         "alpha" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
-    }
-    else if (!affect) {
+    } else if (!affect) {
       pars <- list(
         "alpha_pos" = c(0, 0.5, 1),
         "alpha_neg" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
-    }
-    else {
+    } else {
       pars <- list(
         "alpha_pos" = c(0, 0.5, 1),
         "alpha_neg" = c(0, 0.5, 1),
@@ -479,8 +474,9 @@ fit_learning_model <- function(df_all,
     }
   }
   if (any(outputs == "loo_obj")) {
-    if (!vb) ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
-    else {
+    if (!vb) {
+      ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
+    } else {
       ll <- ret$draws[[1]][grep("log_lik", names(ret$draws[[1]]))]
       log_lik_mat <- t(do.call(rbind, ll))
 
@@ -497,7 +493,7 @@ fit_learning_model <- function(df_all,
         )
     }
   }
-  if (any(outputs == "diagnostics") & !vb) {
+  if (any(outputs == "diagnostics") && !vb) {
     ret$diagnostics <- fit$cmdstan_diagnose()
     if (save_outputs) {
       saveRDS(ret$diagnostics, file = paste0(

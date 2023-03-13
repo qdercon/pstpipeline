@@ -41,15 +41,17 @@ import_single <- function(jatos_txt_file,
   l <- list(...)
   if (is.null(l$multiple)) l$multiple <- FALSE
 
-  if (l$multiple | incomplete) {
-    all_comp = jatos_txt_file
+  if (l$multiple || incomplete) {
+    all_comp <- jatos_txt_file
   } else {
     all_comp <- jsonlite::fromJSON(
-      sprintf('[%s]', paste(
-        readLines(jatos_txt_file, encoding="UTF-8", warn=F), collapse = ',')
+      sprintf("[%s]", paste(
+        readLines(
+          jatos_txt_file, encoding = "UTF-8", warn = FALSE), collapse = ","
         )
       )
-    if (length(all_comp)!=5) {
+    )
+    if (length(all_comp) != 5) {
       stop(
         "Input is a non-standard length - check for missing tasks in text file."
         )
@@ -83,35 +85,34 @@ import_single <- function(jatos_txt_file,
 
     if (!all(sapply(pro_id, FUN = identical, all_comp[[1]]$prolific_id[1]))) {
       warning(paste0("Prolific IDs inconsistent, recording as NA: ",
-                     paste(pro_id, sep=", ")))
-      subjID=NA
+                     paste(pro_id, sep = ", ")))
+      subjID <- NA
     } else {
-      subjID=all_comp[[1]]$prolific_id[1]
+      subjID <- all_comp[[1]]$prolific_id[1]
     }
     if (!all(sapply(stu_id, FUN = identical, all_comp[[1]]$study_id[1]))) {
       warning(paste0("Study IDs inconsistent, recording as NA: ",
-                     paste(stu_id, sep=", ")))
-      studyID=NA
+                     paste(stu_id, sep = ", ")))
+      studyID <- NA
     } else {
-      studyID=all_comp[[1]]$study_id[1]
+      studyID <- all_comp[[1]]$study_id[1]
     }
     if (!all(sapply(ses_id, FUN = identical, all_comp[[1]]$session_id[1]))) {
       warning(paste0("Session IDs inconsistent, recording as NA: ",
-                     paste(ses_id, sep=", ")))
-      sessionID=NA
+                     paste(ses_id, sep = ", ")))
+      sessionID <- NA
     } else {
-      sessionID=all_comp[[1]]$session_id[1]
+      sessionID <- all_comp[[1]]$session_id[1]
     }
-  }
-  else {
-    subjID=sample(1:100000, 1)
-    studyID=NA
-    sessionID=NA
+  } else {
+    subjID <- sample(1:100000, 1)
+    studyID <- NA
+    sessionID <- NA
   }
 
   if (!l$multiple) message(paste0("Importing data for subjID #", subjID))
 
-  distanced = data.frame(all_comp[[2]]=="B")
+  distanced <- data.frame(all_comp[[2]] == "B")
   names(distanced) <- "distanced"
 
   ret <- list()
@@ -138,60 +139,67 @@ import_single <- function(jatos_txt_file,
   ## demographics
 
   demographics <- all_comp[[1]] |>
-    dplyr::select(age:length(all_comp[[1]]), -question,
-                  -tidyselect::contains("_id", ignore.case = F)) |>
-    dplyr::summarise(dplyr::across(.fns=~max(.x, na.rm=T)))
+    dplyr::select(
+      age:length(all_comp[[1]]), -question,
+      -tidyselect::contains("_id", ignore.case = FALSE)
+    ) |>
+    dplyr::summarise(dplyr::across(.fns = ~max(.x, na.rm = TRUE)))
 
   if (!is.null(demographics$neurological_disorder)) {
-    if (demographics$neurological_disorder=="None") {
-      demographics$neurological = 0
-      demographics$neurological_disorder = NA
+    if (demographics$neurological_disorder == "None") {
+      demographics$neurological <- 0
+      demographics$neurological_disorder <- NA
     } else {
       demographics$neurological_disorder <-
-        paste(unlist(jsonlite::parse_json(
-          demographics$neurological_disorder)
-          ), collapse=', ')
+        paste(
+          unlist(jsonlite::parse_json(demographics$neurological_disorder)),
+          collapse = ","
+        )
     }
   }
 
   if (!is.null(demographics$other_psych_neurdev_condition)) {
-    if (demographics$other_psych_neurdev_condition=="None") {
-      demographics$psych_neurdev = 0
-      demographics$psych_neurdev_condition = NULL
-      demographics$other_psych_neurdev_condition = NULL
+    if (demographics$other_psych_neurdev_condition == "None") {
+      demographics$psych_neurdev <- 0
+      demographics$psych_neurdev_condition <- NULL
+      demographics$other_psych_neurdev_condition <- NULL
     }
   }
 
   if (!is.null(demographics$psych_neurdev_condition)) {
       demographics$psych_neurdev_condition <-
-        paste(unlist(jsonlite::parse_json(
-          demographics$psych_neurdev_condition)
-          ), collapse=', ')
+        paste(
+          unlist(jsonlite::parse_json(demographics$psych_neurdev_condition)),
+          collapse = ","
+        )
   }
 
   if (any(demographics$antidepressant)) {
     demographics$antidepressant_type <-
-      paste(unlist(jsonlite::parse_json(
-        demographics$antidepressant_type)
-        ), collapse=', ')
+      paste(
+        unlist(jsonlite::parse_json(demographics$antidepressant_type)),
+        collapse = ","
+      )
   }
 
   if (any(demographics$other_medication)) {
     demographics$other_medication_type <-
-      paste(unlist(jsonlite::parse_json(
-        demographics$other_medication_type)
-        ), collapse=', ')
+      paste(
+        unlist(jsonlite::parse_json(demographics$other_medication_type)),
+        collapse = ","
+      )
   }
 
-  if (any(!demographics$long_covid == "No") &
+  if (any(!demographics$long_covid == "No") &&
       any(demographics$long_covid_symptoms != "None")) {
     demographics$long_covid_symptoms <-
-      paste(unlist(jsonlite::parse_json(
-        demographics$long_covid_symptoms)
-        ), collapse=', ')
+      paste(
+        unlist(jsonlite::parse_json(demographics$long_covid_symptoms)),
+        collapse = ","
+      )
   }
 
-  digit_span = data.frame(all_comp[[4]]$final_digit_span) |> tidyr::drop_na()
+  digit_span <- data.frame(all_comp[[4]]$final_digit_span) |> tidyr::drop_na()
   names(digit_span) <- "digit_span"
 
   questionnaires <- all_comp[[5]]
@@ -212,12 +220,12 @@ import_single <- function(jatos_txt_file,
       MFIS_physical, MFIS_cognitive, MFIS_psychosocial, MFIS_total, BPQ_total,
       SPQ_cognitive_perceptual, SPQ_interpersonal, SPQ_disorganised,
       SPQ_total) |>
-    dplyr::summarise(dplyr::across(.fns=~max(.x, na.rm=T)))
+    dplyr::summarise(dplyr::across(.fns = ~max(.x, na.rm = TRUE)))
 
   ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span,
                     catch_questions, demographics)
 
-  if (add_sex & prolific) id_gender <- ppt_info |>
+  if (add_sex && prolific) id_gender <- ppt_info |>
     dplyr::select(subjID, gender)
 
   questionnaires_tr <- cbind(subjID, sessionID, studyID, questionnaires_tr)
@@ -226,11 +234,11 @@ import_single <- function(jatos_txt_file,
   ## MAIN TASK
 
   main_task <- cbind(subjID, all_comp[[3]])
-  total_points = as.integer(max(main_task$total_points, na.rm=T))
+  total_points <- as.integer(max(main_task$total_points, na.rm = TRUE))
 
   # useful indexes
 
-  end_block_ind <- main_task |>
+  end_block_ind <- main_task |> # nolint
     dplyr::filter(test_part == "fatigue_question") |>
     dplyr::select(trial_index)
 
@@ -252,25 +260,28 @@ import_single <- function(jatos_txt_file,
                   test_part != "training_complete",
                   test_part != "test_quiz",
                   !is.na(test_part)) |>
-    dplyr::select(-tidyselect::contains("_id", ignore.case=F))
+    dplyr::select(-tidyselect::contains("_id", ignore.case = FALSE))
 
   training_blocks <- main_task |>
-    dplyr::filter(trial_index < final_training_ind[1,1])
+    dplyr::filter(trial_index < final_training_ind[1, 1])
   test_block <- main_task |>
-    dplyr::filter(trial_index > final_training_ind[1,1])
+    dplyr::filter(trial_index > final_training_ind[1, 1])
 
   ## TRAINING BLOCKS
 
   # add block numbers
-
   training_blocks <- training_blocks |>
-    dplyr::mutate(trial_block = ifelse(trial_index <= end_block_ind[1,1], 1,
-         ifelse(trial_index <= end_block_ind[2,1], 2,
-                ifelse(trial_index <= end_block_ind[3,1], 3,
-                       ifelse(trial_index <= end_block_ind[4,1], 4,
-                              ifelse(trial_index <= end_block_ind[5,1], 5,
-                                     ifelse(trial_index <= end_block_ind[6,1],
-                                            6, NA)))))))
+    dplyr::mutate(
+      trial_block = dplyr::case_when(
+        trial_index <= end_block_ind[1, 1] ~ 1,
+        trial_index <= end_block_ind[2, 1] ~ 2,
+        trial_index <= end_block_ind[3, 1] ~ 3,
+        trial_index <= end_block_ind[4, 1] ~ 4,
+        trial_index <= end_block_ind[5, 1] ~ 5,
+        trial_index <= end_block_ind[6, 1] ~ 6,
+        .default = NA
+      )
+    )
   # training trials
 
   training_trials <- training_blocks |>
@@ -281,29 +292,31 @@ import_single <- function(jatos_txt_file,
                            ifelse(grepl("E", test_part), 56, NA)))) |>
     dplyr::mutate(choice =
              ifelse(
-               ((test_part=="AB" | test_part=="BA" | test_part=="CD" |
-                   test_part=="DC" | test_part=="EF" |
-                   test_part=="FE") & correct==T) |
+               ((test_part == "AB" | test_part == "BA" | test_part == "CD" |
+                   test_part == "DC" | test_part == "EF" |
+                   test_part == "FE") & correct == TRUE) |
                  # chose choice A/C/E on a standard trial
-               ((test_part=="AB_rev" | test_part=="BA_rev" |
-                   test_part=="CD_rev" | test_part=="DC_rev" |
-                   test_part=="EF_rev" | test_part=="FE_rev") &
-                  correct==F & !timeout
+               ((test_part == "AB_rev" | test_part == "BA_rev" |
+                   test_part == "CD_rev" | test_part == "DC_rev" |
+                   test_part == "EF_rev" | test_part == "FE_rev") &
+                  correct == FALSE & !timeout
                 ), 1,
                 # chose choice A/C/E on a flipped trial
               ifelse(!timeout, 0, NA))) |>
     dplyr::mutate(reward = ifelse(timeout, NA, as.numeric(correct))) |>
       # correct==F on timeout trials, so need extra check
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) |>
-    dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse='')) |>
+    dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse = "")) |>
     dplyr::group_by(type) |>
     dplyr::arrange(trial_no) |>
     dplyr::mutate(trial_no_group = dplyr::row_number()) |>
     dplyr::mutate(
       cuml_accuracy_l20 =
-        runner::runner(x=choice,
-                       f=function(x) {sum(x, na.rm=T)/sum(!is.na(x))},
-                       k=20)
+        runner::runner(
+          x = choice,
+          f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
+          k = 20
+        )
       ) |>
     dplyr::ungroup() |>
     dplyr::select(subjID, type, choice, reward, trial_block, trial_no,
@@ -314,7 +327,7 @@ import_single <- function(jatos_txt_file,
   # training questions
 
   training_questions <- training_blocks |>
-    dplyr::filter(test_part=="question") |>
+    dplyr::filter(test_part == "question") |>
     dplyr::arrange(trial_index) |>
     dplyr::mutate(trial_no = dplyr::row_number()) |>
     dplyr::rename(question_rt = rt, question_slider_start = slider_start,
@@ -330,8 +343,8 @@ import_single <- function(jatos_txt_file,
                   question_slider_start, question_rt, question_response)
 
   fatigue_questions <- training_blocks |>
-    dplyr::filter(test_part=="fatigue_question") |>
-    dplyr::mutate(trial_no = trial_block*60) |>
+    dplyr::filter(test_part == "fatigue_question") |>
+    dplyr::mutate(trial_no = trial_block * 60) |>
     dplyr::rename(fatigue_rt = rt, fatigue_slider_start = slider_start,
                   fatigue_response = response) |>
     dplyr::select(subjID, trial_block, trial_no, fatigue_rt,
@@ -344,65 +357,67 @@ import_single <- function(jatos_txt_file,
                      by = c("subjID", "trial_block", "trial_no"))
 
   final_block_AB <- training |>
-    dplyr::filter(trial_block==6 & trial_no_group==120 & type==12) |>
+    dplyr::filter(trial_block == 6 & trial_no_group == 120 & type == 12) |>
     dplyr::select(cuml_accuracy_l20)
 
   final_block_CD <- training |>
-    dplyr::filter(trial_block==6 & trial_no_group==120 & type==34) |>
+    dplyr::filter(trial_block == 6 & trial_no_group == 120 & type == 34) |>
     dplyr::select(cuml_accuracy_l20)
 
   final_block_EF <- training |>
-    dplyr::filter(trial_block==6 & trial_no_group==120 & type==56) |>
+    dplyr::filter(trial_block == 6 & trial_no_group == 120 & type == 56) |>
     dplyr::select(cuml_accuracy_l20)
 
-  final_block_AB = final_block_AB[[1]]
-  final_block_CD = final_block_CD[[1]]
-  final_block_EF = final_block_EF[[1]]
+  final_block_AB <- final_block_AB[[1]]
+  final_block_CD <- final_block_CD[[1]]
+  final_block_EF <- final_block_EF[[1]]
 
-  num_f = sum(training$key_press==70, na.rm=T)
-  num_j = sum(training$key_press==74, na.rm=T)
-  keypress_percent = max((num_f/(num_f+num_j)*100), (num_j/(num_f+num_j)*100))
+  num_f <- sum(training$key_press == 70, na.rm = TRUE)
+  num_j <- sum(training$key_press == 74, na.rm = TRUE)
+  keypress_percent <-
+    max((num_f / (num_f + num_j) * 100), (num_j / (num_f + num_j) * 100))
 
   if (!incomplete) {
-    if (ppt_info$english=="A1/A2" | ppt_info$english=="B1" |
-        ppt_info$neurological |
-       !ppt_info$catch_question_1 | !ppt_info$catch_question_2 |
-       (!ppt_info$catch_question_3 & !ppt_info$catch_question_4) |
-       (final_block_AB < 0.6 & accuracy) |
-       (digit_span==0 & task_excl) | (keypress_percent>95 & task_excl)) {
+    if (ppt_info$english == "A1/A2" || ppt_info$english == "B1" ||
+        ppt_info$neurological ||
+       !ppt_info$catch_question_1 || !ppt_info$catch_question_2 ||
+       (!ppt_info$catch_question_3 && !ppt_info$catch_question_4) ||
+       (final_block_AB < 0.6 && accuracy) ||
+       (digit_span == 0 && task_excl) || (keypress_percent > 95 && task_excl)) {
           ppt_info <- cbind(subjID, sessionID, studyID, distanced)
-          ppt_info$exclusion=1
-    }
-    else {
+          ppt_info$exclusion <- 1
+    } else {
       ppt_info <- cbind(subjID, sessionID, studyID, distanced)
-      ppt_info$exclusion=0
+      ppt_info$exclusion <- 0
     }
 
-    time_taken = sum(c(max(all_comp[[1]]$time_elapsed),
-                     max(all_comp[[3]]$time_elapsed),
-                     max(all_comp[[4]]$time_elapsed),
-                     max(all_comp[[5]]$time_elapsed)))/60000
-  }
-  else {
+    time_taken <-
+      sum(c(
+        max(all_comp[[1]]$time_elapsed),
+        max(all_comp[[3]]$time_elapsed),
+        max(all_comp[[4]]$time_elapsed),
+        max(all_comp[[5]]$time_elapsed))
+      ) / 60000
+  } else {
     ppt_info <- cbind(subjID, sessionID, studyID, distanced)
-    ppt_info$exclusion=NA
+    ppt_info$exclusion <- NA
   }
 
-  ppt_info$final_block_AB = final_block_AB
-  ppt_info$final_block_CD = final_block_CD
-  ppt_info$final_block_EF = final_block_EF
-  ppt_info$total_points = total_points
+  ppt_info$final_block_AB <- final_block_AB
+  ppt_info$final_block_CD <- final_block_CD
+  ppt_info$final_block_EF <- final_block_EF
+  ppt_info$total_points <- total_points
 
   if (!incomplete) {
-    ppt_info$total_time_taken = time_taken
+    ppt_info$total_time_taken <- time_taken
   } else {
-    ppt_info$total_time_taken = NA
+    ppt_info$total_time_taken <- NA
   }
 
-  ppt_info$keypress_percent = keypress_percent
-  ppt_info$mean_rt = mean(training$rt, na.rm=T)
+  ppt_info$keypress_percent <- keypress_percent
+  ppt_info$mean_rt <- mean(training$rt, na.rm = TRUE)
 
-  if (add_sex & prolific) {
+  if (add_sex && prolific) {
     id_sex <- exprtd_dmgrphcs |>
       dplyr::select(participant_id, Sex) |>
       dplyr::rename(subjID = participant_id, sex_prolific = Sex) |>
@@ -422,9 +437,9 @@ import_single <- function(jatos_txt_file,
     ppt_info <- cbind(ppt_info, digit_span, catch_questions, demographics)
     ret$ppt_info <- tibble::as_tibble(
       dplyr::left_join(
-        ppt_info, questionnaires_tr, by=c("subjID", "sessionID", "studyID")
-        )
+        ppt_info, questionnaires_tr, by = c("subjID", "sessionID", "studyID")
       )
+    )
   }
 
   ret$training <- training
@@ -438,7 +453,7 @@ import_single <- function(jatos_txt_file,
     vals <- list(1, 2, 3, 4, 5, 6)
     names(vals) <- c("A", "C", "E", "F", "D", "B")
     types <- list(1, 3, 5, 6, 4, 2)
-    names(types) <- seq(1,6)
+    names(types) <- seq(1, 6)
     type <- list()
 
     for (t in seq_along(test_types)) {
@@ -459,20 +474,23 @@ import_single <- function(jatos_txt_file,
 
   test_trials <- test_block |>
     dplyr::filter(!grepl("question", test_part)) |>
-    dplyr::mutate(test_type = ifelse(grepl("(AB|BA)|(CD|DC)|(EF|FE)", test_part),
-                                     "training",
-                                  ifelse(grepl("A", test_part), "chooseA",
-                                     ifelse(grepl("B", test_part), "avoidB",
-                                            "novel")))) |>
+    dplyr::mutate(
+      test_type = dplyr::case_when(
+        grepl("(AB|BA)|(CD|DC)|(EF|FE)", test_part) ~ "training",
+        grepl("A", test_part) ~ "chooseA",
+        grepl("B", test_part) ~ "avoidB",
+        .default = "novel"
+      )
+    ) |>
     dplyr::rowwise() |>
     dplyr::mutate(type = as.numeric(get_type_val(test_part, type_key))) |>
     dplyr::mutate(choice = ifelse(!timeout, as.numeric(correct), NA)) |>
     dplyr::group_by(test_type) |>
     dplyr::mutate(test_trial_no_group = dplyr::row_number()) |>
-    dplyr::mutate(cuml_accuracy_test = cumsum(correct)/test_trial_no_group) |>
+    dplyr::mutate(cuml_accuracy_test = cumsum(correct) / test_trial_no_group) |>
     dplyr::ungroup() |>
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) |>
-    dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse='')) |>
+    dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse = "")) |>
     dplyr::select(subjID, type, choice, test_type, test_trial_no,
                   test_trial_no_group, rt, glyph_seq, stimulus, test_part,
                   key_press, correct_response, correct, timeout,
@@ -495,7 +513,7 @@ import_single <- function(jatos_txt_file,
                   question_slider_start, question_rt, question_response)
 
   test <- test_trials |>
-    dplyr::left_join(test_questions, by=c("subjID", "test_trial_no")) |>
+    dplyr::left_join(test_questions, by = c("subjID", "test_trial_no")) |>
     dplyr::rename(trial_no = test_trial_no)
 
   ret$test <- test
@@ -509,19 +527,19 @@ import_single <- function(jatos_txt_file,
   if (qstns_gillan) {
 
     template <- as.data.frame(
-    matrix(nrow=0, ncol=210,
+    matrix(nrow = 0, ncol = 210,
      dimnames =
        list(NULL,
             c("subjID",
-              sapply(1:43, function(i) paste0("SCZ_",i)),
-              sapply(1:18, function(i) paste0("OCI_",i)),
-              sapply(1:26, function(i) paste0("EAT_",i)),
-              sapply(1:18, function(i) paste0("AES_",i)),
-              sapply(1:10, function(i) paste0("AUDIT_",i)),
-              sapply(1:20, function(i) paste0("SDS_",i)),
-              sapply(1:20, function(i) paste0("STAI_",i)),
-              sapply(1:30, function(i) paste0("BIS_",i)),
-              sapply(1:24, function(i) paste0("LSAS_",i))
+              sapply(1:43, function(i) paste0("SCZ_", i)),
+              sapply(1:18, function(i) paste0("OCI_", i)),
+              sapply(1:26, function(i) paste0("EAT_", i)),
+              sapply(1:18, function(i) paste0("AES_", i)),
+              sapply(1:10, function(i) paste0("AUDIT_", i)),
+              sapply(1:20, function(i) paste0("SDS_", i)),
+              sapply(1:20, function(i) paste0("STAI_", i)),
+              sapply(1:30, function(i) paste0("BIS_", i)),
+              sapply(1:24, function(i) paste0("LSAS_", i))
               )
             )
      )
@@ -547,7 +565,7 @@ import_single <- function(jatos_txt_file,
     training <- training |> dplyr::mutate(task_part = "training")
     test <- test |> dplyr::mutate(task_part = "test")
     full_task <- training |> dplyr::bind_rows(test)
-    ret$full_data <- ppt_info |> dplyr::left_join(full_task, by="subjID")
+    ret$full_data <- ppt_info |> dplyr::left_join(full_task, by = "subjID")
   }
 
   if (issues) {

@@ -105,8 +105,7 @@ plot_ppc <- function(train_indiv = list(),
   if (is.null(pal)) {
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80",
              "#C4F7A1", "#B1740F")
-  }
-  else if (!is.null(pal) & length(pal) < 8) {
+  } else if (!is.null(pal) && length(pal) < 8) {
     message("Need at least 8 colours, reverting to defaults.")
     pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80",
              "#C4F7A1", "#B1740F")
@@ -157,7 +156,7 @@ plot_ppc <- function(train_indiv = list(),
         dplyr::mutate(
           !!col_name := runner::runner(
             x = choice,
-            f = function(x) {sum(x, na.rm = T)/sum(!is.na(x))},
+            f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
             k = lag
             )
           )
@@ -177,7 +176,7 @@ plot_ppc <- function(train_indiv = list(),
 
       tr_plot_df <- train_indiv_df |>
         dplyr::group_by(type, trial_no_group) |>
-        dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = T)) |>
+        dplyr::mutate(cuml_acc_mean = mean(!!col, na.rm = TRUE)) |>
         dplyr::mutate(cuml_acc_mean_sub_se = cuml_acc_mean - std(!!col)) |>
         dplyr::mutate(cuml_acc_mean_pl_se = cuml_acc_mean + std(!!col)) |>
         dplyr::ungroup() |>
@@ -189,7 +188,7 @@ plot_ppc <- function(train_indiv = list(),
       plt_tr <- tr_plot_df |>
         ggplot2::ggplot(ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
                                  colour = factor(type), fill = factor(type))) +
-        ggplot2::geom_point(alpha=0.65) +
+        ggplot2::geom_point(alpha = 0.65) +
         ggplot2::geom_line() +
         ggplot2::geom_ribbon(ggplot2::aes(
           ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se), alpha = 0.2
@@ -215,8 +214,7 @@ plot_ppc <- function(train_indiv = list(),
       if (n_lag == l$max_trials_grp) {
         plt_tr <- plt_tr +
           ggplot2::ggtitle(group_title, subtitle = "All trials")
-      }
-      else {
+      } else {
         plt_tr <- plt_tr +
           ggplot2::ggtitle(
             group_title, subtitle = paste0(n_lag, "-trial lagged")
@@ -243,8 +241,9 @@ plot_ppc <- function(train_indiv = list(),
       if (!is.null(id)) {
         avg_overall_df <- train_indiv[[1]] |>
           dplyr::filter(subjID == id)
+      } else {
+        avg_overall_df <- train_indiv[[1]]
       }
-      else avg_overall_df <- train_indiv[[1]]
 
       for (avg_diff in overall_avgs) {
         avg_overall_df <- train_indiv[[1]] |>
@@ -282,14 +281,12 @@ plot_ppc <- function(train_indiv = list(),
             ggplot2::ggtitle(
               group_title, subtitle = "All trials (observed minus predicted)"
               )
-        }
-        else if (avg_diff == l$block_size) {
+        } else if (avg_diff == l$block_size) {
           avg_plts[[avg_nm]] <- avg_plt +
             ggplot2::ggtitle(
               group_title, subtitle = "Final block (observed minus predicted)"
               )
-        }
-        else {
+        } else {
           avg_plts[[avg_nm]] <- avg_plt +
             ggplot2::ggtitle(
               group_title,
@@ -306,8 +303,9 @@ plot_ppc <- function(train_indiv = list(),
     if (!is.null(id)) {
       avg_overall_df <- train_trials[[1]] |>
         dplyr::filter(subjID == id)
+    } else {
+      train_trials_df <- train_trials[[1]]
     }
-    else train_trials_df <- train_trials[[1]]
 
     train_trials_df <- train_trials[[1]] |>
       dplyr::rowwise() |>
@@ -351,13 +349,12 @@ plot_ppc <- function(train_indiv = list(),
           ggplot2::theme(legend.position = legend_pos) +
           ggplot2::ggtitle(
             group_title,
-            subtitle = bquote(R^2~"="~.(
+            subtitle = bquote(
+              R^2 ~ "=" ~ .(
               round(
                 cor(plot_trials_df$obs_mean, plot_trials_df$pred_post_mean)^2, 2
-                )
-              )~"("*.(substr(trgrp, 1, 1))*.(
-                gsub("_", " ", substr(trgrp, 2, nchar(trgrp)))
-                )*")"
+              )) ~ "(" * .(substr(trgrp, 1, 1)) *
+              .(gsub("_", " ", substr(trgrp, 2, nchar(trgrp)))) * ")"
           )
         )
       }
@@ -383,8 +380,7 @@ plot_ppc <- function(train_indiv = list(),
     if (!is.null(id)) {
       test_perf_df <- test_perf_df |> dplyr::filter(subjID == id)
       import_single <- TRUE
-    }
-    else {
+    } else {
       import_single <- FALSE
     }
 
@@ -410,13 +406,11 @@ plot_ppc <- function(train_indiv = list(),
       plt_list$test_perf <-
         cowplot::plot_grid(
           grouped_bar_ppc + ggplot2::theme(legend.position = "none"),
-          indiv_bar_ppc, nrow = 1, rel_widths = c(1,1.4)
+          indiv_bar_ppc, nrow = 1, rel_widths = c(1, 1.4)
         )
-    }
-    else {
+    } else {
       plt_list$test_perf <- grouped_bar_ppc
     }
   }
   return(plt_list)
 }
-

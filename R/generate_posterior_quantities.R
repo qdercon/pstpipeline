@@ -96,7 +96,7 @@ generate_posterior_quantities <-
       paste0(out_dir, "/", save_model_as,
              paste0(
                "_",
-               fit_mcmc$metadata()$iter_sampling *fit_mcmc$metadata()$chains,
+               fit_mcmc$metadata()$iter_sampling * fit_mcmc$metadata()$chains,
                "chain_", chain_no, ".csv"
                )
              )
@@ -106,6 +106,7 @@ generate_posterior_quantities <-
   if (return_type == "paths") return(csv_files)
   else if (return_type == "draws_list") {
     return(fit_gq$draws(variables = "y_pred", format = "list"))
+  } else {
+    return(fit_gq)
   }
-  else return(fit_gq)
 }

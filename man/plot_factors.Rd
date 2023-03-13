@@ -52,5 +52,5 @@ derivation, including histograms and heatmaps of the questions themselves.
 }
 \examples{
 # Please this notebook for usage (examples would require Python input):
-# https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb
+# https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb # nolint
 }

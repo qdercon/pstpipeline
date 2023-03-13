@@ -75,7 +75,7 @@ compare_block_diffs <- function(all_res,
     if (fit_together) {
       rel_data_tr <- rel_data
       rel_data_tr$training <- rel_data_tr$training |>
-        dplyr::filter(trial_no <= iter[i]*60)
+        dplyr::filter(trial_no <= iter[i] * 60)
 
       fit_typ <- ifelse(vb, "vb", "mcmc")
 
@@ -98,15 +98,14 @@ compare_block_diffs <- function(all_res,
         iter_sampling = iter_sampling_glm,
         ...
       )
-    }
-    else {
+    } else {
       rel_data_gr1 <- rel_data[[1]]
       rel_data_gr2 <- rel_data[[2]]
 
       rel_data_gr1$training <- rel_data_gr1$training |>
-        dplyr::filter(trial_no <= iter[i]*60)
+        dplyr::filter(trial_no <= iter[i] * 60)
       rel_data_gr2$training <- rel_data_gr2$training |>
-        dplyr::filter(trial_no <= iter[i]*60)
+        dplyr::filter(trial_no <= iter[i] * 60)
       fit_typ <- ifelse(vb, "vb", "mcmc")
       grp_names <- names(rel_data)
 

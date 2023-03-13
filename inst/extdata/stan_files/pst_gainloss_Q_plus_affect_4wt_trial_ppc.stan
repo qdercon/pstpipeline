@@ -23,15 +23,19 @@ data {
 }
 
 transformed data {
-  // Default values to initialize the vector of expected values
-  vector[6] initial_values;
-  initial_values = rep_vector(0, 6);
+  // default values to initialize the vectors/matrices of EVs/PEs
+  vector[6] inits;
+  row_vector[T] zeros;
+  inits = rep_vector(0, 6);
+  zeros = rep_row_vector(0, T);
 
   int s;
   matrix[N, T] affect_tr;
   s = N*T;
+
+  // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
   for (t in 1:T) {
-    affect_tr[:, t] = ((affect[:, t]*(s-1))+0.5)/s; // Smith & Verkuilen, 2006
+    affect_tr[:, t] = ((affect[:, t]*(s-1))+0.5)/s;
   }
 }
 
@@ -120,71 +124,109 @@ model {
 
   // priors on the weights + gamma + beta distribution precision
   for (p in 1:3) {
-   w0_pr[:, p]   ~ normal(0, 1);
-   w1_o_pr[:, p] ~ normal(0, 1);
-   w2_pr[:, p]   ~ normal(0, 1);
-   w3_pr[:, p]   ~ normal(0, 1);
-   gm_pr[:, p]   ~ normal(0, 1);
-   phi_pr[:, p]  ~ normal(0, 1);
+    w0_pr[:, p]   ~ normal(0, 1);
+    w1_o_pr[:, p] ~ normal(0, 1);
+    w2_pr[:, p]   ~ normal(0, 1);
+    w3_pr[:, p]   ~ normal(0, 1);
+    gm_pr[:, p]   ~ normal(0, 1);
+    phi_pr[:, p]  ~ normal(0, 1);
   }
 
   for (i in 1:N) {
-    int co;                       // Chosen option
-    real pe;                      // Prediction error
-    real alpha;                   // Learning rate (positive or negative)
-    real delta;                   // Difference between two options
-    vector[6] ev;                 // Expected values per symbol
-    vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
+    int ti;
+    ti = Tsubj[i];           // Number of trials for participant i
 
-    real aff_mu_cond;             // Conditional mean of the beta distribution
-    vector[Tsubj[i]] shape_a;     // Beta distribution shape parameter alpha
-    vector[Tsubj[i]] shape_b;     // Beta distribution shape parameter beta
+    int co;                  // Chosen option
+    real pe;                 // Prediction error
+    real alpha;              // Learning rate (positive or negative)
+    
+    vector[6] ev;            // Expected values per symbol
+    vector[ti] delta;        // Difference in EVs between options
 
-    row_vector[Tsubj[i]] ev_vec;
-    row_vector[Tsubj[i]] pe_vec;
+    vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_o_vec;     // Vector of w1_o weights
+    vector[ti] w2_vec;       // Vector of w2 weights
+    vector[ti] w3_vec;       // Vector of w3 weights
+    vector[ti] phi_vec;      // Vector of beta distribution precision
+    
+    row_vector[ti] z_vec;    // Vector of zeros
+    row_vector[ti] ev_vec;   // Vector of expected values
+    row_vector[ti] pe_vec;   // Vector of prediction errors
+    
+    matrix[ti, 3] dcy_mat;   // Weighting of previous trials, by question
 
-    ev     = initial_values;
-    ev_vec = rep_row_vector(0, Tsubj[i]);
-    pe_vec = rep_row_vector(0, Tsubj[i]);
+    vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
+    vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
 
-    // Acquisition Phase
-    for (t in 1:Tsubj[i]) {
+    vector[ti] aff_mu_cond;  // Conditional mean of the beta distribution
+    vector[ti] shape_a;      // Beta distribution shape parameter alpha
+    vector[ti] shape_b;      // Beta distribution shape parameter beta
+
+    z_vec   = zeros[:ti];
+    ev      = inits;
+    ev_vec  = z_vec;
+    pe_vec  = z_vec;
+    dcy_mat = rep_matrix(z_vec', 3);
+    ev_dcy  = z_vec';
+    pe_dcy  = z_vec';
+    
+    // initialise at machine precision to ensure shape parameters > 0
+    shape_a = rep_vector(machine_precision(), ti);
+    shape_b = rep_vector(machine_precision(), ti);
+
+    // calculate relevant quantities for each trial
+    for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
-      // Luce choice rule
-      delta = ev[option1[i, t]] - ev[option2[i, t]];
-      choice[i, t] ~ bernoulli_logit(beta[i] * delta);
-
+      // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
+      delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
+      
       pe = reward[i, t] - ev[co];
       pe_vec[t] = pe;
 
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
       ev_vec[t] = ev[co];
+      
+      // store decay factor weighting for each question (gammas are different)
+      for (q in 1:3) {
+        dcy_mat[t, q] = pow(gamma[i, q], t - 1);
+      }
+      
+      // store weights and beta distribution precision for convenience
+      w0_vec[t]   = w0[i, question[i, t]];
+      w1_o_vec[t] = w1_o[i, question[i, t]];
+      w2_vec[t]   = w2[i, question[i, t]];
+      w3_vec[t]   = w3[i, question[i, t]];
+      phi_vec[t]  = phi[i, question[i, t]];
 
-      decay_vec[t] = pow(gamma[i, question[i, t]], t - 1);
-
-      aff_mu_cond = inv_logit(
-        w0[i, question[i, t]] +
-        w1_o[i, question[i, t]] * ovl_trial[i, t] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
-      );
-
-      // add machine precision to ensure shape parameters > 0
-      shape_a[t] =
-        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] =
-        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
+      // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
     }
+    
+    // increment log density for choice for participant i
+    choice[i, :ti] ~ bernoulli_logit(beta[i] * delta);
+    
+    // calculate conditional mean of the beta distribution
+    aff_mu_cond = inv_logit(
+      w0_vec + 
+      w1_o_vec .* to_vector(ovl_trial[i]) + 
+      (w2_vec .* ev_dcy) + 
+      (w3_vec .* pe_dcy)
+    );
 
-    // increment log density (vectorised)
-    affect_tr[i, :Tsubj[i]] ~ beta(shape_a, shape_b);
+    // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
+    shape_a += aff_mu_cond .* phi_vec;
+    shape_b += phi_vec .* (1 - aff_mu_cond);
+    
+    // increment log density for affect for participant i
+    affect_tr[i, :ti] ~ beta(shape_a, shape_b);
   }
 }
 
 generated quantities {
-  // For group-level parameters
+  // group-level parameter means
   real<lower=0,upper=1>  mu_alpha_pos;
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
@@ -195,16 +237,15 @@ generated quantities {
   vector[3] mu_w3;
   vector[3] mu_gamma;
 
-  // For log-likelihood calculation
+  // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
-  matrix[N, T] y_pred; // will get NaNs for those not predicted
+  vector[N] neg_ones;
+  matrix[N, T] y_pred;
 
-  for (i in 1:N) {
-    for (t in 1:Tsubj[i]) {
-      y_pred[i, t] = -1;
-    }
-  };
+  neg_ones = rep_vector(-1, N);
+  y_pred = rep_matrix(neg_ones, T);
 
+  // calculate moments of the group-level posterior distributions
   mu_alpha_pos = Phi_approx(mu_ql[1]);
   mu_alpha_neg = Phi_approx(mu_ql[2]);
   mu_beta      = Phi_approx(mu_ql[3]) * 10;
@@ -217,61 +258,104 @@ generated quantities {
     mu_gamma[p] = Phi_approx(mu_gm[p]);
   }
 
+  // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
-    int co;                       // Chosen option
-    real pe;                      // Prediction error
-    real alpha;                   // Learning rate (positive or negative)
-    real delta;                   // Difference between two options
-    vector[6] ev;                 // Expected values per symbol
-    vector[Tsubj[i]] decay_vec;   // Weighting of previous trials
+    int ti;
+    ti = Tsubj[i];           // Number of trials for participant i
 
-    real aff_mu_cond;             // Conditional mean of the beta distribution
-    vector[Tsubj[i]] shape_a;     // Beta distribution shape parameter alpha
-    vector[Tsubj[i]] shape_b;     // Beta distribution shape parameter beta
+    int co;                  // Chosen option
+    real pe;                 // Prediction error
+    real alpha;              // Learning rate (positive or negative)
+    
+    vector[6] ev;            // Expected values per symbol
+    vector[ti] delta;        // Difference in EVs between options
 
-    row_vector[Tsubj[i]] ev_vec;
-    row_vector[Tsubj[i]] pe_vec;
+    vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_o_vec;     // Vector of w1_o weights
+    vector[ti] w2_vec;       // Vector of w2 weights
+    vector[ti] w3_vec;       // Vector of w3 weights
+    vector[ti] phi_vec;      // Vector of beta distribution precision
+    
+    row_vector[ti] z_vec;    // Vector of zeros
+    row_vector[ti] ev_vec;   // Vector of expected values
+    row_vector[ti] pe_vec;   // Vector of prediction errors
+    
+    matrix[ti, 3] dcy_mat;   // Weighting of previous trials, by question
 
-    ev     = initial_values;
-    ev_vec = rep_row_vector(0, Tsubj[i]);
-    pe_vec = rep_row_vector(0, Tsubj[i]);
+    vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
+    vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
+
+    vector[ti] aff_mu_cond;  // Conditional mean of the beta distribution
+    vector[ti] shape_a;      // Beta distribution shape parameter alpha
+    vector[ti] shape_b;      // Beta distribution shape parameter beta
+
+    z_vec   = zeros[:ti];
+    ev      = inits;
+    ev_vec  = z_vec;
+    pe_vec  = z_vec;
+    dcy_mat = rep_matrix(z_vec', 3);
+    ev_dcy  = z_vec';
+    pe_dcy  = z_vec';
+    
+    // initialise at machine precision to ensure shape parameters > 0
+    shape_a = rep_vector(machine_precision(), ti);
+    shape_b = rep_vector(machine_precision(), ti);
 
     log_lik[i] = 0;
 
-    // Acquisition Phase
-    for (t in 1:Tsubj[i]) {
+    // calculate relevant quantities for each trial
+    for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
 
-      // Luce choice rule
-      delta = ev[option1[i, t]] - ev[option2[i, t]];
-      log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
-
+      // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
+      delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
+      
       pe = reward[i, t] - ev[co];
       pe_vec[t] = pe;
-      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
 
+      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
       ev_vec[t] = ev[co];
+      
+      // store decay factor weighting for each question (gammas are different)
+      for (q in 1:3) {
+        dcy_mat[t, q] = pow(gamma[i, q], t - 1);
+      }
+      
+      // store weights and beta distribution precision for convenience
+      w0_vec[t]   = w0[i, question[i, t]];
+      w1_o_vec[t] = w1_o[i, question[i, t]];
+      w2_vec[t]   = w2[i, question[i, t]];
+      w3_vec[t]   = w3[i, question[i, t]];
+      phi_vec[t]  = phi[i, question[i, t]];
 
-      decay_vec[t] = pow(gamma[i, question[i, t]], t - 1);
-
-      aff_mu_cond = inv_logit(
-        w0[i, question[i, t]] +
-        w1_o[i, question[i, t]] * ovl_trial[i, t] +
-        w2[i, question[i, t]] * (reverse(ev_vec[:t]) * decay_vec[:t]) +
-        w3[i, question[i, t]] * (reverse(pe_vec[:t]) * decay_vec[:t])
-      );
-
-      // add machine precision to ensure shape parameters > 0
-      shape_a[t] =
-        aff_mu_cond * phi[i, question[i, t]] + machine_precision();
-      shape_b[t] =
-        phi[i, question[i, t]] * (1-aff_mu_cond) + machine_precision();
-
-      // generate posterior predictions
-      y_pred[i, t] = beta_rng(shape_a[t], shape_b[t]);
+      // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
     }
-    // increment log likelihood with affect model
-    log_lik[i] += beta_lpdf(affect_tr[i, :Tsubj[i]] | shape_a, shape_b);
+
+    // increment log likelihood for choice for participant i
+    log_lik[i] += bernoulli_logit_lpmf(choice[i, :ti] | beta[i] * delta);
+    
+    // calculate conditional mean of the beta distribution
+    aff_mu_cond = inv_logit(
+      w0_vec + w1_o_vec .* to_vector(ovl_trial[i]) + (w2_vec .* ev_dcy) + 
+      (w3_vec .* pe_dcy)
+    );
+
+    // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
+    shape_a += aff_mu_cond .* phi_vec;
+    shape_b += phi_vec .* (1 - aff_mu_cond);
+    
+    // increment log likelihood for affect for participant i
+    log_lik[i] += beta_lpdf(affect_tr[i, :ti] | shape_a, shape_b);
+
+    // generate posterior predictions
+    y_pred[i, :ti] = to_row_vector(beta_rng(shape_a, shape_b));
+  }
+
+  // backtransform predictions to be on the original scale for completeness
+  for (t in 1:T) {
+    y_pred[:, t] = ((y_pred[:, t]*s)-0.5)/(s-1);
   }
 }

@@ -89,8 +89,8 @@ plot_raincloud <- function(summary_df,
   }
 
   cred <- sort(cred)
-  cred_l1 <- (1-cred[2])/2
-  cred_l2 <- (1-cred[1])/2
+  cred_l1 <- (1 - cred[2]) / 2
+  cred_l2 <- (1 - cred[1]) / 2
 
   posterior_mean <- subjID <- value <- NULL # appease R CMD check
 
@@ -110,20 +110,21 @@ plot_raincloud <- function(summary_df,
   if (type == "parameter") {
     df <- all_data |>
       dplyr::rename(value = posterior_mean)
-    if (length(unique(df[[type]])) == 2) df[[type]] <- factor(df[[type]])
-    else {
+    if (length(unique(df[[type]])) == 2) {
+      df[[type]] <- factor(df[[type]])
+    } else {
       df[[type]] <-
         factor(df[[type]], levels = c("alpha_pos", "alpha_neg", "beta"))
     }
-  }
-  else if (type == "factor") {
+  } else if (type == "factor") {
     df <- all_data |>
       tidyr::pivot_longer(cols = c("AD", "Compul", "SW"), names_to = type) |>
-      dplyr::distinct(subjID, factor, .keep_all = T)
+      dplyr::distinct(subjID, factor, .keep_all = TRUE)
     if (!flip) {
       df[[type]] <- factor(df[[type]], levels = c("AD", "Compul", "SW"))
+    } else {
+      df[[type]] <- factor(df[[type]], levels = c("SW", "Compul", "AD"))
     }
-    else df[[type]] <- factor(df[[type]], levels = c("SW", "Compul", "AD"))
   }
 
   type <- rlang::sym(type)
@@ -135,8 +136,7 @@ plot_raincloud <- function(summary_df,
       ggplot2::guides(colour = "none", fill = "none") +
       ggplot2::scale_colour_manual(values = pal) +
       ggplot2::scale_fill_manual(values = pal)
-  }
-  else {
+  } else {
     by <- rlang::sym(by)
     by_length <- length(unique(df[[by]]))
     rain_plot <- df |>
@@ -189,7 +189,7 @@ plot_raincloud <- function(summary_df,
 
 
   if (any(is.null(scatter))) {
-    rain_plot$layers <- rain_plot$layers[c(1,3)]
+    rain_plot$layers <- rain_plot$layers[c(1, 3)]
   }
 
   if (flip) {
@@ -198,18 +198,16 @@ plot_raincloud <- function(summary_df,
   }
   if (type == "parameter") {
     if (length(unique(df[[type]])) == 2) {
-      if (test) labs <- c(expression(alpha*minute), expression(beta*minute))
+      if (test) labs <- c(expression(alpha * minute), expression(beta * minute))
       else labs <- c(expression(alpha), expression(beta))
-    }
-    else {
+    } else {
       if (is.null(alpha_par_nms)) alpha_par_nms <- c("pos", "neg")
       if (test) {
         labs <-
           c(str2expression(paste0("alpha*minute[", alpha_par_nms[1], "]")),
             str2expression(paste0("alpha*minute[", alpha_par_nms[2], "]")),
-            expression(beta*minute))
-      }
-      else {
+            expression(beta * minute))
+      } else {
         labs <-
           c(str2expression(paste0("alpha[", alpha_par_nms[1], "]")),
             str2expression(paste0("alpha[", alpha_par_nms[2], "]")),
@@ -219,16 +217,14 @@ plot_raincloud <- function(summary_df,
     rain_plot <- rain_plot +
       ggplot2::scale_x_discrete(name = NULL, labels = labs) +
       ggplot2::scale_y_continuous(
-        name ="Posterior mean", breaks = c(0, 0.5, 1, 2, 4, 8),
+        name = "Posterior mean", breaks = c(0, 0.5, 1, 2, 4, 8),
         trans = "pseudo_log"
         )
-  }
-  else {
+  } else {
     if (flip) {
       x_labels <- c("Social withdrawal", "Compulsive behaviour",
                     "Anxiety/depression")
-    }
-    else {
+    } else {
       x_labels <- c("Anxiety/depression", "Compulsive behaviour",
                     "Social withdrawal")
     }

@@ -42,7 +42,9 @@ participant's results to a (list of) R object(s).
 \examples{
 \dontrun{
 # Data not included in package (as ~900MB)
-all_res_split <- import_multiple("data-raw/all_995_complete.txt", add_sex = TRUE)
+all_res_split <- import_multiple(
+  "data-raw/all_995_complete.txt", add_sex = TRUE
+)
 }
 
 }

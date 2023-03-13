@@ -52,14 +52,16 @@
 #'
 #'   \tabular{ll}{
 #'     \strong{Family} \tab \strong{Functions} \cr
-#'     \emph{Student t family} \tab \code{normal}, \code{student_t}, \code{cauchy} \cr
+#'     \emph{Student t family} \tab \code{normal}, \code{student_t},
+#'     \code{cauchy} \cr
 #'     \emph{Hierarchical shrinkage family} \tab \code{hs}, \code{hs_plus} \cr
 #'     \emph{Laplace family} \tab \code{laplace}, \code{lasso} \cr
 #'     \emph{Product normal family} \tab \code{product_normal} \cr
 #'   }
 #'
-#'   See \[http://mc-stan.org/rstanarm/reference/priors.html](here) for details on the
-#'   families and how to specify the arguments for all of the functions in the table above.
+#'   See \[http://mc-stan.org/rstanarm/reference/priors.html](here) for details
+#'   on the families and how to specify the arguments for all of the functions
+#'   in the table above.
 #'   To omit a prior ---i.e., to use a flat (improper) uniform prior---
 #'   \code{prior} can be set to \code{NULL}, although this is rarely a good
 #'   idea.
@@ -177,7 +179,7 @@ cmdstan_glm <-
            ...,
            prior = default_prior_coef(family),
            prior_intercept = default_prior_intercept(family),
-           prior_aux = exponential(autoscale=TRUE),
+           prior_aux = exponential(autoscale = TRUE),
            prior_PD = FALSE,
            mean_PPD = !prior_PD,
            sparse = FALSE) {
@@ -185,7 +187,6 @@ cmdstan_glm <-
   family <- validate_family(family)
   data <- validate_data(data, if_missing = environment(formula))
 
-  call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "subset", "weights", "na.action", "offset"),
              table = names(mf), nomatch = 0L)

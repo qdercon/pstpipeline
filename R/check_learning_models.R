@@ -42,17 +42,16 @@ check_learning_models <- function(draws,
                                   font_size = 11) {
 
   ## to appease R CMD check
-  value <- ..count.. <- ..density.. <- NULL
+  value <- count <- NULL
 
   if (grepl("draws", class(draws)[1])) {
     if (!grepl("df", class(draws)[1])) {
       if (grepl("draws_list", class(draws)[1])) {
         draws <- posterior::as_draws_array(draws)
       }
-      mu_pars <- draws[,,grepl("mu_alpha|mu_beta", dimnames(draws)$variable)]
+      mu_pars <- draws[, , grepl("mu_alpha|mu_beta", dimnames(draws)$variable)]
       draws_df <- FALSE
-    }
-    else {
+    } else {
       suppressWarnings(
         mu_pars <- draws |>
           dplyr::select(tidyselect::starts_with("mu_")) |>
@@ -66,8 +65,7 @@ check_learning_models <- function(draws,
           possible.", prefix = " ", initial = "")
         )
     }
-  }
-  else if (grepl(".csv", draws[1])) {
+  } else if (grepl(".csv", draws[1])) {
     mu_pars <-
       tryCatch(
         cmdstanr::read_cmdstan_csv(
@@ -82,8 +80,9 @@ check_learning_models <- function(draws,
         }
       )[["post_warmup_draws"]]
     draws_df <- FALSE
+  } else {
+    stop("Unrecognised data format, see help file.")
   }
-  else stop("Unrecognised data format, see help file.")
 
   if (is.null(pal)) pal <- c(
     "#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80"
@@ -112,14 +111,18 @@ check_learning_models <- function(draws,
         dplyr::rename(value = 1) |>
         ggplot2::ggplot(ggplot2::aes(x = value)) +
         ggplot2::geom_histogram(
-          ggplot2::aes(y = ..count.., fill = "value"),
+          ggplot2::aes(y = ggplot2::after_stat(count), fill = "value"),
           colour = "black", alpha = 0.65, binwidth = bin_wdth,
           position = "identity"
           )  +
         ggplot2::geom_line(
           ggplot2::aes(
-            y = (..density..*(dim(df)[1]*bin_wdth)), colour = "value"
-          ), size = 1, stat = 'density') +
+            y = ggplot2::after_stat(density) * (dim(df)[1] * bin_wdth),
+            colour = "value"
+          ),
+          size = 1,
+          stat = "density"
+        ) +
         ggplot2::scale_colour_manual(values = col) +
         ggplot2::scale_fill_manual(values = col) +
         ggplot2::guides(colour = "none", fill = "none") +
@@ -141,8 +144,8 @@ check_learning_models <- function(draws,
 
     for (p in seq_along(pars)) {
       dens_plts[[p]] <- dens_plot(
-        mu_pars_df, par = pars[p], nbins = 30, col = pal[(p*2)-1], font = font,
-        font_size = font_size, alpha_par_nm = alpha_par_nms[p])
+        mu_pars_df, par = pars[p], nbins = 30, col = pal[(p * 2) - 1],
+        font = font, font_size = font_size, alpha_par_nm = alpha_par_nms[p])
     }
 
     ret$mu_par_dens <- cowplot::plot_grid(plotlist = dens_plts, nrow = 1)
@@ -163,7 +166,7 @@ check_learning_models <- function(draws,
     ret$diagnostics$rank_hist <- bayesplot::mcmc_rank_hist(mu_pars)
   }
 
-  if (length(ret) == 1 & length(ret[[1]]) == 1) return(ret[[1]][[1]])
+  if (length(ret) == 1 && length(ret[[1]]) == 1) return(ret[[1]][[1]])
   else return(ret)
 
 }

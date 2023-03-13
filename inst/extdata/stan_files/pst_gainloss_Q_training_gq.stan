@@ -1,13 +1,12 @@
 // Gain-loss Q-learning model for PST training data (for separate posterior predictions)
 data {
-  int<lower=1> N;             // Number of subjects
-  int<lower=1> T;             // Maximum # of trials
-  int<lower=1> Tsubj[N];      // # of trials for acquisition phase
+  int<lower=1> N, T;          // # participants, max # of trials
+  array[N] int Tsubj;         // # of trials for acquisition phase
 
-  int<lower=-1,upper=6> option1[N, T];
-  int<lower=-1,upper=6> option2[N, T];
-  int<lower=-1,upper=1> choice[N, T];
-  real reward[N, T];
+  array[N, T] int option1;    // LHS option (1-6)
+  array[N, T] int option2;    // RHS option (1-6)
+  array[N, T] int choice;     // choice (1 = chose option 1, 3, or 5)
+  matrix[N, T] reward;        // coded as 1 (reward) or -1 (no reward)
 }
 
 transformed data {
@@ -38,15 +37,12 @@ transformed parameters {
 }
 
 generated quantities {
-  // For posterior predictive check
-  real y_pred[N, T];
+  // initialise posterior prediction matrix
+  vector[N] neg_ones;
+  matrix[N, T] y_pred;
 
-  // Initialize all the variables to avoid NULL values
-  for (i in 1:N) {
-    for (t in 1:T) {
-      y_pred[i, t]    = -1;
-    }
-  }
+  neg_ones = rep_vector(-1, N);
+  y_pred   = rep_matrix(neg_ones, T);
 
   {
     for (i in 1:N) {

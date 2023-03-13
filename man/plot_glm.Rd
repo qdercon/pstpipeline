@@ -64,7 +64,7 @@ title compared to the main plot, given as a 2 element vector. Defaults to
 
 \item{plt_rows, plt_rel_widths}{Number of rows, and relative widths for the
 plotted grid (passed to \code{\link[cowplot:plot_grid]{cowplot::plot_grid()}}). Defaults to \code{1}
-(i.e. single row, all equal widths). Ignored if \code{plot_together == FALSE}.}
+(i.e. single row, all equal widths). Ignored if \code{!plot_together}.}
 
 \item{cred}{Vector, length 2, which defines the \% HDI covered by the boxplot
 boxes and lines respectively.}

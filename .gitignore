@@ -6,3 +6,4 @@ outputs
 data-raw/*.txt
 data-raw/subjID_key_scramble.csv
 .DS_Store
+R/.lintr
