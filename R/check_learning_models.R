@@ -18,6 +18,8 @@
 #'
 #' @returns Either a single or named \code{list} of \code{ggplot} objects.
 #'
+#' @importFrom stats density
+#'
 #' @examples \dontrun{
 #' data(example_data)
 #'
