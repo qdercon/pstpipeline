@@ -28,13 +28,10 @@ transformed data {
   inits = rep_vector(0, 6);
   zeros = rep_row_vector(0, T);
 
-  int s;
   matrix[N, T] affect_tr;
-  s = N*T;
-
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
   for (t in 1:T) {
-    affect_tr[:, t] = ((affect[:, t]*(s-1))+0.5)/s;
+    affect_tr[:, t] = ((affect[:, t] * (N - 1)) + 0.5) / N;
   }
 }
 
@@ -132,6 +129,7 @@ model {
     ti = Tsubj[i];           // Number of trials for participant i
 
     int co;                  // Chosen option
+    int qn;                  // Question number
     real pe;                 // Prediction error
     real alpha;              // Learning rate (positive or negative)
     
@@ -171,6 +169,7 @@ model {
     // calculate relevant quantities for each trial
     for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+      qn = question[i, t];
 
       // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
@@ -188,14 +187,14 @@ model {
       }
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]  = w0[i, question[i, t]];
-      w2_vec[t]  = w2[i, question[i, t]];
-      w3_vec[t]  = w3[i, question[i, t]];
-      phi_vec[t] = phi[i, question[i, t]];
+      w0_vec[t]  = w0[i, qn];
+      w2_vec[t]  = w2[i, qn];
+      w3_vec[t]  = w3[i, qn];
+      phi_vec[t] = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
     }
 
     // increment log density for choice for participant i
@@ -250,6 +249,7 @@ generated quantities {
     ti = Tsubj[i];           // Number of trials for participant i
 
     int co;                  // Chosen option
+    int qn;                  // Question number
     real pe;                 // Prediction error
     real alpha;              // Learning rate (positive or negative)
     
@@ -291,6 +291,7 @@ generated quantities {
     // calculate relevant quantities for each trial
     for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+      qn = question[i, t];
 
       // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
@@ -308,14 +309,14 @@ generated quantities {
       }
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]  = w0[i, question[i, t]];
-      w2_vec[t]  = w2[i, question[i, t]];
-      w3_vec[t]  = w3[i, question[i, t]];
-      phi_vec[t] = phi[i, question[i, t]];
+      w0_vec[t]  = w0[i, qn];
+      w2_vec[t]  = w2[i, qn];
+      w3_vec[t]  = w3[i, qn];
+      phi_vec[t] = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
     }
 
     // increment log likelihood for choice for participant i
@@ -337,6 +338,6 @@ generated quantities {
 
   // backtransform predictions to be on the original scale for completeness
   for (t in 1:T) {
-    y_pred[:, t] = ((y_pred[:, t]*s)-0.5)/(s-1);
+    y_pred[:, t] = ((y_pred[:, t] * N) - 0.5) / (N - 1);
   }
 }
