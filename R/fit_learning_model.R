@@ -268,7 +268,7 @@ fit_learning_model <- function(df_all,
     else data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
-  if (outputs == "stan_datalist") return(data_cmdstan)
+  if (all(outputs == "stan_datalist")) return(data_cmdstan)
 
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 

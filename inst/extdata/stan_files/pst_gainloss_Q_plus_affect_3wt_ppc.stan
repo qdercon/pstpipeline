@@ -41,7 +41,7 @@ parameters {
   vector<lower=0>[3] sigma_ql;
 
   // group-level weights
-  matrix[3, 3] mu_wt;
+  matrix[3, 3] mu_wt; // 3 questions x 3 weights
   matrix<lower=0>[3, 3] sigma_wt;
 
   // group-level parameters for decay factor (gamma)
@@ -82,12 +82,12 @@ transformed parameters {
   matrix<lower=0, upper=1>[N, 3] gamma;
   matrix[N, 3] phi;
 
-  for (p in 1:3) {
-    w0[:, p]    = mu_wt[1, p] + sigma_wt[1, p] * w0_pr[:, p];
-    w2[:, p]    = mu_wt[2, p] + sigma_wt[2, p] * w2_pr[:, p];
-    w3[:, p]    = mu_wt[3, p] + sigma_wt[3, p] * w3_pr[:, p];
-    gamma[:, p] = Phi_approx(mu_gm[p] + sigma_gm[p] * gm_pr[:, p]);
-    phi[:, p]   = exp(aff_mu_phi[p] + aff_sigma_phi[p] * phi_pr[:, p]);
+  for (q in 1:3) {
+    w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
+    w2[:, q]    = mu_wt[q, 2] + sigma_wt[q, 2] * w2_pr[:, q];
+    w3[:, q]    = mu_wt[q, 3] + sigma_wt[q, 3] * w3_pr[:, q];
+    gamma[:, q] = Phi_approx(mu_gm[q] + sigma_gm[q] * gm_pr[:, q]);
+    phi[:, q]   = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
 }
 
@@ -97,9 +97,9 @@ model {
   sigma_ql ~ normal(0, 0.2);
 
   // hyperpriors on the weights
-  for (p in 1:3) {
-    mu_wt[:, p]    ~ normal(0, 1);
-    sigma_wt[:, p] ~ exponential(0.1);
+  for (q in 1:3) {
+    mu_wt[q]    ~ normal(0, 1);
+    sigma_wt[q] ~ exponential(0.1);
   }
 
   // hyperpriors on gamma
@@ -116,12 +116,12 @@ model {
   beta_pr      ~ normal(0, 1);
 
   // priors on the weights + gamma + beta distribution precision
-  for (p in 1:3) {
-    w0_pr[:, p]  ~ normal(0, 1);
-    w2_pr[:, p]  ~ normal(0, 1);
-    w3_pr[:, p]  ~ normal(0, 1);
-    gm_pr[:, p]  ~ normal(0, 1);
-    phi_pr[:, p] ~ normal(0, 1);
+  for (q in 1:3) {
+    w0_pr[:, q]   ~ normal(0, 1);
+    w2_pr[:, q]   ~ normal(0, 1);
+    w3_pr[:, q]   ~ normal(0, 1);
+    gm_pr[:, q]   ~ normal(0, 1);
+    phi_pr[:, q]  ~ normal(0, 1);
   }
 
   for (i in 1:N) {
@@ -201,7 +201,11 @@ model {
     choice[i, :ti] ~ bernoulli_logit(beta[i] * delta);
     
     // calculate conditional mean of the beta distribution
-    aff_mu_cond = inv_logit(w0_vec + (w2_vec .* ev_dcy) + (w3_vec .* pe_dcy));
+    aff_mu_cond = inv_logit(
+      w0_vec + 
+      w2_vec .* ev_dcy + 
+      w3_vec .* pe_dcy
+    );
 
     // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
     shape_a += aff_mu_cond .* phi_vec;
@@ -236,12 +240,24 @@ generated quantities {
   mu_alpha_neg = Phi_approx(mu_ql[2]);
   mu_beta      = Phi_approx(mu_ql[3]) * 10;
 
-  for (p in 1:3) {
-    mu_w0[p]    = mu_wt[1, p];
-    mu_w2[p]    = mu_wt[2, p];
-    mu_w3[p]    = mu_wt[3, p];
-    mu_gamma[p] = Phi_approx(mu_gm[p]);
-  }
+  mu_w0    = mu_wt[:, 1];
+  mu_w2    = mu_wt[:, 2];
+  mu_w3    = mu_wt[:, 3];
+  mu_gamma = Phi_approx(mu_gm);
+
+  // difference in weights between questions
+  vector[3] w0_diff;
+  vector[3] w2_diff;
+  vector[3] w3_diff;
+  vector[3] gamma_diff;
+
+  array[3] int bsl = { 1, 1, 2 };
+  array[3] int comp = { 2, 3, 3 };
+
+  w0_diff    = mu_w0[bsl] - mu_w0[comp];
+  w2_diff    = mu_w2[bsl] - mu_w2[comp];
+  w3_diff    = mu_w3[bsl] - mu_w3[comp];
+  gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
   
   // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
@@ -323,7 +339,11 @@ generated quantities {
     log_lik[i] += bernoulli_logit_lpmf(choice[i, :ti] | beta[i] * delta);
     
     // calculate conditional mean of the beta distribution
-    aff_mu_cond = inv_logit(w0_vec + (w2_vec .* ev_dcy) + (w3_vec .* pe_dcy));
+    aff_mu_cond = inv_logit(
+      w0_vec + 
+      w2_vec .* ev_dcy + 
+      w3_vec .* pe_dcy
+    );
 
     // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
     shape_a += aff_mu_cond .* phi_vec;

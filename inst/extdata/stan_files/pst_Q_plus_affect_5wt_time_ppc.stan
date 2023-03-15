@@ -30,13 +30,10 @@ transformed data {
   inits = rep_vector(0, 6);
   zeros = rep_row_vector(0, T);
 
-  int s;
   matrix[N, T] affect_tr;
-  s = N*T;
-
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
   for (t in 1:T) {
-    affect_tr[:, t] = ((affect[:, t]*(s-1))+0.5)/s;
+    affect_tr[:, t] = ((affect[:, t] * (N - 1)) + 0.5) / N;
   }
 }
 
@@ -46,8 +43,8 @@ parameters {
   vector<lower=0>[2] sigma_ql;
 
   // group-level weights
-  matrix[5, 3] mu_wt;
-  matrix<lower=0>[5, 3] sigma_wt;
+  matrix[3, 5] mu_wt; // 3 questions x 5 weights
+  matrix<lower=0>[3, 5] sigma_wt;
 
   // group-level parameters for decay factor (gamma)
   vector[3] mu_gm;
@@ -88,14 +85,14 @@ transformed parameters {
   matrix<lower=0, upper=1>[N, 3] gamma;
   matrix[N, 3] phi;
 
-  for (p in 1:3) {
-    w0[:, p]    = mu_wt[1, p] + sigma_wt[1, p] * w0_pr[:, p];
-    w1_o[:, p]  = mu_wt[2, p] + sigma_wt[2, p] * w1_o_pr[:, p];
-    w1_b[:, p]  = mu_wt[3, p] + sigma_wt[3, p] * w1_b_pr[:, p];
-    w2[:, p]    = mu_wt[4, p] + sigma_wt[4, p] * w2_pr[:, p];
-    w3[:, p]    = mu_wt[5, p] + sigma_wt[5, p] * w3_pr[:, p];
-    gamma[:, p] = Phi_approx(mu_gm[p] + sigma_gm[p] * gm_pr[:, p]);
-    phi[:, p]   = exp(aff_mu_phi[p] + aff_sigma_phi[p] * phi_pr[:, p]);
+  for (q in 1:3) {
+    w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
+    w1_o[:, q]  = mu_wt[q, 2] + sigma_wt[q, 2] * w1_o_pr[:, q];
+    w1_b[:, p]  = mu_wt[q, 3] + sigma_wt[q, 3] * w1_b_pr[:, q];
+    w2[:, q]    = mu_wt[q, 4] + sigma_wt[q, 4] * w2_pr[:, q];
+    w3[:, q]    = mu_wt[q, 5] + sigma_wt[q, 5] * w3_pr[:, q];
+    gamma[:, q] = Phi_approx(mu_gm[q] + sigma_gm[q] * gm_pr[:, q]);
+    phi[:, q]   = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
 }
 
@@ -105,9 +102,9 @@ model {
   sigma_ql ~ normal(0, 0.2);
 
   // hyperpriors on the weights
-  for (p in 1:3) {
-    mu_wt[:, p]    ~ normal(0, 1);
-    sigma_wt[:, p] ~ exponential(0.1);
+  for (q in 1:3) {
+    mu_wt[q]    ~ normal(0, 1);
+    sigma_wt[q] ~ exponential(0.1);
   }
 
   // hyperpriors on gamma
@@ -123,14 +120,14 @@ model {
   beta_pr  ~ normal(0, 1);
 
   // priors on the weights + gamma + beta distribution precision
-  for (p in 1:3) {
-    w0_pr[:, p]   ~ normal(0, 1);
-    w1_o_pr[:, p] ~ normal(0, 1);
-    w1_b_pr[:, p] ~ normal(0, 1);
-    w2_pr[:, p]   ~ normal(0, 1);
-    w3_pr[:, p]   ~ normal(0, 1);
-    gm_pr[:, p]   ~ normal(0, 1);
-    phi_pr[:, p]  ~ normal(0, 1);
+  for (q in 1:3) {
+    w0_pr[:, q]   ~ normal(0, 1);
+    w1_o_pr[:, q] ~ normal(0, 1);
+    w1_b_pr[:, q] ~ normal(0, 1);
+    w2_pr[:, q]   ~ normal(0, 1);
+    w3_pr[:, q]   ~ normal(0, 1);
+    gm_pr[:, q]   ~ normal(0, 1);
+    phi_pr[:, q]  ~ normal(0, 1);
   }
 
   for (i in 1:N) {
@@ -138,6 +135,7 @@ model {
     ti = Tsubj[i];           // Number of trials for participant i
 
     int co;                  // Chosen option
+    int qn;                  // Question number
     real pe;                 // Prediction error
     
     vector[6] ev;            // Expected values per symbol
@@ -178,6 +176,7 @@ model {
     // calculate relevant quantities for each trial
     for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+      qn = question[i, t];
 
       // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
@@ -194,16 +193,16 @@ model {
       }
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]   = w0[i, question[i, t]];
-      w1_o_vec[t] = w1_o[i, question[i, t]];
-      w1_b_vec[t] = w1_b[i, question[i, t]];
-      w2_vec[t]   = w2[i, question[i, t]];
-      w3_vec[t]   = w3[i, question[i, t]];
-      phi_vec[t]  = phi[i, question[i, t]];
+      w0_vec[t]   = w0[i, qn];
+      w1_o_vec[t] = w1_o[i, qn];
+      w1_b_vec[t] = w1_b[i, qn];
+      w2_vec[t]   = w2[i, qn];
+      w3_vec[t]   = w3[i, qn];
+      phi_vec[t]  = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
     }
 
     // increment log density for choice for participant i
@@ -212,10 +211,10 @@ model {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* to_vector(ovl_time[i]) +
-      w1_b_vec .* to_vector(blk_time[i]) +
-      (w2_vec .* ev_dcy) + 
-      (w3_vec .* pe_dcy)
+      w1_o_vec .* to_vector(ovl_time[i]) + 
+      w1_b_vec .* to_vector(blk_time[i]) + 
+      w2_vec .* ev_dcy + 
+      w3_vec .* pe_dcy
     );
 
     // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
@@ -251,14 +250,22 @@ generated quantities {
   mu_alpha = Phi_approx(mu_ql[1]);
   mu_beta  = Phi_approx(mu_ql[2]) * 10;
 
-  for (p in 1:3) {
-    mu_w0[p]    = mu_wt[1, p];
-    mu_w1_o[p]  = mu_wt[2, p];
-    mu_w1_b[p]  = mu_wt[3, p];
-    mu_w2[p]    = mu_wt[4, p];
-    mu_w3[p]    = mu_wt[5, p];
-    mu_gamma[p] = Phi_approx(mu_gm[p]);
-  }
+  vector[3] w0_diff;
+  vector[3] w1_o_diff;
+  vector[3] w1_b_diff;
+  vector[3] w2_diff;
+  vector[3] w3_diff;
+  vector[3] gamma_diff;
+
+  array[3] int bsl = { 1, 1, 2 };
+  array[3] int comp = { 2, 3, 3 };
+
+  w0_diff    = mu_w0[bsl] - mu_w0[comp];
+  w1_o_diff  = mu_w1_o[bsl] - mu_w1_o[comp];
+  w1_b_diff  = mu_w1_b[bsl] - mu_w1_b[comp];
+  w2_diff    = mu_w2[bsl] - mu_w2[comp];
+  w3_diff    = mu_w3[bsl] - mu_w3[comp];
+  gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
   
   // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
@@ -266,6 +273,7 @@ generated quantities {
     ti = Tsubj[i];           // Number of trials for participant i
     
     int co;                  // Chosen option
+    int qn;                  // Question number
     real pe;                 // Prediction error
     
     vector[6] ev;            // Expected values per symbol
@@ -308,6 +316,7 @@ generated quantities {
     // calculate relevant quantities for each trial
     for (t in 1:ti) {
       co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
+      qn = question[i, t];
 
       // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
@@ -324,16 +333,16 @@ generated quantities {
       }
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]   = w0[i, question[i, t]];
-      w1_o_vec[t] = w1_o[i, question[i, t]];
-      w1_b_vec[t] = w1_b[i, question[i, t]];
-      w2_vec[t]   = w2[i, question[i, t]];
-      w3_vec[t]   = w3[i, question[i, t]];
-      phi_vec[t]  = phi[i, question[i, t]];
+      w0_vec[t]   = w0[i, qn];
+      w1_o_vec[t] = w1_o[i, qn];
+      w1_b_vec[t] = w1_b[i, qn];
+      w2_vec[t]   = w2[i, qn];
+      w3_vec[t]   = w3[i, qn];
+      phi_vec[t]  = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, question[i, t]];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, question[i, t]];
+      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
+      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
     }
 
     // increment log likelihood for choice for participant i
@@ -344,8 +353,8 @@ generated quantities {
       w0_vec + 
       w1_o_vec .* to_vector(ovl_time[i]) + 
       w1_b_vec .* to_vector(blk_time[i]) + 
-      (w2_vec .* ev_dcy) + 
-      (w3_vec .* pe_dcy)
+      w2_vec .* ev_dcy + 
+      w3_vec .* pe_dcy
     );
 
     // calculate beta distribution shape parameters (Smith & Verkuilen, 2006)
@@ -359,8 +368,8 @@ generated quantities {
     y_pred[i, :ti] = to_row_vector(beta_rng(shape_a, shape_b));
   }
 
-  // backtransform predictions to be on the original scale for completeness
+  /// backtransform predictions to be on the original scale for completeness
   for (t in 1:T) {
-    y_pred[:, t] = ((y_pred[:, t]*s)-0.5)/(s-1);
+    y_pred[:, t] = ((y_pred[:, t] * N) - 0.5) / (N - 1);
   }
 }
