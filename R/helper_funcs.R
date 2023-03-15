@@ -184,7 +184,7 @@ clean_summary <- function(summary) {
   id_all <- variable <- NULL
   summary |>
     dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
-    dplyr::filter(!grepl("_pr|_s|mu|sigma", variable)) |>
+    dplyr::filter(!grepl("_pr|_s|mu|sigma|_diff", variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(tidyselect::matches("ess|rhat"))
     ) |>
