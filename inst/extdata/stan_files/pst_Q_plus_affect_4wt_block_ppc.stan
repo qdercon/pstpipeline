@@ -204,7 +204,7 @@ model {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* to_vector(block_no[i]) + 
+      w1_o_vec .* to_vector(block_no[, :ti]) + 
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );
@@ -344,7 +344,7 @@ generated quantities {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* to_vector(block_no[i]) + 
+      w1_o_vec .* to_vector(block_no[i, :ti]) + 
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );
