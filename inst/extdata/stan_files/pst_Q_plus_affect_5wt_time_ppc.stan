@@ -86,7 +86,7 @@ transformed parameters {
   for (q in 1:3) {
     w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
     w1_o[:, q]  = mu_wt[q, 2] + sigma_wt[q, 2] * w1_o_pr[:, q];
-    w1_b[:, p]  = mu_wt[q, 3] + sigma_wt[q, 3] * w1_b_pr[:, q];
+    w1_b[:, q]  = mu_wt[q, 3] + sigma_wt[q, 3] * w1_b_pr[:, q];
     w2[:, q]    = mu_wt[q, 4] + sigma_wt[q, 4] * w2_pr[:, q];
     w3[:, q]    = mu_wt[q, 5] + sigma_wt[q, 5] * w3_pr[:, q];
     gamma[:, q] = Phi_approx(mu_gm[q] + sigma_gm[q] * gm_pr[:, q]);
