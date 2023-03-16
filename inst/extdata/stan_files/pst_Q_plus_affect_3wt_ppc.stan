@@ -28,11 +28,9 @@ transformed data {
   inits = rep_vector(0, 6);
   zeros = rep_row_vector(0, T);
 
-  matrix[N, T] affect_tr;
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
-  for (t in 1:T) {
-    affect_tr[:, t] = ((affect[:, t] * (N - 1)) + 0.5) / N;
-  }
+  matrix[N, T] affect_tr;
+  affect_tr = ((affect * (N - 1)) + 0.5) / N;
 }
 
 parameters {
@@ -140,7 +138,7 @@ model {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    matrix[ti, 3] dcy_mat;   // Weighting of previous trials, by question
+    matrix[ti, 3] dcy_qn;   // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -153,9 +151,15 @@ model {
     ev      = inits;
     ev_vec  = z_vec;
     pe_vec  = z_vec;
-    dcy_mat = rep_matrix(z_vec', 3);
     ev_dcy  = z_vec';
     pe_dcy  = z_vec';
+
+    // compute decay matrix for each question
+    for (q in 1:3) {
+      for (t in 1:ti) {
+        dcy_qn[t, q] = pow(gamma[i, q], t-1);
+      }
+    }
 
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -174,11 +178,6 @@ model {
 
       ev[co] += alpha[i] * pe;
       ev_vec[t] = ev[co];
-
-      // store decay factor weighting for each question (gammas are different)
-      for (q in 1:3) {
-        dcy_mat[t, q] = pow(gamma[i, q], t - 1);
-      }
       
       // store weights and beta distribution precision for convenience
       w0_vec[t]  = w0[i, qn];
@@ -187,8 +186,8 @@ model {
       phi_vec[t] = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
+      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
+      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
     }
 
     // increment log density for choice for participant i
@@ -272,7 +271,7 @@ generated quantities {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    matrix[ti, 3] dcy_mat;   // Weighting of previous trials, by question
+    matrix[ti, 3] dcy_qn;   // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -285,9 +284,15 @@ generated quantities {
     ev      = inits;
     ev_vec  = z_vec;
     pe_vec  = z_vec;
-    dcy_mat = rep_matrix(z_vec', 3);
     ev_dcy  = z_vec';
     pe_dcy  = z_vec';
+
+    // compute decay matrix for each question
+    for (q in 1:3) {
+      for (t in 1:ti) {
+        dcy_qn[t, q] = pow(gamma[i, q], t-1);
+      }
+    }
     
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -308,11 +313,6 @@ generated quantities {
 
       ev[co] += alpha[i] * pe;
       ev_vec[t] = ev[co];
-
-      // store decay factor weighting for each question (gammas are different)
-      for (q in 1:3) {
-        dcy_mat[t, q] = pow(gamma[i, q], t - 1);
-      }
       
       // store weights and beta distribution precision for convenience
       w0_vec[t]  = w0[i, qn];
@@ -321,8 +321,8 @@ generated quantities {
       phi_vec[t] = phi[i, qn];
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = reverse(ev_vec[:t]) * dcy_mat[:t, qn];
-      pe_dcy[t] = reverse(pe_vec[:t]) * dcy_mat[:t, qn];
+      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
+      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
     }
 
     // increment log likelihood for choice for participant i
@@ -346,8 +346,6 @@ generated quantities {
     y_pred[i, :ti] = to_row_vector(beta_rng(shape_a, shape_b));
   }
   
-  // backtransform predictions to be on the original scale for completeness
-  for (t in 1:T) {
-    y_pred[:, t] = ((y_pred[:, t] * N) - 0.5) / (N - 1);
-  }
+  // backtransform predictions to be on the original scale
+  y_pred = ((y_pred * N) - 0.5) / (N - 1);
 }
