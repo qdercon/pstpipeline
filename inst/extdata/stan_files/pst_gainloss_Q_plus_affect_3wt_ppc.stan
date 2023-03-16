@@ -230,7 +230,7 @@ generated quantities {
 
   // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
-  vector[N] neg_ones;
+  row_vector[N] neg_ones;
   array[N] row_vector[T] y_pred;
 
   neg_ones = rep_row_vector(-1, T);
