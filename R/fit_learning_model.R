@@ -234,6 +234,8 @@ fit_learning_model <- function(df_all,
     }
   }
 
+  if (all(outputs == "raw_df")) return(raw_df)
+
   ## get info
 
   if (exp_part == "training") {
