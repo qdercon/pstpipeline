@@ -352,7 +352,7 @@ generated quantities {
     shape_b += phi_vec .* (1 - aff_mu_cond);
     
     // increment log likelihood for affect for participant i
-    log_lik[i] += beta_lpdf(affect_tr[i, :ti] | shape_a, shape_b);
+    log_lik[i] += beta_lpdf(affect_tr[i][:ti] | shape_a, shape_b);
 
     // generate posterior predictions on original scale
     y_pred[i][:ti] =

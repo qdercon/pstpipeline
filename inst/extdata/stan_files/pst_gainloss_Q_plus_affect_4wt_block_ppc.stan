@@ -9,17 +9,17 @@
 //------------------------------------------------------------------------------
 
 data {
-  int<lower=1> N, T;          // # participants, max # of trials
-  array[N] int Tsubj;         // # of trials for acquisition phase
+  int<lower=1> N, T;                // # participants, max # of trials
+  array[N] int Tsubj;               // # of trials for acquisition phase
 
-  array[N, T] int option1;    // LHS option (1-6)
-  array[N, T] int option2;    // RHS option (1-6)
-  array[N, T] int choice;     // choice (1 = chose option 1, 3, or 5)
-  matrix[N, T] reward;        // coded as 1 (reward) or -1 (no reward)
+  array[N, T] int option1;          // LHS option (1-6)
+  array[N, T] int option2;          // RHS option (1-6)
+  array[N, T] int choice;           // choice (1 = chose option 1, 3, or 5)
+  matrix[N, T] reward;              // coded as 1 (reward) or -1 (no reward)
 
-  matrix[N, T] affect;        // includes 0 and 1, needs to be transformed
-  array[N, T] int question;   // from 1 to 3 (happy, confident, engaged)
-  array[N, T] int block_no;   // from 1 to 6
+  array[N] row_vector[T] affect;    // includes 0 and 1, needs to be transformed
+  array[N, T] int question;         // from 1 to 3 (happy, confident, engaged)
+  array[N, T] int block_no;         // from 1 to 6
 }
 
 transformed data {
@@ -30,8 +30,16 @@ transformed data {
   zeros = rep_row_vector(0, T);
 
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
-  matrix[N, T] affect_tr;
-  affect_tr = ((affect * (N - 1)) + 0.5) / N;
+  array[N] row_vector[T] affect_tr;
+  for (i in 1:N) {
+    affect_tr[i] = ((affect[i] * (N - 1)) + 0.5) / N;
+  }
+
+  // transpose block number for efficient indexing
+  array[N] vector[T] block_no_tr;
+  for (i in 1:N) {
+    block_no_tr[i] = to_vector(block_no[i]);
+  }
 }
 
 parameters {
@@ -209,7 +217,7 @@ model {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* to_vector(block_no[i, :ti]) + 
+      w1_o_vec .* block_no_tr[i][:ti] + 
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );
@@ -219,7 +227,7 @@ model {
     shape_b += phi_vec .* (1 - aff_mu_cond);
     
     // increment log density for affect for participant i
-    affect_tr[i, :ti] ~ beta(shape_a, shape_b);
+    affect_tr[i][:ti] ~ beta(shape_a, shape_b);
   }
 }
 
@@ -237,11 +245,11 @@ generated quantities {
 
   // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
-  vector[N] neg_ones;
-  matrix[N, T] y_pred;
+  row_vector[N] neg_ones;
+  array[N] row_vector[T] y_pred;
 
-  neg_ones = rep_vector(-1, N);
-  y_pred = rep_matrix(neg_ones, T);
+  neg_ones = rep_row_vector(-1, T);
+  y_pred   = rep_array(neg_ones, N);
 
   // calculate moments of the group-level posterior distributions
   mu_alpha_pos = Phi_approx(mu_ql[1]);
@@ -354,7 +362,7 @@ generated quantities {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* to_vector(block_no[i, :ti]) + 
+      w1_o_vec .* block_no_tr[i][:ti] + 
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );
@@ -364,12 +372,10 @@ generated quantities {
     shape_b += phi_vec .* (1 - aff_mu_cond);
     
     // increment log likelihood for affect for participant i
-    log_lik[i] += beta_lpdf(affect_tr[i, :ti] | shape_a, shape_b);
+    log_lik[i] += beta_lpdf(affect_tr[i][:ti] | shape_a, shape_b);
 
-    // generate posterior predictions
-    y_pred[i, :ti] = to_row_vector(beta_rng(shape_a, shape_b));
+    // generate posterior predictions on original scale
+    y_pred[i][:ti] =
+      ((to_row_vector(beta_rng(shape_a, shape_b)) * N) - 0.5) / (N - 1);
   }
-
-  // backtransform predictions to be on the original scale
-  y_pred = ((y_pred * N) - 0.5) / (N - 1);
 }
