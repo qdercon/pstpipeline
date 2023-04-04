@@ -48,8 +48,8 @@ parameters {
   matrix<lower=0>[3, 3] sigma_wt;
 
   // group-level parameters for decay factor (gamma)
-  real mu_gm;
-  real<lower=0> sigma_gm;
+  vector[3] mu_gm;
+  vector<lower=0>[3] sigma_gm;
 
   // group-level beta distribution precision (phi)
   vector[3] aff_mu_phi;
@@ -59,12 +59,12 @@ parameters {
   vector[N] alpha_pos_pr;
   vector[N] alpha_neg_pr;
   vector[N] beta_pr;
-  vector[N] gm_pr;
 
   // individual-level weights + forgetting factor
   matrix[N, 3] w0_pr;
   matrix[N, 3] w2_pr;
   matrix[N, 3] w3_pr;
+  matrix[N, 3] gm_pr;
 
   // individual-level affect precision (phi)
   matrix[N, 3] phi_pr;
@@ -74,22 +74,22 @@ transformed parameters {
   vector<lower=0, upper=1>[N] alpha_pos;
   vector<lower=0, upper=1>[N] alpha_neg;
   vector<lower=0, upper=10>[N] beta;
-  vector<lower=0, upper=1>[N] gamma;
 
   alpha_pos = Phi_approx(mu_ql[1] + sigma_ql[1] * alpha_pos_pr);
   alpha_neg = Phi_approx(mu_ql[2] + sigma_ql[2] * alpha_neg_pr);
   beta      = Phi_approx(mu_ql[3] + sigma_ql[3] * beta_pr) * 10;
-  gamma     = Phi_approx(mu_gm + sigma_gm * gm_pr);
 
   matrix[N, 3] w0;
   matrix[N, 3] w2;
   matrix[N, 3] w3;
+  matrix<lower=0, upper=1>[N, 3] gamma;
   matrix[N, 3] phi;
 
   for (q in 1:3) {
     w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
     w2[:, q]    = mu_wt[q, 2] + sigma_wt[q, 2] * w2_pr[:, q];
     w3[:, q]    = mu_wt[q, 3] + sigma_wt[q, 3] * w3_pr[:, q];
+    gamma[:, q] = Phi_approx(mu_gm[q] + sigma_gm[q] * gm_pr[:, q]);
     phi[:, q]   = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
 }
@@ -117,13 +117,13 @@ model {
   alpha_pos_pr ~ normal(0, 1);
   alpha_neg_pr ~ normal(0, 1);
   beta_pr      ~ normal(0, 1);
-  gm_pr     ~ normal(0, 1);
 
   // priors on the weights + gamma + beta distribution precision
   for (q in 1:3) {
     w0_pr[:, q]   ~ normal(0, 1);
     w2_pr[:, q]   ~ normal(0, 1);
     w3_pr[:, q]   ~ normal(0, 1);
+    gm_pr[:, q]   ~ normal(0, 1);
     phi_pr[:, q]  ~ normal(0, 1);
   }
 
@@ -148,7 +148,7 @@ model {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    vector[ti] dcy_qn;       // Weighting of previous trials
+    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -161,9 +161,15 @@ model {
     ev      = inits;
     ev_vec  = z_vec;
     pe_vec  = z_vec;
-    dcy_qn  = z_vec';
     ev_dcy  = z_vec';
     pe_dcy  = z_vec';
+
+    // compute decay matrix for each question
+    for (q in 1:3) {
+      for (t in 1:ti) {
+        dcy_qn[t, q] = pow(gamma[i, q], t-1);
+      }
+    }
     
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -189,13 +195,10 @@ model {
       w2_vec[t]  = w2[i, qn];
       w3_vec[t]  = w3[i, qn];
       phi_vec[t] = phi[i, qn];
-      
-      // store decay factor
-      dcy_qn[t] = pow(gamma[i], t-1);
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t]);
-      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t]);
+      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
+      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
     }
 
     // increment log density for choice for participant i
@@ -222,32 +225,33 @@ generated quantities {
   real<lower=0,upper=1>  mu_alpha_pos;
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
-  real<lower=0,upper=1>  mu_gamma;
 
   vector[3] mu_w0;
   vector[3] mu_w2;
   vector[3] mu_w3;
+  vector[3] mu_gamma;
 
   // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
   array[N] row_vector[T] y_pred;
 
-  y_pred   = rep_array(neg_ones, N);
+  y_pred = rep_array(neg_ones, N);
 
   // calculate moments of the group-level posterior distributions
   mu_alpha_pos = Phi_approx(mu_ql[1]);
   mu_alpha_neg = Phi_approx(mu_ql[2]);
   mu_beta      = Phi_approx(mu_ql[3]) * 10;
-  mu_gamma     = Phi_approx(mu_gm);
 
   mu_w0    = mu_wt[:, 1];
   mu_w2    = mu_wt[:, 2];
   mu_w3    = mu_wt[:, 3];
+  mu_gamma = Phi_approx(mu_gm);
 
   // difference in weights between questions
   vector[3] w0_diff;
   vector[3] w2_diff;
   vector[3] w3_diff;
+  vector[3] gamma_diff;
 
   array[3] int bsl = { 1, 1, 2 };
   array[3] int comp = { 2, 3, 3 };
@@ -255,6 +259,7 @@ generated quantities {
   w0_diff    = mu_w0[bsl] - mu_w0[comp];
   w2_diff    = mu_w2[bsl] - mu_w2[comp];
   w3_diff    = mu_w3[bsl] - mu_w3[comp];
+  gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
   
   // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
@@ -278,7 +283,7 @@ generated quantities {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    vector[ti] dcy_qn;       // Weighting of previous trials
+    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -291,9 +296,15 @@ generated quantities {
     ev      = inits;
     ev_vec  = z_vec;
     pe_vec  = z_vec;
-    dcy_qn  = z_vec';
     ev_dcy  = z_vec';
     pe_dcy  = z_vec';
+
+    // compute decay matrix for each question
+    for (q in 1:3) {
+      for (t in 1:ti) {
+        dcy_qn[t, q] = pow(gamma[i, q], t-1);
+      }
+    }
     
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -322,12 +333,9 @@ generated quantities {
       w3_vec[t]  = w3[i, qn];
       phi_vec[t] = phi[i, qn];
 
-      // store decay factor
-      dcy_qn[t] = pow(gamma[i], t-1);
-
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t]);
-      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t]);
+      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
+      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
     }
 
     // increment log likelihood for choice for participant i

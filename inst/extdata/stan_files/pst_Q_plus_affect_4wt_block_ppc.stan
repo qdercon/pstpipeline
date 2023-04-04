@@ -26,8 +26,11 @@ transformed data {
   // default values to initialize the vectors/matrices of EVs/PEs
   vector[6] inits;
   row_vector[T] zeros;
+  row_vector[T] neg_ones;
+
   inits = rep_vector(0, 6);
   zeros = rep_row_vector(0, T);
+  neg_ones = rep_row_vector(-1, T);
 
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
   array[N] row_vector[T] affect_tr;
@@ -152,7 +155,7 @@ model {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    matrix[ti, 3] dcy_qn;   // Weighting of previous trials, by question
+    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -238,11 +241,9 @@ generated quantities {
 
   // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
-  row_vector[T] neg_ones;
   array[N] row_vector[T] y_pred;
 
-  neg_ones = rep_row_vector(-1, T);
-  y_pred   = rep_array(neg_ones, N);
+  y_pred = rep_array(neg_ones, N);
 
   // calculate moments of the group-level posterior distributions
   mu_alpha = Phi_approx(mu_ql[1]);
@@ -291,7 +292,7 @@ generated quantities {
     row_vector[ti] ev_vec;   // Vector of expected values
     row_vector[ti] pe_vec;   // Vector of prediction errors
     
-    matrix[ti, 3] dcy_qn;   // Weighting of previous trials, by question
+    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial

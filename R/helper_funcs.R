@@ -382,7 +382,7 @@ get_affect_ppc <- function(draws,
       dplyr::select(trial_no_q, question_response) |>
       dplyr::rename(mean_raw = question_response)
 
-    aff_tr <- which(raw[raw$subjID == id,]$question_type == adj) #nolint
+    aff_tr <- which(raw[raw$subjID == id, ]$question_type == adj) #nolint
 
     affect_pred <-
       draws[, .SD, .SDcols = patterns(paste0("^y_pred\\[", i, ","))]
