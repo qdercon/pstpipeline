@@ -59,12 +59,12 @@ parameters {
   vector[N] alpha_pos_pr;
   vector[N] alpha_neg_pr;
   vector[N] beta_pr;
+  vector[N] gm_pr;
 
   // individual-level weights + forgetting factor
   matrix[N, 3] w0_pr;
   matrix[N, 3] w2_pr;
   matrix[N, 3] w3_pr;
-  matrix[N, 3] gm_pr;
 
   // individual-level affect precision (phi)
   matrix[N, 3] phi_pr;
@@ -117,7 +117,7 @@ model {
   alpha_pos_pr ~ normal(0, 1);
   alpha_neg_pr ~ normal(0, 1);
   beta_pr      ~ normal(0, 1);
-  gamma_pr     ~ normal(0, 1);
+  gm_pr     ~ normal(0, 1);
 
   // priors on the weights + gamma + beta distribution precision
   for (q in 1:3) {
@@ -326,8 +326,8 @@ generated quantities {
       dcy_qn[t] = pow(gamma[i], t-1);
 
       // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
-      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
+      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t]);
+      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t]);
     }
 
     // increment log likelihood for choice for participant i
