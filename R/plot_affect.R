@@ -77,8 +77,8 @@ plot_affect <- function(data,
     data <- data |> dplyr::filter(!is.na(adj))
 
     p <- unique(data$parameter)
-    labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^o),
-              expression(w[1]^b), expression(w[2]), expression(w[3]))
+    labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^b),
+              expression(w[1]^o), expression(w[2]), expression(w[3]))
 
     if (any(grepl("w1_o", p)) && !any(grepl("w1_b", p)))
       labs <- labs[c(1, 2, 3, 6, 7)]
