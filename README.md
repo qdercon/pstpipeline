@@ -8,7 +8,7 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study
 
-**full methods and results from this study can be found in the preprint:**
+**full methods and results from this study can be found in the paper:**
 
 > Dercon<sup>†</sup>, Q., Mehrhof<sup>†</sup>, S. Z., Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
 
