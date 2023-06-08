@@ -8,9 +8,9 @@
 
 ### an R package to clean, analyse, and present data from a large online learning study
 
-**Full methods and results from this study can be found in the preprint:**
+**full methods and results from this study can be found in the preprint:**
 
-> Q. Dercon<sup>†</sup>, S. Z. Mehrhof<sup>†</sup>, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord. A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
+> Dercon<sup>†</sup>, Q., Mehrhof<sup>†</sup>, S. Z., Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
 
 This package, which accompanies the preprint, is not meant to be a brand new toolkit - better, more flexible packages are available for analysing computational psychiatry experiments. Indeed, some of the R and most of the Stan code is inspired by and/or modified from other R packages, in particular [```hBayesDM```](https://github.com/CCS-Lab/hBayesDM) [[1](#References)] and [```rstanarm```](https://mc-stan.org/rstanarm/).
 
