@@ -1,13 +1,14 @@
 # Using the raw data outside of pstpipeline
 
-The task data is stored here as an R data object (```all_res_split.RDS```). The raw experiment outputs for each partcipant are too large to store on GitHub; this data is outputted from the ```import_multiple``` parsing function. The other two ```.csv``` files are from an earlier study by [Gillan *et al.* (2016)](https://elifesciences.org/articles/11305), the use of which is explained further in [this notebook](https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb).
+The task data is stored here as an ```R``` data object (```all_res_split.RDS```). The raw experiment outputs for each partcipant are too large to store on GitHub; this data is outputted from the ```import_multiple``` parsing function. The other two ```.csv``` files are from an earlier study by [Gillan *et al.* (2016)](https://elifesciences.org/articles/11305), the use of which is explained further in [this notebook](https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb).
 
 The data object is structured as a nested list.  As analyses were done separately in distancing participants, it is first separated by group (```non-distanced``` and ```distanced```). Within each group, there are then four data frames: ```ppt_info``` (demographic and exclusion info); ```training``` (training phase data); ```test``` (test phase data); and ```gillan_questions``` (psychiatric questionnaire question answers).
 
-Note that with the exception of questionnaire questions, the data includes all 995 participants, so you may want to filter out excluded participants. The ```ppt_info``` data frame includes a column called ```exclusion``` which is ```TRUE``` for excluded participants and ```FALSE``` for non-excluded participants (see the [preprint](https://psyarxiv.com/jmnek) for more information on exclusion criteria).
+Note that with the exception of questionnaire questions, the data includes all 995 participants, so you may want to filter out excluded participants. The ```ppt_info``` data frame includes a column called ```exclusion``` which is ```TRUE``` for excluded participants and ```FALSE``` for non-excluded participants (see the [paper](https://doi.org/10.1017/S0033291723001587) for more information on exclusion criteria).
 
-If you use the data for any published work, please consider citing the preprint:
-> Q. Dercon<sup>†</sup>, S. Z. Mehrhof<sup>†</sup>, T. R. Sandhu, C. Hitchcock, R. P. Lawson, D. A. Pizzagalli, T. Dalgleish, C. L. Nord. A Core Component of Psychological Therapy Causes Adaptive Changes in Computational Learning Mechanisms. *PsyArXiv* (2022). https://psyarxiv.com/jmnek.
+If you use the data for any published work, please consider citing the paper:
+
+> Dercon†, Q., Mehrhof†, S. Z., Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
 
 ## In R
 
