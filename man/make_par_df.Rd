@@ -10,6 +10,7 @@ make_par_df(
   summary,
   rhat_upper,
   ess_lower,
+  bsl_trnsfm = function(x) x,
   join_dem = TRUE,
   adj_order = c("happy", "confident", "engaged")
 )
@@ -24,6 +25,8 @@ make_par_df(
 
 \item{ess_lower}{Lower bound of effective sample size values to include. Set
 to \code{0} to include all participants.}
+
+\item{bsl_trnsfm}{A function to apply to intercept. Defaults to identity.}
 
 \item{join_dem}{Combine output with participant demographic info?}
 
