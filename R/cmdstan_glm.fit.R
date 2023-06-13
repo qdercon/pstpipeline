@@ -331,6 +331,7 @@ cmdstan_glm.fit <-
       stan_model <- cmdstanr::cmdstan_model(
         system.file("extdata/stan_files/from_rstanarm/continuous.stan",
                     package = "pstpipeline"),
+        stanc_options = list("auto-format"),
         include_paths = utils::shortPathName(system.file(
           "extdata/stan_files/from_rstanarm", package = "pstpipeline")
           ## Windows-only workaround if path has spaces!
@@ -340,6 +341,7 @@ cmdstan_glm.fit <-
       stan_model <- cmdstanr::cmdstan_model(
         system.file("extdata/stan_files/from_rstanarm/continuous.stan",
                     package = "pstpipeline"),
+        stanc_options = list("auto-format"),
         include_paths = system.file(
           "extdata/stan_files/from_rstanarm", package = "pstpipeline"
         ) ## this will fail if path has spaces!
