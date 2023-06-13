@@ -114,6 +114,7 @@ parameter_glm <- function(summary_df = list(),
   if (is.null(l$refresh)) l$refresh <- 0
   if (is.null(l$cores)) l$cores <- getOption("mc.cores", 4)
   if (is.null(getOption("mc.cores"))) options(mc.cores = l$cores)
+  if (is.null(l$bsl_trnsfm)) l$bsl_trnsfm <- function(x) x
 
   ## to appease R CMD check
   parameter <- recode <- aff_num <- NULL
@@ -122,7 +123,7 @@ parameter_glm <- function(summary_df = list(),
   for (s in seq_along(summary_df)) {
     all_data[[s]] <- make_par_df(
       raw_df[[s]], summary_df[[s]], rhat_upper = rhat_upper,
-      ess_lower = ess_lower
+      ess_lower = ess_lower, bsl_trnsfm = l$bsl_trnsfm
     )
   }
   all_data <- data.table::rbindlist(all_data, use.names = TRUE)

@@ -214,6 +214,7 @@ clean_summary <- function(summary) {
 #' \code{Inf} to include all participants.
 #' @param ess_lower Lower bound of effective sample size values to include. Set
 #' to \code{0} to include all participants.
+#' @param bsl_trnsfm A function to apply to intercept. Defaults to identity.
 #' @param join_dem Combine output with participant demographic info?
 #' @param adj_order Same as [fit_learning_model()].
 #'
@@ -237,10 +238,11 @@ make_par_df <- function(raw,
                         summary,
                         rhat_upper,
                         ess_lower,
+                        bsl_trnsfm = function(x) x,
                         join_dem = TRUE,
                         adj_order = c("happy", "confident", "engaged")) {
 
-  subjID <- aff_num <- NULL
+  subjID <- aff_num <- parameter <- NULL
 
   ids <- raw |>
     dplyr::distinct(subjID) |>
@@ -249,6 +251,9 @@ make_par_df <- function(raw,
   n_id <- length(ids$subjID)
 
   summ <- clean_summary(summary) |>
+    dplyr::mutate(
+      mean = ifelse(grepl("0", parameter), bsl_trnsfm(mean), mean)
+    ) |>
     dplyr::rename(posterior_mean = mean) |>
     dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
     dplyr::right_join(ids, by = "id_no") |>
