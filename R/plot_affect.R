@@ -236,7 +236,7 @@ plot_affect <- function(data,
         ggplot2::annotation_custom(
           grid::textGrob(
             bquote(R^2 ~ "=" ~ .(round(r2, 2))),
-            gp = grid::gpar(fontsize = 16, col = "steelblue4"),
+            gp = grid::gpar(fontsize = font_size + 2, col = "steelblue4"),
             x = r2_coords[1], y = r2_coords[2]
           )
         )  +
