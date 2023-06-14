@@ -264,7 +264,6 @@ cmdstan_glm.fit <-
     prior_dist_for_intercept,
     prior_scale_for_intercept = c(prior_scale_for_intercept),
     prior_mean_for_intercept = c(prior_mean_for_intercept),
-    prior_df_for_intercept = c(prior_df_for_intercept),
     global_prior_df, global_prior_scale, slab_df, slab_scale, # for hs priors
     z_dim = 0,  # betareg data
     link_phi = 0,
