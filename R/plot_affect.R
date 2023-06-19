@@ -168,7 +168,7 @@ plot_affect <- function(data,
         name = NULL,
         values = pal
       ) +
-      ggplot2::xlab("Trial number") +
+      ggplot2::xlab("Rating number") +
       ggplot2::ylab(paste0("Mean (\u00B1 SE) affect rating")) +
       ggplot2::guides(linetype = "none", color = "none", fill = "none") +
       cowplot::theme_half_open(
@@ -230,7 +230,7 @@ plot_affect <- function(data,
           name = "Data type", labels = c("Predicted", "Real"),
           values = c(pal[a * 2 - 1], pal[a * 2])
         ) +
-        ggplot2::xlab("Trial number") +
+        ggplot2::xlab("Rating number") +
         ggplot2::ylab(paste0(nouns[a], " rating /100")) +
         cowplot::theme_half_open(font_size = font_size, font = font) +
         ggplot2::annotation_custom(
