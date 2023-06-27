@@ -92,7 +92,7 @@ plot_raincloud <- function(summary_df,
   cred_l1 <- (1 - cred[2]) / 2
   cred_l2 <- (1 - cred[1]) / 2
 
-  posterior_mean <- subjID <- value <- NULL # appease R CMD check
+  posterior_mean <- subjID <- value <- parameter <- NULL # appease R CMD check
 
   all_data <- list()
   for (s in seq_along(summary_df)) {
@@ -109,7 +109,8 @@ plot_raincloud <- function(summary_df,
 
   if (type == "parameter") {
     df <- all_data |>
-      dplyr::rename(value = posterior_mean)
+      dplyr::rename(value = posterior_mean) |>
+      dplyr::filter(grepl("alpha|beta", parameter))
     if (length(unique(df[[type]])) == 2) {
       df[[type]] <- factor(df[[type]])
     } else {
