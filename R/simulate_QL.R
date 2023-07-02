@@ -323,7 +323,7 @@ simulate_QL <- function(summary_df = NULL,
         pe_vec[i] <- pe
 
         if (i > 1 && sample_time) {
-          if ((i - 1) %% 60 == 0) {
+          if ((i - 1) %% 60 != 0) {
             elapsed <- 5 + rgamma(1, shape = 3, scale = 2) # after trial
             trial_time[i] <- trial_time[i - 1] + (elapsed / 3600)
             block_time[i] <- 0
