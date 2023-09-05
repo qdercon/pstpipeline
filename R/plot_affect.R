@@ -184,7 +184,8 @@ plot_affect <- function(data,
     median_id <- function(df, kind, id = id_no) {
       if (kind == "num") {
         med <- subset(
-          df, round(R2, 2) == round(median(df$R2, na.rm = TRUE), 2)
+          df,
+          round(R2, 2) == round(quantile(df$R2, 0.5, na.rm = TRUE, type = 3), 2)
         )$id_no
         if (length(med) > 1) sample(med, 1)
         # takes someone with approx. median R2, so can show diff. ppts
