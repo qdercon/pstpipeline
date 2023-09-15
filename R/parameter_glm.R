@@ -131,6 +131,15 @@ parameter_glm <- function(summary_df = list(),
     all_data <- all_data |>
       dplyr::left_join(extra_data, by = "subjID")
   }
+  if (!is.null(recode_na)) {
+    all_data <- all_data |>
+      dplyr::mutate(
+        dplyr::across(
+          .cols = c(var_of_interest, interaction, covariates),
+          .fns = ~ifelse(is.na(.), recode_na, .)
+          )
+        )
+  }
   if ("aff_num" %in% colnames(all_data)) {
     if (is.null(affect_number)) {
       warning(
@@ -148,14 +157,6 @@ parameter_glm <- function(summary_df = list(),
   if (!is.null(interaction)) {
     int_term <- rlang::sym(interaction)
     formula <- paste0(formula, "+", var_of_interest, "*", interaction)
-    if (!is.null(recode_na)) {
-      all_data <- all_data |>
-        dplyr::mutate(
-          !!int_term := ifelse(
-            is.na(!!int_term), recode_na, !!int_term
-            )
-          )
-    }
     vals <- unique(all_data[[interaction]])
     if (length(vals) > 2) {
       stop("Interaction term is non-binary. Perhaps NAs need to be recoded?")
