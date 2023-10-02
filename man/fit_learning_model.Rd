@@ -9,7 +9,7 @@ fit_learning_model(
   model,
   exp_part,
   affect = FALSE,
-  affect_sfx = c("3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time"),
+  affect_sfx = c("3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time", "cond_prev"),
   adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
   ppc = vb,
