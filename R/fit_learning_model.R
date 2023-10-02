@@ -109,7 +109,8 @@ fit_learning_model <- function(df_all,
                                exp_part,
                                affect = FALSE,
                                affect_sfx = c("3wt", "4wt_trial", "4wt_block",
-                                              "4wt_time", "5wt_time"),
+                                              "4wt_time", "5wt_time",
+                                              "cond_prev"),
                                adj_order = c("happy", "confident", "engaged"),
                                vb = TRUE,
                                ppc = vb,
@@ -170,7 +171,10 @@ fit_learning_model <- function(df_all,
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- reward <- trial_time <- NULL
+    question_type <- reward <- trial_time <- question_response <- sigma_gm <-
+    time_elapsed <- outc_no <- NULL
+
+  if (affect) aff_mod <- match.arg(affect_sfx)
 
   if (!par_recovery) {
     if (task_excl || accuracy_excl) {
@@ -202,20 +206,37 @@ fit_learning_model <- function(df_all,
         raw_df <- data.table::as.data.table(training_df)
       } else {
         training_df <- training_df |>
-          dplyr::rowwise() |>
           dplyr::mutate(trial_no_block = trial_no - (trial_block - 1) * 60) |>
           dplyr::mutate(
-            question =
-              ifelse(question_type == adj_order[1], 1,
-                     ifelse(question_type == adj_order[2], 2, 3)
-              )
+            question = dplyr::case_when(
+              question_type == adj_order[1] ~ 1,
+              question_type == adj_order[2] ~ 2,
+              question_type == adj_order[3] ~ 3,
+              .default = -1
+            )
           ) |>
           dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
-          dplyr::group_by(subjID, trial_block) |>
+          dplyr::group_by(subjID) |>
+          dplyr::mutate(outc_no = order(trial_no, decreasing = FALSE)) |>
+          dplyr::group_by(trial_block, .add = TRUE) |>
           dplyr::mutate(block_time = trial_time - min(trial_time)) |>
           dplyr::group_by(subjID, question_type) |>
-          dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
+          dplyr::mutate(
+            trial_no_q = order(trial_no, decreasing = FALSE),
+            qn_response_prev = dplyr::lag(question_response),
+            time_elapsed = trial_time - dplyr::lag(trial_time),
+            trials_elapsed = outc_no - dplyr::lag(outc_no)
+          ) |>
           dplyr::ungroup()
+
+          if (grepl("cond", aff_mod)) {
+            training_df <- training_df |> tidyr::drop_na(time_elapsed)
+          } else {
+            training_df <- training_df |>
+              dplyr::mutate(
+                qn_response_prev = -1, time_elapsed = -1, trials_elapsed = -1
+              )
+          }
 
           raw_df <- data.table::as.data.table(training_df)
       }
@@ -275,9 +296,6 @@ fit_learning_model <- function(df_all,
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  if (affect) {
-    aff_mod <- match.arg(affect_sfx)
-  }
   label <- ifelse(
     !affect, exp_part, paste("plus_affect", aff_mod, sep = "_")
   )
@@ -332,9 +350,8 @@ fit_learning_model <- function(df_all,
       } else {
         function() {
           ret <- list(
-            mu_ql_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_ql_pr")]),
+            mu_ql = as.vector(m_vb[startsWith(names(m_vb), "mu_ql_pr")]),
             sigma_ql = as.vector(m_vb[startsWith(names(m_vb), "sigma_ql")]),
-            nu = as.vector(m_vb[startsWith(names(m_vb), "nu")]),
             mu_wt = rbind(
               as.vector(m_vb[startsWith(names(m_vb), "mu_wt[1,")]),
               as.vector(m_vb[startsWith(names(m_vb), "mu_wt[2,")]),
@@ -347,9 +364,12 @@ fit_learning_model <- function(df_all,
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[3,")]),
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[4,")])
             ),
-            alpha_s = as.vector(m_vb[startsWith(names(m_vb), "alpha_s")]),
-            beta_s = as.vector(m_vb[startsWith(names(m_vb), "beta_s")]),
-            sigma_t = as.vector(m_vb[startsWith(names(m_vb), "sigma_t")])
+            mu_gm = as.vector(m_vb[startsWith(names(m_vb), "mu_gm")]),
+            sigma_gm = as.vector(m_vb[startsWith(names(sigma_gm), "sigma_gm")]),
+            aff_mu_phi = as.vector(m_vb[startsWith(names(m_vb), "aff_mu_phi")]),
+            aff_sigma_phi = as.vector(
+              m_vb[startsWith(names(m_vb), "aff_sigma_phi")]
+            )
           )
 
           for (p in names(parameters)[1:3]) {
@@ -387,7 +407,6 @@ fit_learning_model <- function(df_all,
         "beta" = c(0, 1, 10),
         "w0" = c(-1, 0, 1),
         "w1_o" = c(-2, 0, 2),
-        "w1_b" = c(-1, 0, 1),
         "w2" = c(-1, 0, 1),
         "w3" = c(-1, 0, 1),
         "gamma" = c(0, 0.5, 1)
