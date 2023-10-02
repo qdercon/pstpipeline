@@ -171,8 +171,8 @@ fit_learning_model <- function(df_all,
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- reward <- trial_time <- question_response <- sigma_gm <-
-    time_elapsed <- outc_no <- NULL
+    question_type <- reward <- trial_time <- question_response <- outc_no <-
+    time_elapsed <- NULL
 
   if (affect) aff_mod <- match.arg(affect_sfx)
 
@@ -339,33 +339,27 @@ fit_learning_model <- function(df_all,
             mu_pr = as.vector(m_vb[startsWith(names(m_vb), "mu_pr")]),
             sigma = as.vector(m_vb[startsWith(names(m_vb), "sigma")])
           )
-
           for (p in names(parameters)) {
             ret[[paste0(p, "_pr")]] <-
               as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
           }
-
           return(ret)
         }
       } else {
         function() {
           ret <- list(
-            mu_ql = as.vector(m_vb[startsWith(names(m_vb), "mu_ql_pr")]),
+            mu_ql = as.vector(m_vb[startsWith(names(m_vb), "mu_ql")]),
             sigma_ql = as.vector(m_vb[startsWith(names(m_vb), "sigma_ql")]),
             mu_wt = rbind(
               as.vector(m_vb[startsWith(names(m_vb), "mu_wt[1,")]),
               as.vector(m_vb[startsWith(names(m_vb), "mu_wt[2,")]),
-              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[3,")]),
-              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[4,")])
+              as.vector(m_vb[startsWith(names(m_vb), "mu_wt[3,")])
             ),
             sigma_wt = rbind(
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[1,")]),
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[2,")]),
-              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[3,")]),
-              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[4,")])
+              as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[3,")])
             ),
-            mu_gm = as.vector(m_vb[startsWith(names(m_vb), "mu_gm")]),
-            sigma_gm = as.vector(m_vb[startsWith(names(sigma_gm), "sigma_gm")]),
             aff_mu_phi = as.vector(m_vb[startsWith(names(m_vb), "aff_mu_phi")]),
             aff_sigma_phi = as.vector(
               m_vb[startsWith(names(m_vb), "aff_sigma_phi")]
@@ -378,8 +372,10 @@ fit_learning_model <- function(df_all,
           }
 
           for (q in names(parameters)[-(1:3)]) {
-            m_vb_tr <- m_vb[names(m_vb[startsWith(names(m_vb), q)])]
-            ret[[q]] <- cbind(
+            m_vb_tr <- m_vb[
+              names(m_vb[startsWith(names(m_vb), paste0(q, "_pr"))])
+            ]
+            ret[[paste0(q, "_pr")]] <- cbind(
               as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",1]")]),
               as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",2]")]),
               as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",3]")])
@@ -394,24 +390,29 @@ fit_learning_model <- function(df_all,
         "alpha" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
-    } else if (!affect) {
+    } else {
       pars <- list(
         "alpha_pos" = c(0, 0.5, 1),
         "alpha_neg" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
-    } else {
-      pars <- list(
-        "alpha_pos" = c(0, 0.5, 1),
-        "alpha_neg" = c(0, 0.5, 1),
-        "beta" = c(0, 1, 10),
-        "w0" = c(-1, 0, 1),
-        "w1_o" = c(-2, 0, 2),
-        "w2" = c(-1, 0, 1),
-        "w3" = c(-1, 0, 1),
-        "gamma" = c(0, 0.5, 1)
-      )
     }
+    if (affect) {
+      if (!grepl("cond", affect_sfx)) {
+        pars[["w0"]] <- c(-1, 0, 1)
+        pars[["gm"]] <- c(0, 0.5, 1)
+        if (!grepl("3wt", affect_sfx)) {
+          pars[["w1_o"]] <- c(-2, 0, 2)
+          if (grepl("5wt", affect_sfx)) pars[["w1_b"]] <- c(-2, 0, 2)
+        }
+      } else {
+        pars[["w1_i"]] <- c(-2, 0, 2)
+      }
+      pars[["w2"]] <- c(-1, 0, 1)
+      pars[["w3"]] <- c(-1, 0, 1)
+      pars[["phi"]] <- c(0, 10, 100)
+    }
+
     inits <- gen_init_vb(
       model = stan_model,
       data_list = data_cmdstan,
