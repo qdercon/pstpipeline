@@ -24,11 +24,13 @@ data {
 transformed data {
   // default values to initialize the vectors/matrices of EVs/PEs
   vector[6] inits;
-  row_vector[T] zeros;
+  vector[T] zeros;
+  row_vector[3] init_sum;
   row_vector[T] neg_ones;
 
   inits = rep_vector(0, 6);
-  zeros = rep_row_vector(0, T);
+  zeros = rep_vector(0, T);
+  init_sum = rep_row_vector(0, 3);
   neg_ones = rep_row_vector(-1, T);
 
   // transform affect to be strictly between 0 and 1 (Smith & Verkuilen, 2006)
@@ -143,12 +145,11 @@ model {
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
     vector[ti] phi_vec;      // Vector of beta distribution precision
+    vector[ti] z_vec;        // Vector of zeros
     
-    row_vector[ti] z_vec;    // Vector of zeros
-    row_vector[ti] ev_vec;   // Vector of expected values
-    row_vector[ti] pe_vec;   // Vector of prediction errors
-    
-    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
+    vector[3] gamma_vec;     // Vector of gamma weights
+    row_vector[3] ev_sum;    // Vector of summed EVs by question
+    row_vector[3] pe_sum;    // Vector of summed PEs by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -159,17 +160,10 @@ model {
 
     z_vec   = zeros[:ti];
     ev      = inits;
-    ev_vec  = z_vec;
-    pe_vec  = z_vec;
-    ev_dcy  = z_vec';
-    pe_dcy  = z_vec';
-
-    // compute decay matrix for each question
-    for (q in 1:3) {
-      for (t in 1:ti) {
-        dcy_qn[t, q] = pow(gamma[i, q], t-1);
-      }
-    }
+    ev_sum  = init_sum;
+    pe_sum  = init_sum;
+    ev_dcy  = z_vec;
+    pe_dcy  = z_vec;
     
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -184,11 +178,15 @@ model {
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
       
       pe = reward[i, t] - ev[co];
-      pe_vec[t] = pe;
+      pe_sum += pe;
 
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
-      ev_vec[t] = ev[co];
+      ev_sum += ev[co];
+
+      // store summed EVs and PEs for this trial
+      ev_dcy[t] = ev_sum[qn];
+      pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
       w0_vec[t]  = w0[i, qn];
@@ -196,9 +194,9 @@ model {
       w3_vec[t]  = w3[i, qn];
       phi_vec[t] = phi[i, qn];
 
-      // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
-      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
+      // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
+      ev_sum = ev_sum .* gamma[i, :];
+      pe_sum = pe_sum .* gamma[i, :];
     }
 
     // increment log density for choice for participant i
@@ -278,12 +276,11 @@ generated quantities {
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
     vector[ti] phi_vec;      // Vector of beta distribution precision
+    vector[ti] z_vec;        // Vector of zeros
     
-    row_vector[ti] z_vec;    // Vector of zeros
-    row_vector[ti] ev_vec;   // Vector of expected values
-    row_vector[ti] pe_vec;   // Vector of prediction errors
-    
-    matrix[ti, 3] dcy_qn;    // Weighting of previous trials, by question
+    vector[3] gamma_vec;     // Vector of gamma weights
+    row_vector[3] ev_sum;    // Vector of summed EVs by question
+    row_vector[3] pe_sum;    // Vector of summed PEs by question
 
     vector[ti] ev_dcy;       // Vector of summed decayed EVs by trial
     vector[ti] pe_dcy;       // Vector of summed decayed PEs by trial
@@ -294,17 +291,10 @@ generated quantities {
 
     z_vec   = zeros[:ti];
     ev      = inits;
-    ev_vec  = z_vec;
-    pe_vec  = z_vec;
-    ev_dcy  = z_vec';
-    pe_dcy  = z_vec';
-
-    // compute decay matrix for each question
-    for (q in 1:3) {
-      for (t in 1:ti) {
-        dcy_qn[t, q] = pow(gamma[i, q], t-1);
-      }
-    }
+    ev_sum  = init_sum;
+    pe_sum  = init_sum;
+    ev_dcy  = z_vec;
+    pe_dcy  = z_vec;
     
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
@@ -321,11 +311,15 @@ generated quantities {
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
       
       pe = reward[i, t] - ev[co];
-      pe_vec[t] = pe;
+      pe_sum += pe;
 
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
-      ev_vec[t] = ev[co];
+      ev_sum += ev[co];
+
+      // store summed EVs and PEs for this trial
+      ev_dcy[t] = ev_sum[qn];
+      pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
       w0_vec[t]  = w0[i, qn];
@@ -333,9 +327,9 @@ generated quantities {
       w3_vec[t]  = w3[i, qn];
       phi_vec[t] = phi[i, qn];
 
-      // store decayed EVs and PEs (i.e., gamma weighted sum over prev. trials)
-      ev_dcy[t] = dot_product(reverse(ev_vec[:t]), dcy_qn[:t, qn]);
-      pe_dcy[t] = dot_product(reverse(pe_vec[:t]), dcy_qn[:t, qn]);
+      // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
+      ev_sum = ev_sum .* gamma[i, :];
+      pe_sum = pe_sum .* gamma[i, :];
     }
 
     // increment log likelihood for choice for participant i

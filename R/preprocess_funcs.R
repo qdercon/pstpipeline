@@ -118,7 +118,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
   afct_prev <- array(0, c(n_subj, t_max))
   block_no  <- array(0, c(n_subj, t_max))
   ovl_trial <- array(0, c(n_subj, t_max))
-  int_trial <- array(0, c(n_subj, t_max))
   ovl_time  <- array(0, c(n_subj, t_max))
   blk_time  <- array(0, c(n_subj, t_max))
   int_time  <- array(0, c(n_subj, t_max))
@@ -141,7 +140,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
     question[i, 1:t]  <- DT_subj$question
     block_no[i, 1:t]  <- DT_subj$trial_block
     ovl_trial[i, 1:t] <- DT_subj$trial_no_group # ovl question no., by question
-    int_trial[i, 1:t] <- DT_subj$trials_elapsed
     ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
     blk_time[i, 1:t]  <- DT_subj$block_time / 60
     int_time[i, 1:t]  <- DT_subj$time_elapsed # in mins
@@ -162,7 +160,6 @@ preprocess_func_affect <- function(raw_data, general_info) {
     affect_prev = afct_prev, # only relevant for conditional model
     block_no    = block_no,
     ovl_trial   = ovl_trial,
-    int_trials  = int_trial, # only relevant for conditional model
     ovl_time    = ovl_time,
     blk_time    = blk_time,
     int_time    = int_time, # only relevant for conditional model

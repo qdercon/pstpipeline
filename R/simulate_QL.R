@@ -49,7 +49,8 @@ simulate_QL <- function(summary_df = NULL,
 
   # to appease R CMD check
   parameter <- subjID <- value <- trial_no <- id_no <- aff_num <-
-  hidden_reward <- question_type <- missing_times <- trial_block <- adj <- NULL
+  hidden_reward <- question_type <- missing_times <- trial_block <- adj <-
+  question_response <- aff_cond <- time_elapsed <- NULL
 
   l <- list(...)
 
@@ -62,6 +63,7 @@ simulate_QL <- function(summary_df = NULL,
       if (is.null(l$time_pars)) l$time_pars <- c("block", "overall")
       time_prm <- match.arg(l$time_pars, c("none", "overall", "block"), TRUE)
     }
+    if (is.null(l$cond_model)) aff_cond <- FALSE
   }
 
   if (is.null(summary_df)) {
@@ -432,9 +434,20 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::group_by(subjID, trial_block) |>
       dplyr::mutate(block_time = trial_time - min(trial_time)) |>
       dplyr::group_by(subjID, question_type) |>
-      dplyr::mutate(trial_no_q = order(trial_no, decreasing = FALSE)) |>
+      dplyr::mutate(
+        trial_no_q = order(trial_no, decreasing = FALSE),
+        qn_response_prev = dplyr::lag(question_response),
+        time_elapsed = trial_time - dplyr::lag(trial_time)
+      ) |>
       dplyr::ungroup() |>
       dplyr::arrange(id_no)
+
+    if (!aff_cond) {
+      all_res <- all_res |>
+        dplyr::mutate(qn_response_prev = -1, time_elapsed = -1)
+    } else {
+      training_df <- training_df |> tidyr::drop_na(time_elapsed)
+    }
   } else if (!is.null(raw_df)) {
     all_res <- all_res |>
       dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")

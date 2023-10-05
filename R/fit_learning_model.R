@@ -171,7 +171,7 @@ fit_learning_model <- function(df_all,
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- reward <- trial_time <- question_response <- outc_no <-
+    question_type <- reward <- trial_time <- question_response <-
     time_elapsed <- NULL
 
   if (affect) aff_mod <- match.arg(affect_sfx)
@@ -224,8 +224,7 @@ fit_learning_model <- function(df_all,
           dplyr::mutate(
             trial_no_q = order(trial_no, decreasing = FALSE),
             qn_response_prev = dplyr::lag(question_response),
-            time_elapsed = trial_time - dplyr::lag(trial_time),
-            trials_elapsed = outc_no - dplyr::lag(outc_no)
+            time_elapsed = trial_time - dplyr::lag(trial_time)
           ) |>
           dplyr::ungroup()
 
@@ -233,9 +232,7 @@ fit_learning_model <- function(df_all,
             training_df <- training_df |> tidyr::drop_na(time_elapsed)
           } else {
             training_df <- training_df |>
-              dplyr::mutate(
-                qn_response_prev = -1, time_elapsed = -1, trials_elapsed = -1
-              )
+              dplyr::mutate(qn_response_prev = -1, time_elapsed = -1)
           }
 
           raw_df <- data.table::as.data.table(training_df)
