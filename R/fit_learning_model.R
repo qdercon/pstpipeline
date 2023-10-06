@@ -110,7 +110,8 @@ fit_learning_model <- function(df_all,
                                affect = FALSE,
                                affect_sfx = c("3wt", "4wt_trial", "4wt_block",
                                               "4wt_time", "5wt_time",
-                                              "cond_prev"),
+                                              "cond_3wt", "cond_4wt",
+                                              "cond_5wt"),
                                adj_order = c("happy", "confident", "engaged"),
                                vb = TRUE,
                                ppc = vb,
@@ -404,6 +405,8 @@ fit_learning_model <- function(df_all,
         }
       } else {
         pars[["w1_i"]] <- c(-2, 0, 2)
+        if (grepl("4wt", affect_sfx)) pars[["w1_c"]] <- c(-2, 0, 2)
+        if (grepl("5wt", affect_sfx)) pars[["w0"]] <- c(-2, 0, 2)
       }
       pars[["w2"]] <- c(-1, 0, 1)
       pars[["w3"]] <- c(-1, 0, 1)

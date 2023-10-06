@@ -52,8 +52,8 @@ parameters {
   vector<lower=0>[3] sigma_ql;
 
   // group-level weights
-  matrix[3, 3] mu_wt; // 3 questions x 4 weights
-  matrix<lower=0>[3, 3] sigma_wt;
+  matrix[3, 5] mu_wt; // 3 questions x 4 weights
+  matrix<lower=0>[3, 5] sigma_wt;
 
   // group-level beta distribution precision (phi)
   vector[3] aff_mu_phi;
@@ -65,6 +65,8 @@ parameters {
   vector[N] beta_pr;
 
   // individual-level weights + forgetting factor
+  matrix[N, 3] w0_pr;
+  matrix[N, 3] w1_c_pr;
   matrix[N, 3] w1_i_pr;
   matrix[N, 3] w2_pr;
   matrix[N, 3] w3_pr;
@@ -82,15 +84,19 @@ transformed parameters {
   alpha_neg = Phi_approx(mu_ql[2] + sigma_ql[2] * alpha_neg_pr);
   beta      = Phi_approx(mu_ql[3] + sigma_ql[3] * beta_pr) * 10;
 
+  matrix[N, 3] w0;
+  matrix[N, 3] w1_c;
   matrix[N, 3] w1_i;
   matrix[N, 3] w2;
   matrix[N, 3] w3;
   matrix[N, 3] phi;
 
   for (q in 1:3) {
-    w1_i[:, q]  = mu_wt[q, 1] + sigma_wt[q, 1] * w1_i_pr[:, q];
-    w2[:, q]    = mu_wt[q, 2] + sigma_wt[q, 2] * w2_pr[:, q];
-    w3[:, q]    = mu_wt[q, 3] + sigma_wt[q, 3] * w3_pr[:, q];
+    w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
+    w1_c[:, q]  = mu_wt[q, 2] + sigma_wt[q, 2] * w1_c_pr[:, q];
+    w1_i[:, q]  = mu_wt[q, 3] + sigma_wt[q, 3] * w1_i_pr[:, q];
+    w2[:, q]    = mu_wt[q, 4] + sigma_wt[q, 4] * w2_pr[:, q];
+    w3[:, q]    = mu_wt[q, 5] + sigma_wt[q, 5] * w3_pr[:, q];
     phi[:, q]   = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
 }
@@ -117,6 +123,8 @@ model {
 
   // priors on the weights + gamma + beta distribution precision
   for (q in 1:3) {
+    w0_pr[:, q]   ~ normal(0, 1);
+    w1_c_pr[:, q] ~ normal(0, 1);
     w1_i_pr[:, q] ~ normal(0, 1);
     w2_pr[:, q]   ~ normal(0, 1);
     w3_pr[:, q]   ~ normal(0, 1);
@@ -136,6 +144,8 @@ model {
     vector[ti] delta;        // Difference in EVs between options
 
     vector[ti] aff_prev;     // Previous affect rating
+    vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_c_vec;     // Vector of w1_c weights
     vector[ti] w1_i_vec;     // Vector of w1_i weights
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
@@ -175,6 +185,8 @@ model {
       
       // store weights and beta distribution precision for convenience
       aff_prev[t] = affect_prev[i, t];
+      w0_vec[t]   = w0[i, qn];
+      w1_c_vec[t] = w1_c[i, qn];
       w1_i_vec[t] = w1_i[i, qn];
       w2_vec[t]   = w2[i, qn];
       w3_vec[t]   = w3[i, qn];
@@ -186,7 +198,8 @@ model {
     
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
-      aff_prev + 
+      w0_vec +
+      w1_c_vec .* aff_prev + 
       w1_i_vec .* int_time_tr[i][:ti] + 
       w2_vec .* ev_vec +
       w3_vec .* pe_vec
@@ -207,6 +220,8 @@ generated quantities {
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
 
+  vector[3] mu_w0;
+  vector[3] mu_w1_c;
   vector[3] mu_w1_i;
   vector[3] mu_w2;
   vector[3] mu_w3;
@@ -222,11 +237,15 @@ generated quantities {
   mu_alpha_neg = Phi_approx(mu_ql[2]);
   mu_beta      = Phi_approx(mu_ql[3]) * 10;
 
-  mu_w1_i  = mu_wt[:, 1];
-  mu_w2    = mu_wt[:, 2];
-  mu_w3    = mu_wt[:, 3];
+  mu_w0    = mu_wt[:, 1];
+  mu_w1_c  = mu_wt[:, 2];
+  mu_w1_i  = mu_wt[:, 3];
+  mu_w2    = mu_wt[:, 4];
+  mu_w3    = mu_wt[:, 5];
 
   // difference in weights between questions
+  vector[3] w0_diff;
+  vector[3] w1_c_diff;
   vector[3] w1_i_diff;
   vector[3] w2_diff;
   vector[3] w3_diff;
@@ -234,9 +253,11 @@ generated quantities {
   array[3] int bsl = { 1, 1, 2 };
   array[3] int comp = { 2, 3, 3 };
 
-  w1_i_diff  = mu_w1_i[bsl] - mu_w1_i[comp];
-  w2_diff    = mu_w2[bsl] - mu_w2[comp];
-  w3_diff    = mu_w3[bsl] - mu_w3[comp];
+  w0_diff   = mu_w0[bsl] - mu_w0[comp];
+  w1_c_diff = mu_w1_c[bsl] - mu_w1_c[comp];
+  w1_i_diff = mu_w1_i[bsl] - mu_w1_i[comp];
+  w2_diff   = mu_w2[bsl] - mu_w2[comp];
+  w3_diff   = mu_w3[bsl] - mu_w3[comp];
 
   // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
@@ -252,6 +273,8 @@ generated quantities {
     vector[ti] delta;        // Difference in EVs between options
 
     vector[ti] aff_prev;     // Previous affect rating
+    vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_c_vec;     // Vector of w1_c weights
     vector[ti] w1_i_vec;     // Vector of w1_i weights
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
@@ -293,6 +316,8 @@ generated quantities {
       
       // store weights and beta distribution precision for convenience
       aff_prev[t] = affect_prev[i, t];
+      w0_vec[t]   = w0[i, qn];
+      w1_c_vec[t] = w1_c[i, qn];
       w1_i_vec[t] = w1_i[i, qn];
       w2_vec[t]   = w2[i, qn];
       w3_vec[t]   = w3[i, qn];
@@ -304,7 +329,8 @@ generated quantities {
     
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
-      aff_prev + 
+      w0_vec +
+      w1_c_vec .* aff_prev + 
       w1_i_vec .* int_time_tr[i][:ti] + 
       w2_vec .* ev_vec +
       w3_vec .* pe_vec
