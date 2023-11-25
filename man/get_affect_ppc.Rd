@@ -19,13 +19,16 @@ internally.}
 }
 \value{
 List containing a dataframe with participant identifiers, numbers,
-and \eqn{R^2}, MAE and RMSE for each individual; and a named list (by ID) of
-data frames with individuals' mean posterior predictions and raw affect data.
+and pseudo \eqn{R^2}, MAE and RMSE for each individual; and a named list (by
+ID) of data frames with individuals' mean posterior predictions and raw
+affect data.
 }
 \description{
 \code{get_affect_ppc} combines posterior predictions contained in a
 \code{\link[posterior:draws_df]{posterior::draws_df()}} outputted from a fit model with raw affect ratings,
-and returns various fit metrics (\eqn{R^2}, MAE, RMSE), for each individual.
+and returns various fit metrics (pseudo-\eqn{R^2}, MAE, RMSE), for each
+individual. We follow Ferrari & Cribari-Neto (2004) in defining pseudo-R^2 as
+the squared correlation between observed and mean posterior predictions.
 }
 \examples{
 \dontrun{

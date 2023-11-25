@@ -14,7 +14,7 @@
 #' @param id_no If \code{grouped == FALSE}, a participant number to plot. If
 #' left as \code{NULL}, defaults to the individual with the median \eqn{R^2} for
 #' each adjective.
-#' @param r2_coords If \code{grouped == FALSE}, coordinates to print the
+#' @param r2_coords If \code{grouped == FALSE}, coordinates to print the pseudo-
 #' \eqn{R^2} value.
 #' @param cred Same as [plot_glm], ignored unless \code{plt_type == "weights"}.
 #' @param legend_pos,pal,font,font_size Same as [plot_import].
@@ -182,13 +182,16 @@ plot_affect <- function(data,
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
     }
     median_id <- function(df, kind, id = id_no) {
+      pseudo_R2 <- NULL # appease R CMD check
       if (kind == "num") {
         med <- subset(
           df,
-          round(R2, 2) == round(quantile(df$R2, 0.5, na.rm = TRUE, type = 3), 2)
+          round(pseudo_R2, 2) == round(
+            quantile(df$pseudo_R2, 0.5, na.rm = TRUE, type = 3), 2
+          )
         )$id_no
         if (length(med) > 1) sample(med, 1)
-        # takes someone with approx. median R2, so can show diff. ppts
+        # takes someone with approx. median pseudo-R2, so can show diff. ppts
         else med
       } else if (kind == "id" && !is.null(id)) {
         subset(df, id_no == id)$subjID
@@ -209,7 +212,7 @@ plot_affect <- function(data,
 
     for (a in seq_along(adj_order)) {
       adj <- adj_order[a]
-      r2 <- subset(data[[a]]$fit_df, id_no == id_vec[a])$R2
+      r2 <- subset(data[[a]]$fit_df, id_no == id_vec[a])$pseudo_R2
 
       indiv_ppc_plots[[adj]] <-
         data[[a]]$indiv_ppcs[[
@@ -236,7 +239,7 @@ plot_affect <- function(data,
         cowplot::theme_half_open(font_size = font_size, font = font) +
         ggplot2::annotation_custom(
           grid::textGrob(
-            bquote(R^2 ~ "=" ~ .(round(r2, 2))),
+            bquote("Pseudo-" ~ R^2 ~ "=" ~ .(round(r2, 2))),
             gp = grid::gpar(fontsize = font_size + 2, col = "steelblue4"),
             x = r2_coords[1], y = r2_coords[2]
           )

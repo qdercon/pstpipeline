@@ -325,7 +325,9 @@ axis_title <- function(param,
 #'
 #' \code{get_affect_ppc} combines posterior predictions contained in a
 #' [posterior::draws_df()] outputted from a fit model with raw affect ratings,
-#' and returns various fit metrics (\eqn{R^2}, MAE, RMSE), for each individual.
+#' and returns various fit metrics (pseudo-\eqn{R^2}, MAE, RMSE), for each
+#' individual. We follow Ferrari & Cribari-Neto (2004) in defining pseudo-R^2 as
+#' the squared correlation between observed and mean posterior predictions.
 #'
 #' @param draws A [posterior::draws_df()]. Draws outputted from
 #' [fit_learning_model] (as a [posterior::draws_list()]) should be converted via
@@ -336,8 +338,9 @@ axis_title <- function(param,
 #' "engaged".
 #'
 #' @returns List containing a dataframe with participant identifiers, numbers,
-#' and \eqn{R^2}, MAE and RMSE for each individual; and a named list (by ID) of
-#' data frames with individuals' mean posterior predictions and raw affect data.
+#' and pseudo \eqn{R^2}, MAE and RMSE for each individual; and a named list (by
+#' ID) of data frames with individuals' mean posterior predictions and raw
+#' affect data.
 #'
 #' @examples \dontrun{
 #' fit_affect <- fit_learning_model(
@@ -373,8 +376,10 @@ get_affect_ppc <- function(draws,
   grps <- raw |>
     dplyr::distinct(dplyr::pick(subjID, tidyselect::any_of("distanced")))
   fit_df <- as.data.frame(
-    matrix(nrow = n_id, ncol = 5,
-           dimnames = list(1:n_id, c("subjID", "id_no", "R2", "MAE", "RMSE")))
+    matrix(
+      nrow = n_id, ncol = 5,
+      dimnames = list(1:n_id, c("subjID", "id_no", "pseudo_R2", "MAE", "RMSE"))
+    )
   )
   pb <- txtProgressBar(min = 0, max = n_id, initial = 0, style = 3)
 

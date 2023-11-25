@@ -34,7 +34,7 @@ from \link{make_par_df}.}
 left as \code{NULL}, defaults to the individual with the median \eqn{R^2} for
 each adjective.}
 
-\item{r2_coords}{If \code{grouped == FALSE}, coordinates to print the
+\item{r2_coords}{If \code{grouped == FALSE}, coordinates to print the pseudo-
 \eqn{R^2} value.}
 
 \item{cred}{Same as \link{plot_glm}, ignored unless \code{plt_type == "weights"}.}

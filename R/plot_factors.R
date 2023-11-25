@@ -22,8 +22,8 @@
 #' @return A single or \code{list} of \code{ggplot} object(s).
 #'
 #' @examples
-#' # Please this notebook for usage (examples would require Python input):
-#' # https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb # nolint
+#' # See the notebook (data_cleaning_factor_derivation.ipynb) for examples as
+#' # it requires Python input.
 #' @export
 
 plot_factors <- function(df,
