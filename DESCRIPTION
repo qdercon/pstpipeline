@@ -18,7 +18,8 @@ Imports:
     runner,
     rlang,
     cowplot,
-    methods
+    methods,
+    scales
 Suggests:
     cmdstanr,
     posterior,

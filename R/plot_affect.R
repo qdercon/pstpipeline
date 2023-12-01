@@ -22,6 +22,7 @@
 #' @return A single or list of \code{ggplot} object(s) depending on type.
 #'
 #' @importFrom stats quantile
+#' @importFrom scales pseudo_log_trans
 #'
 #' @examples \dontrun{
 #' fit_affect <- fit_learning_model(
@@ -77,25 +78,32 @@ plot_affect <- function(data,
     data <- data |> dplyr::filter(!is.na(adj))
 
     p <- unique(data$parameter)
-    labs <- c("\u03B3", expression(w[0]), expression(w[1]), expression(w[1]^b),
-              expression(w[1]^o), expression(w[2]), expression(w[3]))
+    labs <- c(
+      expression(w[0]), expression(w[1]), expression(w[1]^b),
+      expression(w[1]^o), expression(w[2]), expression(w[3]), "\u03B3"
+    )
 
     if (any(grepl("w1_o", p)) && !any(grepl("w1_b", p)))
-      labs <- labs[c(1, 2, 3, 6, 7)]
-    else if (!any(grepl("w1_o", p))) labs <- labs[c(1, 2, 6, 7)]
-    else labs <- labs[c(1, 2, 4, 5, 6, 7)]
+      labs <- labs[c(1, 2, 5, 6, 7)]
+    else if (!any(grepl("w1_o", p))) labs <- labs[c(1, 5, 6, 7)]
+    else labs <- labs[c(1, 3, 4, 5, 6, 7)] # for "full" model
 
     weight_plot <- data |>
       dplyr::mutate(
+        # move gamma to end of plot
+        parameter = ifelse(parameter == "gamma", "zgamma", parameter),
         adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj)))
       ) |>
       ggplot2::ggplot(
         ggplot2::aes(
           x = parameter, y = posterior_mean, color = factor(adj),
           fill = factor(adj)
-        )) +
-      geom_flat_violin(position = ggplot2::position_nudge(x = .125, y = 0),
-                       adjust = 2, trim = FALSE, alpha = 0.5) +
+        )
+      ) +
+      geom_flat_violin(
+        position = ggplot2::position_nudge(x = .125, y = 0), adjust = 2,
+        trim = FALSE, alpha = 0.5
+      ) +
       ggplot2::geom_point(
         ggplot2::aes(x = as.numeric(as.factor(parameter)) - 0.225),
         position = ggplot2::position_jitter(width = .1, height = 0),
@@ -110,21 +118,22 @@ plot_affect <- function(data,
             c("ymin", "lower", "middle", "upper", "ymax")
           )
         },
-        position = ggplot2::position_dodge2(),
-        alpha = 0.6,
-        width = 0.2
+        position = ggplot2::position_dodge2(), alpha = 0.6, width = 0.2
       ) +
       ggplot2::geom_hline(
-        ggplot2::aes(yintercept = 0),
-        size = 0.6,
-        alpha = 0.4,
-        linetype = "dashed",
-        colour = "slategrey"
+        ggplot2::aes(yintercept = 0), linetype = "dashed", colour = "slategrey"
+      ) +
+      ggplot2::geom_hline(
+        ggplot2::aes(yintercept = 1), linetype = "dashed", colour = "slategrey"
       ) +
       ggplot2::scale_color_manual(name = NULL, values = pal) +
       ggplot2::scale_fill_manual(name = NULL, values = pal) +
       ggplot2::scale_x_discrete(name = "Parameter", labels = labs) +
-      ggplot2::scale_y_continuous(name = "Posterior mean") +
+      ggplot2::scale_y_continuous(
+        name = "Posterior mean",
+        trans = scales::pseudo_log_trans(sigma = 0.1),
+        breaks = c(-5, -1, 0, 1, 5)
+      ) +
       cowplot::theme_half_open(font_family = font, font_size = font_size) +
       ggplot2::theme(legend.position = legend_pos)
     return(weight_plot)
@@ -153,21 +162,15 @@ plot_affect <- function(data,
       ) +
       ggplot2::scale_x_continuous(
         limits = c(0, 120), breaks = seq(0, 120, 20)) +
-      ggplot2::scale_y_continuous(limits = c(25, 72)) +
+      # ggplot2::scale_y_continuous(limits = c(25, 72)) +
       ggplot2::geom_line(size = 1.1, alpha = 0.5) +
       ggplot2::geom_ribbon(
         ggplot2::aes(
           ymin = mean_val - se_val, ymax = mean_val + se_val),
         alpha = 0.3, colour = NA
       ) +
-      ggplot2::scale_color_manual(
-        name = NULL,
-        values = pal
-      ) +
-      ggplot2::scale_fill_manual(
-        name = NULL,
-        values = pal
-      ) +
+      ggplot2::scale_color_manual(name = NULL, values = pal) +
+      ggplot2::scale_fill_manual(name = NULL, values = pal) +
       ggplot2::xlab("Rating number") +
       ggplot2::ylab(paste0("Mean (\u00B1 SE) affect rating")) +
       ggplot2::guides(linetype = "none", color = "none", fill = "none") +
