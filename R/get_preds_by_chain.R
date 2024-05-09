@@ -75,9 +75,9 @@ get_preds_by_chain <- function(out_files,
                                test = FALSE,
                                prefix = "",
                                splits = list(
-                                blocks = 1:6,
-                                sum_blks = list(c(1, 3), c(4, 6))
-                              ),
+                                 blocks = 1:6,
+                                 sum_blks = list(c(1, 3), c(4, 6))
+                               ),
                                exclude = NULL,
                                memory_save = TRUE,
                                ...) {
@@ -137,7 +137,7 @@ get_preds_by_chain <- function(out_files,
   )
   indiv_vars <- split(
     pred_var_names, ceiling(seq_along(pred_var_names) / l$n_trials)
-    )
+  )
 
   indiv <- unique(obs_df$subjID)
   ids <- sapply(1:n_indiv, function(i) list(i))
@@ -167,9 +167,10 @@ get_preds_by_chain <- function(out_files,
     for (o in seq_along(paths)) {
       all_draws[[o]] <-
         cmdstanr::read_cmdstan_csv(
-          paths[o], variables = l$pred_var, format = "draws_list")[[2]][[1]]
+          paths[o], variables = l$pred_var, format = "draws_list"
+        )[[2]][[1]]
       if (is.list(all_draws[[o]])) all_draws[[o]] <-
-          data.table::as.data.table(all_draws[[o]])
+        data.table::as.data.table(all_draws[[o]])
     }
     all_draws_df <- data.table::rbindlist(all_draws)
     rm(all_draws)
@@ -190,7 +191,7 @@ get_preds_by_chain <- function(out_files,
           cmdstanr::read_cmdstan_csv(paths[o], variables = indiv_vars[[id]],
                                      format = "draws_list")[[2]][[1]]
         if (is.list(all_indiv_draws[[o]])) all_indiv_draws[[o]] <-
-            data.table::as.data.table(all_indiv_draws[[o]])
+          data.table::as.data.table(all_indiv_draws[[o]])
         all_indiv_draws[[o]] <- all_indiv_draws[[o]] |>
           dplyr::select(-tidyselect::vars_select_helpers$where(~ any(. == -1)))
       }
@@ -207,7 +208,7 @@ get_preds_by_chain <- function(out_files,
     for (m in missing) {
       all_indiv_draws <- all_indiv_draws |>
         tibble::add_column(NA, .after = m - 1)
-          # adds columns of NAs in the correct place where a trial was missed
+      # adds columns of NAs in the correct place where a trial was missed
     }
     colnames(all_indiv_draws) <- sapply(
       1:l$n_trials, function(n) paste(l$pred_var, n, sep = "_")
@@ -227,7 +228,7 @@ get_preds_by_chain <- function(out_files,
         l$pred_var, "_",
         indiv_obs_list_id[indiv_obs_list_id$type ==
                             type_key[[l$pred_types[stim]]], ]$trial_no
-        )
+      )
       preds <- all_indiv_draws |>
         dplyr::select(tidyselect::all_of(pred_nms))
 
@@ -239,7 +240,7 @@ get_preds_by_chain <- function(out_files,
         dplyr::rowwise() |>
         dplyr::mutate(
           trial_no = as.integer(tail(strsplit(trial_no, "_")[[1]], n = 1))
-          ) |>
+        ) |>
         dplyr::ungroup()
 
       obs <-
@@ -292,7 +293,7 @@ get_preds_by_chain <- function(out_files,
             summed_trials_blk <- rowSums(preds_blk) / dim(preds_blk)[2]
             blk_trials_q <- quantile_hdi(
               summed_trials_blk, c(0.025, 0.5, 0.975)
-              )
+            )
 
             trial_avg_list[[id]] <- trial_avg_list[[id]] |>
               dplyr::bind_rows(
@@ -300,15 +301,17 @@ get_preds_by_chain <- function(out_files,
                   "subjID" = indiv[id],
                   "id_no" = id,
                   "obs_mean" = mean(
-                    obs[obs$trial_no > ((blk - 1) * trials_per_block) &
-                    obs$trial_no <= (blk * trials_per_block), ]$choice
-                    ),
+                    obs[
+                      obs$trial_no > ((blk - 1) * trials_per_block) &
+                        obs$trial_no <= (blk * trials_per_block),
+                    ]$choice
+                  ),
                   "pred_post_mean" = mean(summed_trials_blk),
                   "pred_post_median" = blk_trials_q[2],
                   "pred_post_lower_95_hdi" = blk_trials_q[1],
                   "pred_post_upper_95_hdi" = blk_trials_q[3],
                   "type" = paste(l$pred_types[stim], blknames[blk], sep = "_")
-                  )
+                )
               )
           }
         }
@@ -328,13 +331,13 @@ get_preds_by_chain <- function(out_files,
             included <- seq(splits[[2]][[blkgrp]][1], splits[[2]][[blkgrp]][2])
             included_names <- as.vector(
               unlist(sapply(included, function(nm) pred_names[[blknames[nm]]]))
-              )
+            )
             preds_blkgrp <- preds |>
               dplyr::select(tidyselect::all_of(included_names))
             summed_trials_blkgrp <- rowSums(preds_blkgrp) / dim(preds_blkgrp)[2]
             blk_trial_grp_q <- quantile_hdi(
               summed_trials_blkgrp, c(0.025, 0.5, 0.975)
-              )
+            )
 
             trial_avg_list[[id]] <- trial_avg_list[[id]] |>
               dplyr::bind_rows(
@@ -342,8 +345,10 @@ get_preds_by_chain <- function(out_files,
                   "subjID" = indiv[id],
                   "id_no" = id,
                   "obs_mean" = mean(
-                    obs[obs$trial_no > (min(included - 1) * trials_per_block) &
-                    obs$trial_no <= (max(included) * trials_per_block), ]$choice
+                    obs[
+                      obs$trial_no > (min(included - 1) * trials_per_block) &
+                        obs$trial_no <= (max(included) * trials_per_block),
+                    ]$choice
                   ),
                   "pred_post_mean" = mean(summed_trials_blkgrp),
                   "pred_post_median" = blk_trial_grp_q[2],
@@ -401,18 +406,22 @@ get_preds_by_chain <- function(out_files,
     trial_obs_df <- trial_obs_df |> dplyr::filter(!id_no %in% exclude)
   }
 
-  saveRDS(indiv_obs_df, file = paste0(
-    save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS")
-    )
-  saveRDS(trial_obs_df, file = paste0(
-    save_dir, "/", prefix, "trial_block_avg_hdi_ppcs_df.RDS")
-    )
+  saveRDS(
+    indiv_obs_df,
+    file = paste0(save_dir, "/", prefix, "indiv_obs_sum_ppcs_df.RDS")
+  )
+  saveRDS(
+    trial_obs_df,
+    file = paste0(save_dir, "/", prefix, "trial_block_avg_hdi_ppcs_df.RDS")
+  )
 
-  message(paste0(
-    "Finished in ",
-    round(difftime(Sys.time(), start, units = "secs")[[1]], digits = 1),
-    " seconds.")
+  message(
+    paste0(
+      "Finished in ",
+      round(difftime(Sys.time(), start, units = "secs")[[1]], digits = 1),
+      " seconds."
     )
+  )
 
   ret <- list()
   ret$indiv_obs_df <- indiv_obs_df

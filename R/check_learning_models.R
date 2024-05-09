@@ -58,14 +58,13 @@ check_learning_models <- function(draws,
         mu_pars <- draws |>
           dplyr::select(tidyselect::starts_with("mu_")) |>
           dplyr::select(-tidyselect::contains("pr"))
-        )
+      )
       mu_pars_df <- mu_pars
       draws_df <- TRUE
       warning(
-        strwrap(
-          "Data given as 'draws_df': chain-by-chain diagnostics won't be
+        strwrap("Data given as 'draws_df': chain-by-chain diagnostics won't be
           possible.", prefix = " ", initial = "")
-        )
+      )
     }
   } else if (grepl(".csv", draws[1])) {
     mu_pars <-
@@ -77,7 +76,7 @@ check_learning_models <- function(draws,
           return(
             cmdstanr::read_cmdstan_csv(
               draws, variables = c("mu_alpha", "mu_beta")
-              )
+            )
           )
         }
       )[["post_warmup_draws"]]
@@ -88,17 +87,18 @@ check_learning_models <- function(draws,
 
   if (is.null(pal)) pal <- c(
     "#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80"
-    )
+  )
 
   ret <- list()
 
   if (mean_pars) {
     if (!draws_df) {
-      mu_pars_df <- suppressWarnings(
-        posterior::as_draws_df(mu_pars) |>
-        dplyr::select(tidyselect::starts_with("mu_")) |>
-        dplyr::select(-tidyselect::contains("pr"))
-      )
+      mu_pars_df <-
+        suppressWarnings(
+          posterior::as_draws_df(mu_pars) |>
+            dplyr::select(tidyselect::starts_with("mu_")) |>
+            dplyr::select(-tidyselect::contains("pr"))
+        )
     }
     pars <- names(mu_pars_df)
     dens_plts <- list()
@@ -116,7 +116,7 @@ check_learning_models <- function(draws,
           ggplot2::aes(y = ggplot2::after_stat(count), fill = "value"),
           colour = "black", alpha = 0.65, binwidth = bin_wdth,
           position = "identity"
-          )  +
+        )  +
         ggplot2::geom_line(
           ggplot2::aes(
             y = ggplot2::after_stat(density) * (dim(df)[1] * bin_wdth),
@@ -130,7 +130,8 @@ check_learning_models <- function(draws,
         ggplot2::guides(colour = "none", fill = "none") +
         ggplot2::scale_x_continuous(
           name = bquote(
-            .(rlang::parse_expr(
+            .(
+              rlang::parse_expr(
                 axis_title(par, p, test, alpha_par, alpha_par_nms, mu = TRUE)
               )
             )
@@ -147,7 +148,8 @@ check_learning_models <- function(draws,
     for (p in seq_along(pars)) {
       dens_plts[[p]] <- dens_plot(
         mu_pars_df, par = pars[p], nbins = 30, col = pal[(p * 2) - 1],
-        font = font, font_size = font_size, alpha_par_nm = alpha_par_nms[p])
+        font = font, font_size = font_size, alpha_par_nm = alpha_par_nms[p]
+      )
     }
 
     ret$mu_par_dens <- cowplot::plot_grid(plotlist = dens_plts, nrow = 1)
@@ -159,8 +161,8 @@ check_learning_models <- function(draws,
     bayesplot::bayesplot_theme_set(
       cowplot::theme_half_open(
         font_family = font, font_size = font_size
-        )
       )
+    )
     bayesplot::color_scheme_set(pal)
 
     ret$diagnostics <- list()

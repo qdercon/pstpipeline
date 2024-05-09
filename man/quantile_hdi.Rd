@@ -5,13 +5,16 @@
 \title{Compute quantiles of a probability distrbution based on highest density
 intervals (HDIs)}
 \usage{
-quantile_hdi(var, quantile, ...)
+quantile_hdi(var, quantile, moment = "mean", ...)
 }
 \arguments{
 \item{var}{A vector of representative values from a probability distribution
 (e.g., MCMC samples).}
 
 \item{quantile}{A vector of quantiles to return.}
+
+\item{moment}{A string indicating the first moment to return ("mean" or
+"median") if \code{quantile} contains 0.5.}
 
 \item{...}{Internal arguments.}
 }

@@ -11,8 +11,9 @@ plot_glm(
   id.col = "parameter",
   test = FALSE,
   grp = id.col,
+  fclr = id.col,
+  axis_fixed = FALSE,
   grp_labs = NULL,
-  alpha_par_nms = NULL,
   plot_together = TRUE,
   ovrll_title = NULL,
   title_font_size = 16,
@@ -26,7 +27,8 @@ plot_glm(
   box_nudge = 0.1,
   pal = NULL,
   font_size = 11,
-  font = ""
+  font = "",
+  ...
 )
 }
 \arguments{
@@ -43,12 +45,15 @@ non-distanced).}
 \item{grp}{Optional group to plot separately on each plot, which should be
 the interaction variable specified in \code{\link[=parameter_glm]{parameter_glm()}}.}
 
+\item{fclr}{To what variable should the colour scheme be applied? Defaults to
+\code{grp} = \code{id.col}.}
+
+\item{axis_fixed}{Logical indicating whether the y-axis should be fixed
+across all plots. Defaults to \code{FALSE}.}
+
 \item{grp_labs}{Optional labels for the groups defined by \code{grp}. It is
 recommended to first run the function with this kept as \code{NULL} to make
 sure you label the correct densities.}
-
-\item{alpha_par_nms}{Option to rename learning rate parameters, defaults to
-the names from \code{par_df}.}
 
 \item{plot_together}{If \code{TRUE}, returns a panel with all plots plotted
 as defined by subsequent arguments. Otherwise a named list of plots is
@@ -76,6 +81,9 @@ densities.}
 position of the summary boxplot.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
+
+\item{...}{Additional arguments such as \code{alpha_par_nms} to alter axis
+titles or control \code{\link[=quantile_hdi]{quantile_hdi()}}.}
 }
 \value{
 Either a list of ggplots or a \code{\link[cowplot:plot_grid]{cowplot::plot_grid()}} if

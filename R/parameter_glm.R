@@ -137,8 +137,8 @@ parameter_glm <- function(summary_df = list(),
         dplyr::across(
           .cols = c(var_of_interest, interaction, covariates),
           .fns = ~ifelse(is.na(.), recode_na, .)
-          )
         )
+      )
   }
   if ("aff_num" %in% colnames(all_data)) {
     if (is.null(affect_number)) {
@@ -165,15 +165,15 @@ parameter_glm <- function(summary_df = list(),
       dplyr::mutate(
         !!int_term := ifelse(
           !!int_term == vals[1], vals[2], vals[1]
-          )
         )
+      )
     par_ls_recode <- list()
   }
   par_ls <- list()
 
   mod <- lm(rlang::parse_expr(formula), data = all_data)
-    # used to get the correct names for betas (as ordering may change e.g.,
-    # with interactions)
+  # used to get the correct names for betas (as ordering may change e.g.,
+  # with interactions)
   if (is.factor(all_data[[var_of_interest]])) {
     cov_names <- setdiff(attr(mod$terms, "term.labels"), var_of_interest)
     beta_names <-
@@ -197,7 +197,7 @@ parameter_glm <- function(summary_df = list(),
       dplyr::rename_with(
         .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
         .cols = tidyselect::starts_with("beta")
-        )
+      )
   }
   if (!is.null(interaction)) {
     for (par in unique(all_data_recode$parameter)) {
@@ -213,7 +213,7 @@ parameter_glm <- function(summary_df = list(),
         dplyr::rename_with(
           .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
           .cols = tidyselect::starts_with("beta")
-          ) |>
+        ) |>
         dplyr::mutate(recode = TRUE)
     }
   }

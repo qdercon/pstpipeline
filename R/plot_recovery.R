@@ -4,7 +4,7 @@
 #' parameter values, plus a confusability matrix.
 #'
 #' @param raw_pars Parameters outputted from [simulate_QL()].
-#' @param sim_pars [cmdstanr::summary()] containing the fitted parameter values
+#' @param rec_pars [cmdstanr::summary()] containing the fitted parameter values
 #' for the relevant model.
 #' @param test Boolean indicating whether recovered parameters are from the test
 #' phase.
@@ -47,7 +47,7 @@
 #' @export
 
 plot_recovery <- function(raw_pars,
-                          sim_pars,
+                          rec_pars,
                           test = FALSE,
                           affect = FALSE,
                           alpha_par_nms = NULL,
@@ -62,11 +62,11 @@ plot_recovery <- function(raw_pars,
   }
 
   # to appease R CMD check
-  parameter <- obs_mean <- sim_mean <- id_no <- sim_var <-
-    obs_var <- corr <- aff_num <- adj <- NULL
+  parameter <- obs_mean <- rec_mean <- id_no <- rec_var <- obs_var <- corr <-
+    aff_num <- adj <- outc_lag <- NULL
 
-  sim_pars_df <- clean_summary(sim_pars) |>
-    dplyr::rename(sim_mean = mean)
+  rec_pars_df <- clean_summary(rec_pars) |>
+    dplyr::rename(rec_mean = mean)
 
   pars_df <- raw_pars |>
     dplyr::select(-tidyselect::any_of("subjID")) |>
@@ -74,13 +74,24 @@ plot_recovery <- function(raw_pars,
       cols = c(tidyselect::matches("alpha|beta|gamma|w")),
       names_to = "parameter", values_to = "obs_mean"
     ) |>
-    dplyr::left_join(sim_pars_df) |>
+    dplyr::left_join(rec_pars_df) |>
     suppressMessages() |>
     dplyr::select(-tidyselect::any_of(c("rhat", "ess_bulk", "ess_tail")))
 
   pars <- list()
 
   if (affect) {
+    pars_df <- pars_df |> tidyr::drop_na(obs_mean, rec_mean)
+    if ("outc_lag" %in% colnames(pars_df)) {
+      pars_df <- pars_df |>
+        dplyr::mutate(
+          parameter = ifelse(
+            !is.na(outc_lag), paste(parameter, outc_lag, sep = "_"), parameter
+          )
+        ) |>
+        #dplyr::arrange(parameter) |>
+        dplyr::select(-outc_lag)
+    }
     pars[[1]] <- pars_df |> dplyr::filter(is.na(aff_num) & !is.na(obs_mean))
     pars[[2]] <- pars_df |>
       dplyr::filter(!is.na(aff_num) & !is.na(obs_mean)) |>
@@ -97,6 +108,10 @@ plot_recovery <- function(raw_pars,
   pred_plots$cor_plots <- list()
   all_pars <- unique(pars_df$parameter)
   num_ql <- sum(grepl("alpha|beta", all_pars))
+
+  if (length(all_pars) > length(pal)) {
+    pal <- rep(pal, 1 + length(all_pars) %/% length(pal))
+  }
 
   for (p in seq_along(all_pars)) {
     legend_pos <- "none"
@@ -116,25 +131,29 @@ plot_recovery <- function(raw_pars,
     pred_plots$cor_plots[[all_pars[p]]] <- pars_to_plot |>
       dplyr::filter(parameter == par) |>
       ggplot2::ggplot(
-        ggplot2::aes(x = obs_mean, y = sim_mean, fill = adj, colour = adj)
+        ggplot2::aes(x = obs_mean, y = rec_mean, fill = adj, colour = adj)
       ) +
       ggplot2::geom_point(size = 2, alpha = 0.5) +
       ggplot2::geom_smooth(
         method = "lm", formula = "y~x", se = FALSE, fill = line_col,
         colour = line_col
-        ) +
+      ) +
       ggplot2::scale_colour_manual(name = NULL, values = col_vals) +
       ggplot2::scale_fill_manual(name = NULL, values = col_vals) +
       ggplot2::ggtitle(
         bquote(
           .(rlang::parse_expr(
             axis_title(par, p, test, alpha_par, alpha_par_nms)
-            ))
+          ))
         ),
         subtitle = bquote(
-          r ~ "=" ~ .(round(
-            cor(pars_to_plot[pars_to_plot$parameter == par, ]$obs_mean,
-                pars_to_plot[pars_to_plot$parameter == par, ]$sim_mean), 2))
+          r ~ "=" ~ .(
+            round(
+              cor(pars_to_plot[pars_to_plot$parameter == par, ]$obs_mean,
+                pars_to_plot[pars_to_plot$parameter == par, ]$rec_mean
+              ), 2
+            )
+          )
         )
       ) +
       ggplot2::xlab("Observed") +
@@ -169,16 +188,16 @@ plot_recovery <- function(raw_pars,
     )
 
     htmps[[c]] <-
-      tibble::as_tibble(cor_mat, rownames = "sim_var") |>
+      tibble::as_tibble(cor_mat, rownames = "rec_var") |>
       dplyr::select(tidyselect::matches("var|obs")) |>
-      dplyr::filter(grepl("sim", sim_var)) |>
-      dplyr::mutate(sim_var = sub("sim_mean_", "", sim_var)) |>
+      dplyr::filter(grepl("rec", rec_var)) |>
+      dplyr::mutate(rec_var = sub("rec_mean_", "", rec_var)) |>
       tidyr::pivot_longer(cols = tidyselect::contains("obs"),
                           names_to = "obs_var", names_prefix = "obs_mean_",
                           values_to = "corr") |>
-      dplyr::mutate(sim_var = factor(sim_var, levels = par_nms)) |>
+      dplyr::mutate(rec_var = factor(rec_var, levels = par_nms)) |>
       dplyr::mutate(obs_var = factor(obs_var, levels = par_nms)) |>
-      ggplot2::ggplot(ggplot2::aes(x = obs_var, y = sim_var, fill = corr)) +
+      ggplot2::ggplot(ggplot2::aes(x = obs_var, y = rec_var, fill = corr)) +
       ggplot2::geom_tile(alpha = 0.6) +
       ggplot2::guides(fill = "none") +
       ggplot2::geom_text(ggplot2::aes(label = round(corr, 2), family = font)) +

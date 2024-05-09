@@ -7,12 +7,18 @@
 plot_raincloud(
   summary_df,
   raw_df,
+  pars_of_interest = NULL,
   type = "parameter",
   test = FALSE,
-  alpha_par_nms = NULL,
   by = NULL,
-  rhat_upper = 1.1,
-  ess_lower = 100,
+  recode_na = 0,
+  par_nms = type,
+  par_vals = "posterior_mean",
+  par_lvls = NULL,
+  par_labs = NULL,
+  afct_filt = NULL,
+  afct_col = NULL,
+  combine_with = NULL,
   legend_title = by,
   legend_labels = NULL,
   legend_pos = "right",
@@ -24,7 +30,8 @@ plot_raincloud(
   scatter = c(width = 0.15, nudge = 0.225),
   pal = NULL,
   font_size = 11,
-  font = ""
+  font = "",
+  ...
 )
 }
 \arguments{
@@ -34,21 +41,35 @@ interest.}
 \item{raw_df}{List of raw data inputs to the above fits (in the same order).
 Used to correctly link subject IDs to independent variables.}
 
+\item{pars_of_interest}{Vector of parameters to plot, for example if we want
+to only plot a specific parameter by a certain demographic variable.}
+
 \item{type}{Type of plot to return - either separate plots for each
 \code{parameter}, or each transdiagnostic symptom \code{factor}.}
 
 \item{test}{Boolean indicating whether summaries are from the test phase.}
 
-\item{alpha_par_nms}{Vector of learning rate parameter names for dual
-learning rate model. Defaults to "pos" and "neg" if not specified.}
-
 \item{by}{Separately plot distributions by a certain demographic variable?}
 
-\item{rhat_upper, ess_lower}{Upper and lower bounds for individuals' rhat and
-effective sample size (ESS) for the parameters of interest. For consistency,
-if one of an individual's parameters do not meet these criteria, all their
-parameters are removed from the plot. Set to \code{Inf} and \code{0} to avoid
-excluding any individuals.}
+\item{recode_na}{Value to recode NAs in the \code{by} variable to.}
+
+\item{par_nms}{The name of the column that contains the discrete axis labels
+(i.e., the parameter or factor score names).}
+
+\item{par_vals}{The name of the column that contains the continuous values to
+plot (i.e., the parameter values or factor scores).}
+
+\item{par_lvls}{The order in which to plot the parameters or factors.}
+
+\item{par_labs}{Modify the labels of the parameters or factors - must be in
+the same order as \code{par_lvls}.}
+
+\item{afct_filt}{Affect adjective to filter on, if \code{affect = TRUE}.}
+
+\item{afct_col}{Column containing the affect types.}
+
+\item{combine_with}{A column to combine with the \code{par_nms} variable, if
+this is further split by another variable.}
 
 \item{legend_title, legend_labels, legend_pos}{Controls to name and label the
 items in the legend (as these may be formatted poorly if \code{by != NULL}),
@@ -71,6 +92,9 @@ x-direction.}
 \code{NULL} to omit the scatterplots from the plot entirely.}
 
 \item{pal, font_size, font}{Same as \code{\link[=plot_import]{plot_import()}}.}
+
+\item{...}{Additional arguments such as \code{alpha_par_nms} to alter axis
+titles or control the \code{moment} used in \code{\link[=quantile_hdi]{quantile_hdi()}}.}
 }
 \value{
 A ggplot.

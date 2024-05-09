@@ -104,6 +104,8 @@ single_hdi <- function(vals,
 #' @param var A vector of representative values from a probability distribution
 #' (e.g., MCMC samples).
 #' @param quantile A vector of quantiles to return.
+#' @param moment A string indicating the first moment to return ("mean" or
+#' "median") if \code{quantile} contains 0.5.
 #' @param ... Internal arguments.
 #'
 #' @returns A sorted vector with all specified quantiles.
@@ -115,19 +117,21 @@ single_hdi <- function(vals,
 
 quantile_hdi <- function(var,
                          quantile,
+                         moment = "mean",
                          ...) {
 
   l <- list(...)
   if (is.null(l$transform)) l$transform <- FALSE
-  if (l$transform) { # fixes issues calling function from within ggplot with
-                     # exponentiated coefficients
+  cent <- match.arg(moment, c("mean", "median"), several.ok = FALSE)
+  if (l$transform) {
+    # fixes issues calling fn from within ggplot with exponentiated coefficients
     var <- log(var / 100 + 1)
   }
   returns <- vector(mode = "numeric")
 
   for (q in quantile) {
     if (q == 0.5) {
-      returns <- cbind(returns, median(var))
+      returns <- cbind(returns, get(cent)(var))
     } else if (q == 0) {
       returns <- cbind(returns, min(var))
     } else if (q == 1) {
@@ -183,8 +187,8 @@ family_ch <- function(param) {
 clean_summary <- function(summary) {
   id_all <- variable <- NULL
   summary |>
-    dplyr::filter(grepl("alpha|beta|w|gamma\\[", variable)) |>
-    dplyr::filter(!grepl("_pr|_s|mu|sigma|_diff", variable)) |>
+    dplyr::filter(grepl("alpha|beta|w|gamma", variable)) |>
+    dplyr::filter(!grepl("_pr|_s|mu|sigma|_diff|_i", variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(tidyselect::matches("ess|rhat"))
     ) |>
@@ -194,9 +198,9 @@ clean_summary <- function(summary) {
     dplyr::rowwise() |>
     dplyr::mutate(
       id_no = as.numeric(strsplit(id_all, ",")[[1]][1]),
-      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2])
+      aff_num = as.numeric(strsplit(id_all, ",")[[1]][2]), # affect models
+      outc_lag = as.numeric(strsplit(id_all, ",")[[1]][3]) # affect delta model
     ) |>
-    # NA unless affect model
     dplyr::ungroup() |>
     dplyr::mutate(parameter = sub("\\[.*$", "", variable)) |>
     dplyr::select(-variable, -id_all)
@@ -242,7 +246,11 @@ make_par_df <- function(raw,
                         join_dem = TRUE,
                         adj_order = c("happy", "confident", "engaged")) {
 
-  subjID <- aff_num <- parameter <- NULL
+  subjID <- id_no <- aff_num <- parameter <- NULL
+
+  if (is.null(raw$subjID)) {
+    raw <- raw |> dplyr::mutate(subjID = as.character(id_no))
+  }
 
   ids <- raw |>
     dplyr::distinct(subjID) |>
@@ -259,11 +267,11 @@ make_par_df <- function(raw,
     dplyr::right_join(ids, by = "id_no") |>
     dplyr::group_by(subjID) |>
     dplyr::filter(dplyr::if_any(
-      tidyselect::any_of("rhat"), ~!any(.x > rhat_upper))
-    ) |>
+      tidyselect::any_of("rhat"), ~!any(.x > rhat_upper)
+    )) |>
     dplyr::filter(dplyr::if_any(
-      tidyselect::any_of(
-        tidyselect::starts_with("ess_b")), ~!any(.x < ess_lower)
+      tidyselect::any_of(tidyselect::starts_with("ess_b")),
+      ~!any(.x < ess_lower)
     )) |>
     dplyr::select(
       tidyselect::vars_select_helpers$where(~!all(is.na(.x)))
@@ -273,7 +281,7 @@ make_par_df <- function(raw,
   lost_ids <- n_id - length(unique(summ$subjID))
   if (lost_ids > 0) message(
     lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS."
-    )
+  )
   if (join_dem) {
     summ <- ppt_info |>
       dplyr::inner_join(summ, by = "subjID")
@@ -370,7 +378,7 @@ get_affect_ppc <- function(draws,
 
   ## to appease R CMD check
   question_type <- trial_no_q <- question_response <- type <- se_pred <-
-  "patterns" <- "..aff_tr" <- subjID <- NULL
+    "patterns" <- "..aff_tr" <- subjID <- NULL
 
   n_id <- length(unique(raw$subjID))
   grps <- raw |>
@@ -397,7 +405,7 @@ get_affect_ppc <- function(draws,
     affect_pred <-
       draws[, .SD, .SDcols = patterns(paste0("^y_pred\\[", i, ","))]
     affect_pred <- suppressWarnings(affect_pred[, ..aff_tr])
-      # https://github.com/Rdatatable/data.table/issues/2988
+    # https://github.com/Rdatatable/data.table/issues/2988
 
     means <- colMeans(affect_pred) * 100
     se <- sapply(affect_pred, function(x) sd(x * 100) / sqrt(length(x)))

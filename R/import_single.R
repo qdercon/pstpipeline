@@ -47,14 +47,14 @@ import_single <- function(jatos_txt_file,
     all_comp <- jsonlite::fromJSON(
       sprintf("[%s]", paste(
         readLines(
-          jatos_txt_file, encoding = "UTF-8", warn = FALSE), collapse = ","
-        )
-      )
+          jatos_txt_file, encoding = "UTF-8", warn = FALSE
+        ), collapse = ","
+      ))
     )
     if (length(all_comp) != 5) {
       stop(
         "Input is a non-standard length - check for missing tasks in text file."
-        )
+      )
     }
   }
 
@@ -167,11 +167,11 @@ import_single <- function(jatos_txt_file,
   }
 
   if (!is.null(demographics$psych_neurdev_condition)) {
-      demographics$psych_neurdev_condition <-
-        paste(
-          unlist(jsonlite::parse_json(demographics$psych_neurdev_condition)),
-          collapse = ","
-        )
+    demographics$psych_neurdev_condition <-
+      paste(
+        unlist(jsonlite::parse_json(demographics$psych_neurdev_condition)),
+        collapse = ","
+      )
   }
 
   if (any(demographics$antidepressant)) {
@@ -191,7 +191,7 @@ import_single <- function(jatos_txt_file,
   }
 
   if (any(!demographics$long_covid == "No") &&
-      any(demographics$long_covid_symptoms != "None")) {
+        any(demographics$long_covid_symptoms != "None")) {
     demographics$long_covid_symptoms <-
       paste(
         unlist(jsonlite::parse_json(demographics$long_covid_symptoms)),
@@ -219,7 +219,8 @@ import_single <- function(jatos_txt_file,
       DARS_hobbies, DARS_food_drink, DARS_social, DARS_sensory, DARS_total,
       MFIS_physical, MFIS_cognitive, MFIS_psychosocial, MFIS_total, BPQ_total,
       SPQ_cognitive_perceptual, SPQ_interpersonal, SPQ_disorganised,
-      SPQ_total) |>
+      SPQ_total
+    ) |>
     dplyr::summarise(dplyr::across(.fns = ~max(.x, na.rm = TRUE)))
 
   ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span,
@@ -286,25 +287,30 @@ import_single <- function(jatos_txt_file,
 
   training_trials <- training_blocks |>
     dplyr::filter(!grepl("question", test_part)) |>
-    dplyr::mutate(type =
-             ifelse(grepl("A", test_part), 12,
-                    ifelse(grepl("C", test_part), 34,
-                           ifelse(grepl("E", test_part), 56, NA)))) |>
-    dplyr::mutate(choice =
-             ifelse(
-               ((test_part == "AB" | test_part == "BA" | test_part == "CD" |
-                   test_part == "DC" | test_part == "EF" |
-                   test_part == "FE") & correct == TRUE) |
-                 # chose choice A/C/E on a standard trial
-               ((test_part == "AB_rev" | test_part == "BA_rev" |
-                   test_part == "CD_rev" | test_part == "DC_rev" |
-                   test_part == "EF_rev" | test_part == "FE_rev") &
-                  correct == FALSE & !timeout
-                ), 1,
-                # chose choice A/C/E on a flipped trial
-              ifelse(!timeout, 0, NA))) |>
+    dplyr::mutate(
+      type =
+        ifelse(grepl("A", test_part), 12,
+               ifelse(grepl("C", test_part), 34,
+                      ifelse(grepl("E", test_part), 56, NA)))
+    ) |>
+    dplyr::mutate(
+      choice =
+        ifelse(
+          ((test_part == "AB" | test_part == "BA" | test_part == "CD" |
+              test_part == "DC" | test_part == "EF" |
+              test_part == "FE") & correct == TRUE) |
+            # chose choice A/C/E on a standard trial
+            ((test_part == "AB_rev" | test_part == "BA_rev" |
+                test_part == "CD_rev" | test_part == "DC_rev" |
+                test_part == "EF_rev" | test_part == "FE_rev") &
+                correct == FALSE & !timeout
+            ), 1,
+          # chose choice A/C/E on a flipped trial
+          ifelse(!timeout, 0, NA)
+        )
+    ) |>
     dplyr::mutate(reward = ifelse(timeout, NA, as.numeric(correct))) |>
-      # correct==F on timeout trials, so need extra check
+    # correct==F on timeout trials, so need extra check
     dplyr::mutate(stimulus = gsub("<.*?>", "", stimulus)) |>
     dplyr::mutate(glyph_seq = paste(glyph_seq[[1]], collapse = "")) |>
     dplyr::group_by(type) |>
@@ -317,7 +323,7 @@ import_single <- function(jatos_txt_file,
           f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
           k = 20
         )
-      ) |>
+    ) |>
     dplyr::ungroup() |>
     dplyr::select(subjID, type, choice, reward, trial_block, trial_no,
                   trial_no_group, glyph_seq, stimulus, test_part, key_press, rt,
@@ -338,7 +344,8 @@ import_single <- function(jatos_txt_file,
       question_type = ifelse(grepl("happy", stimulus), "happy",
                              ifelse(grepl("engaged", stimulus), "engaged",
                                     ifelse(grepl("confident", stimulus),
-                                           "confident", "fatigue")))) |>
+                                           "confident", "fatigue")))
+    ) |>
     dplyr::select(subjID, trial_block, trial_no, trial_time, question_type,
                   question_slider_start, question_rt, question_response)
 
@@ -378,14 +385,16 @@ import_single <- function(jatos_txt_file,
     max((num_f / (num_f + num_j) * 100), (num_j / (num_f + num_j) * 100))
 
   if (!incomplete) {
-    if (ppt_info$english == "A1/A2" || ppt_info$english == "B1" ||
+    if (
+      ppt_info$english == "A1/A2" || ppt_info$english == "B1" ||
         ppt_info$neurological ||
-       !ppt_info$catch_question_1 || !ppt_info$catch_question_2 ||
-       (!ppt_info$catch_question_3 && !ppt_info$catch_question_4) ||
-       (final_block_AB < 0.6 && accuracy) ||
-       (digit_span == 0 && task_excl) || (keypress_percent > 95 && task_excl)) {
-          ppt_info <- cbind(subjID, sessionID, studyID, distanced)
-          ppt_info$exclusion <- 1
+        !ppt_info$catch_question_1 || !ppt_info$catch_question_2 ||
+        (!ppt_info$catch_question_3 && !ppt_info$catch_question_4) ||
+        (final_block_AB < 0.6 && accuracy) ||
+        (digit_span == 0 && task_excl) || (keypress_percent > 95 && task_excl)
+    ) {
+      ppt_info <- cbind(subjID, sessionID, studyID, distanced)
+      ppt_info$exclusion <- 1
     } else {
       ppt_info <- cbind(subjID, sessionID, studyID, distanced)
       ppt_info$exclusion <- 0
@@ -396,8 +405,8 @@ import_single <- function(jatos_txt_file,
         max(all_comp[[1]]$time_elapsed),
         max(all_comp[[3]]$time_elapsed),
         max(all_comp[[4]]$time_elapsed),
-        max(all_comp[[5]]$time_elapsed))
-      ) / 60000
+        max(all_comp[[5]]$time_elapsed)
+      )) / 60000
   } else {
     ppt_info <- cbind(subjID, sessionID, studyID, distanced)
     ppt_info$exclusion <- NA
@@ -431,7 +440,7 @@ import_single <- function(jatos_txt_file,
   if (l$multiple) {
     ret$ppt_info <- tibble::as_tibble(
       cbind(ppt_info, digit_span, catch_questions, demographics)
-      )
+    )
     ret$questionnaires <- tibble::as_tibble(questionnaires_tr)
   } else {
     ppt_info <- cbind(ppt_info, digit_span, catch_questions, demographics)
@@ -448,7 +457,7 @@ import_single <- function(jatos_txt_file,
   chars <-
     unique(
       test_block$test_part
-      )[!unique(test_block$test_part) %in% "question_test"]
+    )[!unique(test_block$test_part) %in% "question_test"]
   make_type_dict <- function(test_types) {
     vals <- list(1, 2, 3, 4, 5, 6)
     names(vals) <- c("A", "C", "E", "F", "D", "B")
@@ -458,11 +467,14 @@ import_single <- function(jatos_txt_file,
 
     for (t in seq_along(test_types)) {
       test <- test_types[t]
-      type[[t]] <- paste0(types[[as.character(min(vals[[substr(test, 1, 1)]],
-                                                vals[[substr(test, 2, 2)]]))]],
-                          types[[as.character(max(vals[[substr(test, 1, 1)]],
-                                                  vals[[substr(test, 2, 2)]]))]]
-                          )
+      type[[t]] <- paste0(
+        types[[as.character(
+          min(vals[[substr(test, 1, 1)]], vals[[substr(test, 2, 2)]])
+        )]],
+        types[[as.character(
+          max(vals[[substr(test, 1, 1)]], vals[[substr(test, 2, 2)]])
+        )]]
+      )
     }
     names(type) <- test_types
     return(type)
@@ -527,22 +539,24 @@ import_single <- function(jatos_txt_file,
   if (qstns_gillan) {
 
     template <- as.data.frame(
-    matrix(nrow = 0, ncol = 210,
-     dimnames =
-       list(NULL,
-            c("subjID",
-              sapply(1:43, function(i) paste0("SCZ_", i)),
-              sapply(1:18, function(i) paste0("OCI_", i)),
-              sapply(1:26, function(i) paste0("EAT_", i)),
-              sapply(1:18, function(i) paste0("AES_", i)),
-              sapply(1:10, function(i) paste0("AUDIT_", i)),
-              sapply(1:20, function(i) paste0("SDS_", i)),
-              sapply(1:20, function(i) paste0("STAI_", i)),
-              sapply(1:30, function(i) paste0("BIS_", i)),
-              sapply(1:24, function(i) paste0("LSAS_", i))
-              )
-            )
-     )
+      matrix(
+        nrow = 0,
+        ncol = 210,
+        dimnames = list(
+          NULL,
+          c("subjID",
+            sapply(1:43, function(i) paste0("SCZ_", i)),
+            sapply(1:18, function(i) paste0("OCI_", i)),
+            sapply(1:26, function(i) paste0("EAT_", i)),
+            sapply(1:18, function(i) paste0("AES_", i)),
+            sapply(1:10, function(i) paste0("AUDIT_", i)),
+            sapply(1:20, function(i) paste0("SDS_", i)),
+            sapply(1:20, function(i) paste0("STAI_", i)),
+            sapply(1:30, function(i) paste0("BIS_", i)),
+            sapply(1:24, function(i) paste0("LSAS_", i))
+          )
+        )
+      )
     )
 
     if (prolific) {
@@ -554,7 +568,7 @@ import_single <- function(jatos_txt_file,
       dplyr::select(gillan_name, score) |>
       tidyr::pivot_wider(
         names_from = gillan_name, values_from = score, values_fn = sum
-        )
+      )
 
     qstns <- cbind(subjID, qstns)
     ret$gillan_questions <- dplyr::bind_rows(template, qstns)

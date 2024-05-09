@@ -53,7 +53,7 @@ compare_block_diffs <- function(all_res,
   if (is.null(l$accuracy_excl)) l$accuracy_excl <- FALSE
 
   block_group <- trial_no <- NULL
-    # to appease R CMD check
+  # to appease R CMD check
 
   rel_data <- list()
   if (fit_together) {
@@ -85,7 +85,7 @@ compare_block_diffs <- function(all_res,
         accuracy_excl = l$accuracy_excl, model_checks = FALSE,
         save_model_as = paste(
           "first", i, "training_blocks", model, fit_typ, sep = "_"
-          ),
+        ),
         outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
 
@@ -115,7 +115,7 @@ compare_block_diffs <- function(all_res,
         accuracy_excl = l$accuracy_excl, model_checks = FALSE,
         save_model_as = paste(
           "first", i, "training_blocks", model, grp_names[1], fit_typ, sep = "_"
-          ),
+        ),
         outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
       first_n_blks_gr2 <- fit_learning_model(
@@ -124,7 +124,7 @@ compare_block_diffs <- function(all_res,
         accuracy_excl = l$accuracy_excl, model_checks = FALSE,
         save_model_as = paste(
           "first", i, "training_blocks", model, grp_names[2], fit_typ, sep = "_"
-          ),
+        ),
         outputs = c("raw_df", "summary"), save_outputs = save_mod_out, ...
       )
 
@@ -142,15 +142,15 @@ compare_block_diffs <- function(all_res,
 
   names_all <- c(
     "Block 1 only",
-     sapply(2:5, function(b) paste0("Block 1 to ", b)),
+    sapply(2:5, function(b) paste0("Block 1 to ", b)),
     "All blocks"
-    )
+  )
   names(par_df_ls) <- names_all[c(min_blocks:max_blocks)]
 
   glm_pars_df <- data.table::rbindlist(par_df_ls, idcol = "block_group") |>
     dplyr::mutate(
       block_group = factor(block_group, levels = rev(names(par_df_ls)))
-      )
+    )
 
   return(glm_pars_df)
 }

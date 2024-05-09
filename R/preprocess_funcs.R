@@ -112,15 +112,14 @@ preprocess_func_affect <- function(raw_data, general_info) {
   n_subj  <- general_info$n_subj
   t_subjs <- general_info$t_subjs
   t_max   <- general_info$t_max
+  i_max   <- general_info$i_max
 
   # Initialize (model-specific) data arrays
   affect    <- array(0, c(n_subj, t_max))
-  afct_prev <- array(0, c(n_subj, t_max))
   block_no  <- array(0, c(n_subj, t_max))
   ovl_trial <- array(0, c(n_subj, t_max))
   ovl_time  <- array(0, c(n_subj, t_max))
-  blk_time  <- array(0, c(n_subj, t_max))
-  int_time  <- array(0, c(n_subj, t_max))
+  int_trls  <- array(0, c(n_subj, t_max))
   question  <- array(0, c(n_subj, t_max))
 
   option1 <- array(-1, c(n_subj, t_max))
@@ -141,28 +140,25 @@ preprocess_func_affect <- function(raw_data, general_info) {
     block_no[i, 1:t]  <- DT_subj$trial_block
     ovl_trial[i, 1:t] <- DT_subj$trial_no_group # ovl question no., by question
     ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
-    blk_time[i, 1:t]  <- DT_subj$block_time / 60
-    int_time[i, 1:t]  <- DT_subj$time_elapsed # in mins
+    int_trls[i, 1:t]  <- DT_subj$trials_elapsed
     affect[i, 1:t]    <- DT_subj$question_response / 100
-    afct_prev[i, 1:t] <- DT_subj$qn_response_prev / 100
   }
 
   # Wrap into a list for Stan
   data_list <- list(
     N           = n_subj,
     T           = t_max,
+    I           = i_max,
     Tsubj       = t_subjs,
     option1     = option1,
     option2     = option2,
     choice      = choice,
     reward      = reward,
     affect      = affect,
-    affect_prev = afct_prev, # only relevant for conditional model
     block_no    = block_no,
     ovl_trial   = ovl_trial,
+    int_trials  = int_trls,
     ovl_time    = ovl_time,
-    blk_time    = blk_time,
-    int_time    = int_time, # only relevant for conditional model
     question    = question
   )
 

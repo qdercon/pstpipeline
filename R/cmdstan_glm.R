@@ -162,27 +162,26 @@
 #'
 #' @export
 
-cmdstan_glm <-
-  function(formula,
-           family = gaussian(),
-           data,
-           weights,
-           subset,
-           na.action = NULL,
-           offset = NULL,
-           model = TRUE,
-           algorithm = c("sampling", "meanfield", "fullrank"),
-           x = FALSE,
-           y = TRUE,
-           contrasts = NULL,
-           out_dir = NULL,
-           ...,
-           prior = default_prior_coef(family),
-           prior_intercept = default_prior_intercept(family),
-           prior_aux = exponential(autoscale = TRUE),
-           prior_PD = FALSE,
-           mean_PPD = !prior_PD,
-           sparse = FALSE) {
+cmdstan_glm <- function(formula,
+                        family = gaussian(),
+                        data,
+                        weights,
+                        subset,
+                        na.action = NULL,
+                        offset = NULL,
+                        model = TRUE,
+                        algorithm = c("sampling", "meanfield", "fullrank"),
+                        x = FALSE,
+                        y = TRUE,
+                        contrasts = NULL,
+                        out_dir = NULL,
+                        ...,
+                        prior = default_prior_coef(family),
+                        prior_intercept = default_prior_intercept(family),
+                        prior_aux = exponential(autoscale = TRUE),
+                        prior_PD = FALSE,
+                        mean_PPD = !prior_PD,
+                        sparse = FALSE) {
 
   family <- validate_family(family)
   data <- validate_data(data, if_missing = environment(formula))
@@ -253,10 +252,12 @@ validate_offset <- function(o, y) {
     o <- double(0)
   } else {
     if (length(o) != NROW(y))
-      stop(gettextf(
-        "Number of offsets is %d but should be %d (number of observations)",
-        length(o), NROW(y)), domain = NA, call. = FALSE
-        )
+      stop(
+        gettextf(
+          "Number of offsets is %d but should be %d (number of observations)",
+          length(o), NROW(y)
+        ), domain = NA, call. = FALSE
+      )
   }
   return(o)
 }

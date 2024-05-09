@@ -10,6 +10,7 @@ simulate_QL(
   gain_loss = TRUE,
   test = FALSE,
   affect = FALSE,
+  time_pars = "overall",
   prev_sample = NULL,
   raw_df = NULL,
   ...
@@ -30,6 +31,9 @@ the \code{summary_df}.}
 
 \item{affect}{Simulate subjective affect ratings (uses full passage-of-time
 model).}
+
+\item{time_pars}{Which time parameters to include in the affect model: either
+\code{"none"}; or either/both \code{"overall"} (default) or \code{"block"}.}
 
 \item{prev_sample}{An optional previous sample of id numbers (if you wish to
 simulate data for the same subset of individual parameters across a number

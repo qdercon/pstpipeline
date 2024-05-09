@@ -41,361 +41,360 @@ cmdstan_glm.fit <-
            mean_PPD = !prior_PD,
            sparse = FALSE) {
 
-  algorithm <- match.arg(algorithm)
-  family <- validate_family(family)
-  supported_families <- c("gaussian", "Gamma", "inverse.gaussian",
-                          "Beta regression")
-  fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
-  if (!length(fam)) {
-    supported_families_err <- supported_families
-    supported_families_err[supported_families_err == "Beta regression"] <-
-      "mgcv::betar"
-    stop(
-      "'family' must be one of ", paste(supported_families_err, collapse = ", ")
+    algorithm <- match.arg(algorithm)
+    family <- validate_family(family)
+    supported_families <- c("gaussian", "Gamma", "inverse.gaussian",
+                            "Beta regression")
+    fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
+    if (!length(fam)) {
+      supported_families_err <- supported_families
+      supported_families_err[supported_families_err == "Beta regression"] <-
+        "mgcv::betar"
+      stop(
+        "'family' must be one of ",
+        paste(supported_families_err, collapse = ", ")
       )
-  }
-
-  supported_links <- supported_glm_links(supported_families[fam])
-  link <- which(supported_links == family$link)
-  if (!length(link))
-    stop("'link' must be one of ", paste(supported_links, collapse = ", "))
-
-  y <- validate_glm_outcome_support(y, family)
-
-  # useless assignments to pass R CMD check
-  has_intercept <-
-    prior_df <- prior_df_for_intercept <- prior_df_for_aux <-
-    prior_df_for_smooth <- prior_dist <- prior_dist_for_intercept <-
-    prior_dist_for_aux <- prior_dist_for_smooth <- prior_mean <-
-    prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
-    prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <-
-    prior_scale_for_smooth <- prior_autoscale <- prior_autoscale_for_aux <-
-    prior_autoscale_for_intercept <- global_prior_scale <- global_prior_df <-
-    slab_df <- slab_scale <- xtemp <- xbar <- NULL
-
-  if (is.list(x)) {
-    x_stuff <- center_x(x[[1]], sparse)
-    smooth_map <- unlist(lapply(1:(length(x) - 1L), FUN = function(j) {
-      rep(j, NCOL(x[[j + 1L]]))
-    }))
-    S <- do.call(cbind, x[-1L])
-  } else {
-    x_stuff <- center_x(x, sparse)
-    S <- matrix(NA_real_, nrow = nrow(x), ncol = 0L)
-    smooth_map <- integer()
-  }
-  for (i in names(x_stuff)) # xtemp, xbar, has_intercept
-    assign(i, x_stuff[[i]])
-  nvars <- ncol(xtemp)
-
-  ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus",
-                    "laplace", "lasso", "product_normal")
-  ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
-
-  # prior distributions
-  prior_stuff <- handle_glm_prior(
-    prior,
-    nvars,
-    link = family$link,
-    default_scale = 2.5,
-    ok_dists = ok_dists
-  )
-  # prior_{dist, mean, scale, df, dist_name, autoscale},
-  # global_prior_df, global_prior_scale, slab_df, slab_scale
-  for (i in names(prior_stuff))
-    assign(i, prior_stuff[[i]])
-
-  if (isTRUE(is.list(prior_intercept)) &&
-      isTRUE(prior_intercept$default)) {
-    m_y <- 0
-    if (family$family == "gaussian" && family$link == "identity") {
-      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
     }
-    prior_intercept$location <- m_y
-  }
-  prior_intercept_stuff <- handle_glm_prior(
-    prior_intercept,
-    nvars = 1,
-    default_scale = 2.5,
-    link = family$link,
-    ok_dists = ok_intercept_dists
-  )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
-  names(prior_intercept_stuff) <- paste0(
-    names(prior_intercept_stuff), "_for_intercept"
-    )
-  for (i in names(prior_intercept_stuff))
-    assign(i, prior_intercept_stuff[[i]])
 
-  prior_aux_stuff <-
-    handle_glm_prior(
-      prior_aux,
+    supported_links <- supported_glm_links(supported_families[fam])
+    link <- which(supported_links == family$link)
+    if (!length(link))
+      stop("'link' must be one of ", paste(supported_links, collapse = ", "))
+
+    y <- validate_glm_outcome_support(y, family)
+
+    # useless assignments to pass R CMD check
+    has_intercept <-
+      prior_df <- prior_df_for_intercept <- prior_df_for_aux <-
+      prior_df_for_smooth <- prior_dist <- prior_dist_for_intercept <-
+      prior_dist_for_aux <- prior_dist_for_smooth <- prior_mean <-
+      prior_mean_for_intercept <- prior_mean_for_aux <- prior_mean_for_smooth <-
+      prior_scale <- prior_scale_for_intercept <- prior_scale_for_aux <-
+      prior_scale_for_smooth <- prior_autoscale <- prior_autoscale_for_aux <-
+      prior_autoscale_for_intercept <- global_prior_scale <- global_prior_df <-
+      slab_df <- slab_scale <- xtemp <- xbar <- NULL
+
+    if (is.list(x)) {
+      x_stuff <- center_x(x[[1]], sparse)
+      smooth_map <- unlist(lapply(1:(length(x) - 1L), FUN = function(j) {
+        rep(j, NCOL(x[[j + 1L]]))
+      }))
+      S <- do.call(cbind, x[-1L])
+    } else {
+      x_stuff <- center_x(x, sparse)
+      S <- matrix(NA_real_, nrow = nrow(x), ncol = 0L)
+      smooth_map <- integer()
+    }
+    # xtemp, xbar, has_intercept
+    for (i in names(x_stuff)) assign(i, x_stuff[[i]])
+    nvars <- ncol(xtemp)
+
+    ok_dists <- nlist("normal", student_t = "t", "cauchy", "hs", "hs_plus",
+                      "laplace", "lasso", "product_normal")
+    ok_intercept_dists <- ok_dists[1:3]
+    ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
+
+    # prior distributions
+    prior_stuff <- handle_glm_prior(
+      prior,
+      nvars,
+      link = family$link,
+      default_scale = 2.5,
+      ok_dists = ok_dists
+    )
+    # prior_{dist, mean, scale, df, dist_name, autoscale},
+    # global_prior_df, global_prior_scale, slab_df, slab_scale
+    for (i in names(prior_stuff)) assign(i, prior_stuff[[i]])
+
+    if (isTRUE(is.list(prior_intercept)) &&
+          isTRUE(prior_intercept$default)) {
+      m_y <- 0
+      if (family$family == "gaussian" && family$link == "identity") {
+        if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
+      }
+      prior_intercept$location <- m_y
+    }
+    prior_intercept_stuff <- handle_glm_prior(
+      prior_intercept,
       nvars = 1,
-      default_scale = 1,
-      link = NULL, # don't need to adjust scale based on logit vs probit
-      ok_dists = ok_aux_dists
+      default_scale = 2.5,
+      link = family$link,
+      ok_dists = ok_intercept_dists
     )
-  # prior_{dist, mean, scale, df, dist_name, autoscale}_for_aux
-  names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), "_for_aux")
-  if (is.null(prior_aux)) {
-    if (prior_PD)
-      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE.")
-    prior_aux_stuff$prior_scale_for_aux <- Inf
-  }
-  for (i in names(prior_aux_stuff))
-    assign(i, prior_aux_stuff[[i]])
+    # prior_{dist, mean, scale, df, dist_name, autoscale}_for_intercept
+    names(prior_intercept_stuff) <- paste0(
+      names(prior_intercept_stuff), "_for_intercept"
+    )
+    for (i in names(prior_intercept_stuff)) {
+      assign(i, prior_intercept_stuff[[i]])
+    }
 
-  if (ncol(S) > 0) {
-    # prior_{dist, mean, scale, df, dist_name, autoscale}_for_smooth
-    prior_smooth_stuff <-
+    prior_aux_stuff <-
       handle_glm_prior(
-        prior_smooth,
-        nvars = max(smooth_map),
+        prior_aux,
+        nvars = 1,
         default_scale = 1,
-        link = NULL,
+        link = NULL, # don't need to adjust scale based on logit vs probit
         ok_dists = ok_aux_dists
       )
-
-    names(prior_smooth_stuff) <- paste0(
-      names(prior_smooth_stuff), "_for_smooth"
-      )
-    if (is.null(prior_smooth)) {
+    # prior_{dist, mean, scale, df, dist_name, autoscale}_for_aux
+    names(prior_aux_stuff) <- paste0(names(prior_aux_stuff), "_for_aux")
+    if (is.null(prior_aux)) {
       if (prior_PD)
-        stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")
-      prior_smooth_stuff$prior_scale_for_smooth <- Inf
+        stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE.")
+      prior_aux_stuff$prior_scale_for_aux <- Inf
     }
-    for (i in names(prior_smooth_stuff))
-      assign(i, prior_smooth_stuff[[i]])
+    for (i in names(prior_aux_stuff)) assign(i, prior_aux_stuff[[i]])
 
-    prior_scale_for_smooth <- array(prior_scale_for_smooth)
-  } else {
-    prior_dist_for_smooth <- 0L
-    prior_mean_for_smooth <- array(NA_real_, dim = 0)
-    prior_scale_for_smooth <- array(NA_real_, dim = 0)
-    prior_df_for_smooth <- array(NA_real_, dim = 0)
-  }
+    if (ncol(S) > 0) {
+      # prior_{dist, mean, scale, df, dist_name, autoscale}_for_smooth
+      prior_smooth_stuff <-
+        handle_glm_prior(
+          prior_smooth,
+          nvars = max(smooth_map),
+          default_scale = 1,
+          link = NULL,
+          ok_dists = ok_aux_dists
+        )
 
-  famname <- supported_families[fam]
-  is_gaussian <- is.gaussian(famname)
-  is_gamma <- is.gamma(famname)
-  is_ig <- is.ig(famname)
-  is_beta <- is.beta(famname)
-  is_continuous <- is_gaussian || is_gamma || is_ig || is_beta # always TRUE
+      names(prior_smooth_stuff) <- paste0(
+        names(prior_smooth_stuff), "_for_smooth"
+      )
+      if (is.null(prior_smooth)) {
+        if (prior_PD)
+          stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")
+        prior_smooth_stuff$prior_scale_for_smooth <- Inf
+      }
+      for (i in names(prior_smooth_stuff)) assign(i, prior_smooth_stuff[[i]])
 
-  # require intercept for certain family and link combinations
-  if (!has_intercept) {
-    linkname <- supported_links[link]
-    needs_intercept <- !is_gaussian && linkname == "identity" ||
-      is_gamma && linkname == "inverse"
-    if (needs_intercept)
-      stop("To use this combination of family and link ",
-           "the model must have an intercept.")
-  }
-
-  # allow prior_PD even if no y variable
-  if (is.null(y)) {
-    if (!prior_PD) {
-      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+      prior_scale_for_smooth <- array(prior_scale_for_smooth)
     } else {
-      y <- fake_y_for_prior_PD(N = NROW(x), family = family)
-      if (is_gaussian &&
-          (prior_autoscale || prior_autoscale_for_intercept ||
-           prior_autoscale_for_aux)
-          ) {
-        message(
-          strwrap(
-            "'y' not specified, will assume sd(y)=1 when calculating
-            scaled prior(s).", prefix = " ", initial = ""
+      prior_dist_for_smooth <- 0L
+      prior_mean_for_smooth <- array(NA_real_, dim = 0)
+      prior_scale_for_smooth <- array(NA_real_, dim = 0)
+      prior_df_for_smooth <- array(NA_real_, dim = 0)
+    }
+
+    famname <- supported_families[fam]
+    is_gaussian <- is.gaussian(famname)
+    is_gamma <- is.gamma(famname)
+    is_ig <- is.ig(famname)
+    is_beta <- is.beta(famname)
+    is_continuous <- is_gaussian || is_gamma || is_ig || is_beta # always TRUE
+
+    # require intercept for certain family and link combinations
+    if (!has_intercept) {
+      linkname <- supported_links[link]
+      needs_intercept <- !is_gaussian && linkname == "identity" ||
+        is_gamma && linkname == "inverse"
+      if (needs_intercept)
+        stop("To use this combination of family and link ",
+             "the model must have an intercept.")
+    }
+
+    # allow prior_PD even if no y variable
+    if (is.null(y)) {
+      if (!prior_PD) {
+        stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+      } else {
+        y <- fake_y_for_prior_PD(N = NROW(x), family = family)
+        if (is_gaussian &&
+            (prior_autoscale || prior_autoscale_for_intercept ||
+               prior_autoscale_for_aux)
+        ) {
+          message(
+            strwrap(
+              "'y' not specified, will assume sd(y)=1 when calculating
+              scaled prior(s).", prefix = " ", initial = ""
             )
           )
+        }
       }
     }
-  }
 
-  if (is_gaussian) {
-    ss <- sd(y)
-    if (prior_dist > 0L && prior_autoscale)
-      prior_scale <- ss * prior_scale
-    if (prior_dist_for_intercept > 0L && prior_autoscale_for_intercept)
-      prior_scale_for_intercept <-  ss * prior_scale_for_intercept
-    if (prior_dist_for_aux > 0L && prior_autoscale_for_aux)
-      prior_scale_for_aux <- ss * prior_scale_for_aux
-  }
-  if (prior_dist > 0L && prior_autoscale) {
-    min_prior_scale <- 1e-12
-    prior_scale <- pmax(min_prior_scale, prior_scale /
-                          apply(xtemp, 2L, FUN = function(x) {
-                            num.categories <- length(unique(x))
-                            x.scale <- 1
-                            if (num.categories == 1) {
-                              x.scale <- 1
-                            } else {
-                              x.scale <- sd(x)
-                            }
-                            return(x.scale)
-                          }))
-  }
-  prior_scale <-
-    as.array(pmin(.Machine$double.xmax, prior_scale))
-  prior_scale_for_intercept <-
-    min(.Machine$double.xmax, prior_scale_for_intercept)
+    if (is_gaussian) {
+      ss <- sd(y)
+      if (prior_dist > 0L && prior_autoscale)
+        prior_scale <- ss * prior_scale
+      if (prior_dist_for_intercept > 0L && prior_autoscale_for_intercept)
+        prior_scale_for_intercept <-  ss * prior_scale_for_intercept
+      if (prior_dist_for_aux > 0L && prior_autoscale_for_aux)
+        prior_scale_for_aux <- ss * prior_scale_for_aux
+    }
+    if (prior_dist > 0L && prior_autoscale) {
+      min_prior_scale <- 1e-12
+      prior_scale <- pmax(min_prior_scale, prior_scale /
+        apply(xtemp, 2L, FUN = function(x) {
+          num.categories <- length(unique(x))
+          x.scale <- 1
+          if (num.categories == 1) {
+            x.scale <- 1
+          } else {
+            x.scale <- sd(x)
+          }
+          return(x.scale)
+        }))
+    }
+    prior_scale <-
+      as.array(pmin(.Machine$double.xmax, prior_scale))
+    prior_scale_for_intercept <-
+      min(.Machine$double.xmax, prior_scale_for_intercept)
 
-  if (length(weights) > 0 && all(weights == 1)) weights <- double()
-  if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
+    if (length(weights) > 0 && all(weights == 1)) weights <- double()
+    if (length(offset)  > 0 && all(offset  == 0)) offset  <- double()
 
-  # create entries in the data block of the .stan file
-  standata <- nlist(
-    N = nrow(xtemp),
-    K = ncol(xtemp),
-    xbar = as.array(xbar),
-    dense_X = !sparse,
-    family = stan_family_number(famname),
-    link,
-    has_weights = length(weights) > 0,
-    has_offset = length(offset) > 0,
-    has_intercept,
-    prior_PD,
-    compute_mean_PPD = mean_PPD,
-    prior_dist,
-    prior_mean,
-    prior_scale,
-    prior_df,
-    prior_dist_for_intercept,
-    prior_scale_for_intercept = c(prior_scale_for_intercept),
-    prior_mean_for_intercept = c(prior_mean_for_intercept),
-    global_prior_df, global_prior_scale, slab_df, slab_scale, # for hs priors
-    z_dim = 0,  # betareg data
-    link_phi = 0,
-    betareg_z = array(0, dim = c(nrow(xtemp), 0)),
-    has_intercept_z = 0,
-    zbar = array(0, dim = c(0)),
-    prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(),
-    prior_df_z = integer(), global_prior_scale_z = 0, global_prior_df_z = 0,
-    prior_dist_for_intercept_z = 0, prior_mean_for_intercept_z = 0,
-    prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
-    prior_df_for_intercept = c(prior_df_for_intercept),
-    prior_dist_for_aux = prior_dist_for_aux,
-    prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth,
-    prior_df_for_smooth,
-    slab_df_z = 0, slab_scale_z = 0,
-    num_normals = if (prior_dist == 7) as.integer(prior_df) else integer(0),
-    num_normals_z = integer(0),
-    clogit = 0L, J = 0L, strata = integer()
-    # mean,df,scale for aux added below depending on family
-  )
+    # create entries in the data block of the .stan file
+    standata <- nlist(
+      N = nrow(xtemp),
+      K = ncol(xtemp),
+      xbar = as.array(xbar),
+      dense_X = !sparse,
+      family = stan_family_number(famname),
+      link,
+      has_weights = length(weights) > 0,
+      has_offset = length(offset) > 0,
+      has_intercept,
+      prior_PD,
+      compute_mean_PPD = mean_PPD,
+      prior_dist,
+      prior_mean,
+      prior_scale,
+      prior_df,
+      prior_dist_for_intercept,
+      prior_scale_for_intercept = c(prior_scale_for_intercept),
+      prior_mean_for_intercept = c(prior_mean_for_intercept),
+      global_prior_df, global_prior_scale, slab_df, slab_scale, # for hs priors
+      z_dim = 0,  # betareg data
+      link_phi = 0,
+      betareg_z = array(0, dim = c(nrow(xtemp), 0)),
+      has_intercept_z = 0,
+      zbar = array(0, dim = c(0)),
+      prior_dist_z = 0, prior_mean_z = integer(), prior_scale_z = integer(),
+      prior_df_z = integer(), global_prior_scale_z = 0, global_prior_df_z = 0,
+      prior_dist_for_intercept_z = 0, prior_mean_for_intercept_z = 0,
+      prior_scale_for_intercept_z = 0, prior_df_for_intercept_z = 0,
+      prior_df_for_intercept = c(prior_df_for_intercept),
+      prior_dist_for_aux = prior_dist_for_aux,
+      prior_dist_for_smooth, prior_mean_for_smooth, prior_scale_for_smooth,
+      prior_df_for_smooth,
+      slab_df_z = 0, slab_scale_z = 0,
+      num_normals = if (prior_dist == 7) as.integer(prior_df) else integer(0),
+      num_normals_z = integer(0),
+      clogit = 0L, J = 0L, strata = integer()
+      # mean,df,scale for aux added below depending on family
+    )
 
-  # make a copy of user specification before modifying 'group' (used for keeping
-  # track of priors)
-  standata$t <- 0L
-  standata$p <- integer(0)
-  standata$l <- integer(0)
-  standata$q <- 0L
-  standata$len_theta_L <- 0L
-  standata$num_non_zero <- 0L
-  standata$w <- double(0)
-  standata$v <- integer(0)
-  standata$u <- integer(0)
-  standata$special_case <- 0L
-  standata$shape <- standata$scale <- standata$concentration <-
-    standata$regularization <- rep(0, 0)
-  standata$len_concentration <- 0L
-  standata$len_regularization <- 0L
-  standata$SSfun <- 0L
-  standata$input <- double()
-  standata$Dose <- double()
+    # make a copy of user specification before modifying 'group' (used for
+    # keeping track of priors)
+    standata$t <- 0L
+    standata$p <- integer(0)
+    standata$l <- integer(0)
+    standata$q <- 0L
+    standata$len_theta_L <- 0L
+    standata$num_non_zero <- 0L
+    standata$w <- double(0)
+    standata$v <- integer(0)
+    standata$u <- integer(0)
+    standata$special_case <- 0L
+    standata$shape <- standata$scale <- standata$concentration <-
+      standata$regularization <- rep(0, 0)
+    standata$len_concentration <- 0L
+    standata$len_regularization <- 0L
+    standata$SSfun <- 0L
+    standata$input <- double()
+    standata$Dose <- double()
 
-  # removed if_bernoulli as not relevant anymore
-  standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
-  standata$nnz_X <- 0L
-  standata$w_X <- double(0)
-  standata$v_X <- integer(0)
-  standata$u_X <- integer(0)
-  standata$y <- y
-  standata$weights <- weights
-  standata$offset_ <- offset
-  standata$K_smooth <- ncol(S)
-  standata$S <- S
-  standata$smooth_map <- smooth_map
+    # removed if_bernoulli as not relevant anymore
+    standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
+    standata$nnz_X <- 0L
+    standata$w_X <- double(0)
+    standata$v_X <- integer(0)
+    standata$u_X <- integer(0)
+    standata$y <- y
+    standata$weights <- weights
+    standata$offset_ <- offset
+    standata$K_smooth <- ncol(S)
+    standata$S <- S
+    standata$smooth_map <- smooth_map
 
-  # call stan() to draw from posterior distribution
-  if (is_continuous) {
-    standata$ub_y <- Inf
-    standata$lb_y <- if (is_gaussian) -Inf else 0
-    standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
-    standata$prior_df_for_aux <- c(prior_df_for_aux)
-    standata$prior_mean_for_aux <- c(prior_mean_for_aux)
-    standata$len_y <- length(y)
-    if (.Platform$OS.type == "windows") {
-      stan_model <- cmdstanr::cmdstan_model(
-        system.file("extdata/stan_files/from_rstanarm/continuous.stan",
-                    package = "pstpipeline"),
-        include_paths = utils::shortPathName(system.file(
-          "extdata/stan_files/from_rstanarm", package = "pstpipeline")
+    # call stan() to draw from posterior distribution
+    if (is_continuous) {
+      standata$ub_y <- Inf
+      standata$lb_y <- if (is_gaussian) -Inf else 0
+      standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
+      standata$prior_df_for_aux <- c(prior_df_for_aux)
+      standata$prior_mean_for_aux <- c(prior_mean_for_aux)
+      standata$len_y <- length(y)
+      if (.Platform$OS.type == "windows") {
+        stan_model <- cmdstanr::cmdstan_model(
+          system.file("extdata/stan_files/from_rstanarm/continuous.stan",
+                      package = "pstpipeline"),
+          include_paths = utils::shortPathName(system.file(
+            "extdata/stan_files/from_rstanarm", package = "pstpipeline"
+          ))
           ## Windows-only workaround if path has spaces!
         )
+      } else {
+        stan_model <- cmdstanr::cmdstan_model(
+          system.file("extdata/stan_files/from_rstanarm/continuous.stan",
+                      package = "pstpipeline"),
+          include_paths = system.file(
+            "extdata/stan_files/from_rstanarm", package = "pstpipeline"
+          ) ## this will fail if path has spaces!
+        )
+      }
+    } else {
+      stop(paste(famname, "is not supported in this version of the function."))
+    }
+
+    l <- list(...)
+    if (algorithm != "sampling") {
+      if (is.null(l$iter)) l$iter <- 10000
+      if (is.null(l$output_samples)) l$output_samples <- 1000
+    } else {
+      # clearly nothing is being changed, given here just to show defaults
+      if (is.null(l$chains)) l$chains <- 4
+      # default (explicitly defined here for file naming)
+      if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
+      # default (explicitly defined here for file naming)
+      if (is.null(l$adapt_delta)) l$adapt_delta <- 0.95
+    }
+
+    cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
+    if (!is.null(out_dir)) {
+      out_dir <- file.path(getwd(), out_dir)
+      if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+    }
+
+    if (algorithm != "sampling") {
+      fit <- stan_model$variational(
+        data = standata,
+        algorithm = algorithm,
+        seed = l$seed,
+        iter = l$iter,
+        refresh = l$refresh,
+        output_samples = l$output_samples,
+        output_dir = out_dir
       )
     } else {
-      stan_model <- cmdstanr::cmdstan_model(
-        system.file("extdata/stan_files/from_rstanarm/continuous.stan",
-                    package = "pstpipeline"),
-        include_paths = system.file(
-          "extdata/stan_files/from_rstanarm", package = "pstpipeline"
-        ) ## this will fail if path has spaces!
+      # MCMC
+      fit <- stan_model$sample(
+        data = standata,
+        seed = l$seed,
+        refresh = l$refresh, # default = 100
+        chains = l$chains, # default = 4
+        iter_warmup = l$iter_warmup, # default = 1000
+        iter_sampling = l$iter_sampling, # default = 1000
+        adapt_delta = l$adapt_delta, # default = 0.95
+        step_size = l$step_size, # default = 1
+        max_treedepth = l$max_treedepth, # default = 10
+        output_dir = out_dir
       )
     }
-  } else {
-    stop(paste(famname, "is not supported in this version of the function."))
+
+    return(fit)
+
   }
-
-  l <- list(...)
-  if (algorithm != "sampling") {
-    if (is.null(l$iter)) l$iter <- 10000
-    if (is.null(l$output_samples)) l$output_samples <- 1000
-  } else {
-      # clearly nothing is being changed, given here just to show defaults
-    if (is.null(l$chains)) l$chains <- 4
-      # default (explicitly defined here for file naming)
-    if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
-      # default (explicitly defined here for file naming)
-    if (is.null(l$adapt_delta)) l$adapt_delta <- 0.95
-  }
-
-  cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
-  if (!is.null(out_dir)) {
-    out_dir <- file.path(getwd(), out_dir)
-    if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-  }
-
-  if (algorithm != "sampling") {
-    fit <- stan_model$variational(
-      data = standata,
-      algorithm = algorithm,
-      seed = l$seed,
-      iter = l$iter,
-      refresh = l$refresh,
-      output_samples = l$output_samples,
-      output_dir = out_dir
-    )
-  } else {
-    # MCMC
-    fit <- stan_model$sample(
-      data = standata,
-      seed = l$seed,
-      refresh = l$refresh, # default = 100
-      chains = l$chains, # default = 4
-      iter_warmup = l$iter_warmup, # default = 1000
-      iter_sampling = l$iter_sampling, # default = 1000
-      adapt_delta = l$adapt_delta, # default = 0.95
-      step_size = l$step_size, # default = 1
-      max_treedepth = l$max_treedepth, # default = 10
-      output_dir = out_dir
-    )
-  }
-
-  return(fit)
-
-}
 
 
 # rstanarm::priors internal fns
@@ -701,11 +700,12 @@ check_constant_vars <- function(mf) {
 # @param default_scale Default value to use to scale if not specified by user
 # @param link String naming the link function.
 # @param ok_dists A list of admissible distributions
-handle_glm_prior <- function(prior, nvars, default_scale, link,
-                             ok_dists = nlist(
-                               "normal", student_t = "t", "cauchy", "hs",
-                               "hs_plus", "laplace", "lasso", "product_normal")
-                             ) {
+handle_glm_prior <- function(
+    prior, nvars, default_scale, link,
+    ok_dists = nlist(
+      "normal", student_t = "t", "cauchy", "hs",
+      "hs_plus", "laplace", "lasso", "product_normal"
+    )) {
   if (!length(prior))
     return(list(prior_dist = 0L, prior_mean = as.array(rep(0, nvars)),
                 prior_scale = as.array(rep(1, nvars)),
@@ -730,8 +730,10 @@ handle_glm_prior <- function(prior, nvars, default_scale, link,
   if (!prior_dist_name %in% unlist(ok_dists)) {
     stop("The prior distribution should be one of ",
          paste(names(ok_dists), collapse = ", "))
-  } else if (prior_dist_name %in%
-             c("normal", "t", "cauchy", "laplace", "lasso", "product_normal")) {
+  } else if (
+    prior_dist_name %in%
+      c("normal", "t", "cauchy", "laplace", "lasso", "product_normal")
+  ) {
     if (prior_dist_name == "normal") prior_dist <- 1L
     else if (prior_dist_name == "t") prior_dist <- 2L
     else if (prior_dist_name == "laplace") prior_dist <- 5L
@@ -875,25 +877,25 @@ summarize_glm_prior <-
            adjusted_prior_intercept_scale,
            adjusted_prior_aux_scale,
            family) {
-    prior_dist_name <- prior_mean <- prior_scale <- prior_df <-
-    prior_dist_name_for_intercept <- prior_mean_for_intercept <-
-    prior_scale_for_intercept <- prior_df_for_intercept <-
-    prior_dist_name_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
-    prior_df_for_aux <- NULL
-    rescaled_coef <-
-      user_prior$prior_autoscale &&
-      has_predictors &&
-      !is.na(user_prior$prior_dist_name) &&
-      !all(user_prior$prior_scale == adjusted_prior_scale)
-    rescaled_int <-
-      user_prior_intercept$prior_autoscale_for_intercept &&
-      has_intercept &&
-      !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
-      (user_prior_intercept$prior_scale_for_intercept !=
-      adjusted_prior_intercept_scale)
-    rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
-      !is.na(user_prior_aux$prior_dist_name_for_aux) &&
-      (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
+    # prior_dist_name <- prior_mean <- prior_scale <- prior_df <-
+    # prior_dist_name_for_intercept <- prior_mean_for_intercept <-
+    # prior_scale_for_intercept <- prior_df_for_intercept <-
+    # prior_dist_name_for_aux <- prior_mean_for_aux <- prior_scale_for_aux <-
+    # prior_df_for_aux <- NULL
+    # rescaled_coef <-
+    #   user_prior$prior_autoscale &&
+    #   has_predictors &&
+    #   !is.na(user_prior$prior_dist_name) &&
+    #   !all(user_prior$prior_scale == adjusted_prior_scale)
+    # rescaled_int <-
+    #   user_prior_intercept$prior_autoscale_for_intercept &&
+    #   has_intercept &&
+    #   !is.na(user_prior_intercept$prior_dist_name_for_intercept) &&
+    #   (user_prior_intercept$prior_scale_for_intercept !=
+    #   adjusted_prior_intercept_scale)
+    # rescaled_aux <- user_prior_aux$prior_autoscale_for_aux &&
+    #   !is.na(user_prior_aux$prior_dist_name_for_aux) &&
+    #   (user_prior_aux$prior_scale_for_aux != adjusted_prior_aux_scale)
 
     if (has_predictors && user_prior$prior_dist_name %in% "t") {
       if (all(user_prior$prior_df == 1)) {
@@ -903,7 +905,7 @@ summarize_glm_prior <-
       }
     }
     if (has_intercept &&
-        user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
+          user_prior_intercept$prior_dist_name_for_intercept %in% "t") {
       if (all(user_prior_intercept$prior_df_for_intercept == 1)) {
         user_prior_intercept$prior_dist_name_for_intercept <- "cauchy"
       } else {
@@ -927,7 +929,7 @@ summarize_glm_prior <-
             adjusted_prior_scale else NULL,
           df = if (
             prior_dist_name %in%
-            c("student_t", "hs", "hs_plus", "lasso", "product_normal")
+              c("student_t", "hs", "hs_plus", "lasso", "product_normal")
           ) prior_df else NULL
         )),
       prior_intercept =
@@ -947,23 +949,23 @@ summarize_glm_prior <-
     aux_name <- .rename_aux(family)
     prior_list$prior_aux <- if (is.na(aux_name))
       NULL else with(user_prior_aux, list(
-        dist = prior_dist_name_for_aux,
-        location = if (!is.na(prior_dist_name_for_aux) &&
+      dist = prior_dist_name_for_aux,
+      location = if (!is.na(prior_dist_name_for_aux) &&
                        prior_dist_name_for_aux != "exponential")
-          prior_mean_for_aux else NULL,
-        scale = if (!is.na(prior_dist_name_for_aux) &&
+        prior_mean_for_aux else NULL,
+      scale = if (!is.na(prior_dist_name_for_aux) &&
                     prior_dist_name_for_aux != "exponential")
-          prior_scale_for_aux else NULL,
-        adjusted_scale = if (rescaled_aux)
-          adjusted_prior_aux_scale else NULL,
-        df = if (!is.na(prior_dist_name_for_aux) &&
+        prior_scale_for_aux else NULL,
+      adjusted_scale = if (rescaled_aux)
+        adjusted_prior_aux_scale else NULL,
+      df = if (!is.na(prior_dist_name_for_aux) &&
                  prior_dist_name_for_aux %in% "student_t")
-          prior_df_for_aux else NULL,
-        rate = if (!is.na(prior_dist_name_for_aux) &&
+        prior_df_for_aux else NULL,
+      rate = if (!is.na(prior_dist_name_for_aux) &&
                    prior_dist_name_for_aux %in% "exponential")
-          1 / prior_scale_for_aux else NULL,
-        aux_name = aux_name
-      ))
+        1 / prior_scale_for_aux else NULL,
+      aux_name = aux_name
+    ))
 
     return(prior_list)
   }

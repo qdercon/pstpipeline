@@ -20,21 +20,21 @@ geom_flat_violin <-
            inherit.aes = TRUE,
            ...) {
 
-  ggplot2::layer(
-    data = data,
-    mapping = mapping,
-    stat = stat,
-    geom = GeomFlatViolin,
-    position = position,
-    show.legend = show.legend,
-    inherit.aes = inherit.aes,
-    params = list(
-      trim = trim,
-      scale = scale,
-      ...
+    ggplot2::layer(
+      data = data,
+      mapping = mapping,
+      stat = stat,
+      geom = GeomFlatViolin,
+      position = position,
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      params = list(
+        trim = trim,
+        scale = scale,
+        ...
+      )
     )
-  )
-}
+  }
 
 GeomFlatViolin <-
   ggplot2::ggproto("GeomFlatViolin", ggplot2::Geom,
@@ -73,7 +73,7 @@ GeomFlatViolin <-
       ggplot2:::ggname(
         "geom_flat_violin",
         ggplot2::GeomPolygon$draw_panel(newdata, panel_scales, coord)
-        )
+      )
     },
 
     draw_key = ggplot2::draw_key_polygon,

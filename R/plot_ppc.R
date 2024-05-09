@@ -137,15 +137,15 @@ plot_ppc <- function(train_indiv = list(),
       tidyr::pivot_longer(
         tidyselect::contains("choice"),
         names_to = "choice_type", values_to = "choice", names_prefix = "choice_"
-        ) |>
+      ) |>
       dplyr::arrange(trial_no) |>
       dplyr::mutate(
         acc_type = ifelse(grepl("obs", choice_type), "Observed", "Predicted")
-        ) |>
+      ) |>
       dplyr::rowwise() |>
       dplyr::mutate(
         type = paste0(pairs[[as.character(type)]], " (", acc_type, ")")
-        ) |>
+      ) |>
       dplyr::select(-acc_type) |>
       dplyr::group_by(subjID, type, choice_type)
 
@@ -158,8 +158,8 @@ plot_ppc <- function(train_indiv = list(),
             x = choice,
             f = function(x) sum(x, na.rm = TRUE) / sum(!is.na(x)),
             k = lag
-            )
           )
+        )
     }
     cols <-
       names(train_indiv_df)[startsWith(names(train_indiv_df), "cuml_accuracy")]
@@ -186,16 +186,22 @@ plot_ppc <- function(train_indiv = list(),
         )
 
       plt_tr <- tr_plot_df |>
-        ggplot2::ggplot(ggplot2::aes(x = trial_no_group, y = cuml_acc_mean,
-                                 colour = factor(type), fill = factor(type))) +
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = trial_no_group, y = cuml_acc_mean, colour = factor(type),
+            fill = factor(type)
+          )
+        ) +
         ggplot2::geom_point(alpha = 0.65) +
         ggplot2::geom_line() +
-        ggplot2::geom_ribbon(ggplot2::aes(
-          ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se), alpha = 0.2
+        ggplot2::geom_ribbon(
+          ggplot2::aes(
+            ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se
+          ), alpha = 0.2
         ) +
         ggplot2::scale_x_continuous(
           breaks = seq(0, l$max_trials_grp, l$block_size)
-          ) +
+        ) +
         ggplot2::geom_vline(
           xintercept = tryCatch(c(seq(n_lag, 120 - n_lag, n_lag)),
                                 error = function(e) NULL),
@@ -218,16 +224,17 @@ plot_ppc <- function(train_indiv = list(),
         plt_tr <- plt_tr +
           ggplot2::ggtitle(
             group_title, subtitle = paste0(n_lag, "-trial lagged")
-            )
+          )
       }
 
       if (is.null(id)) {
         plt_tr <- plt_tr +
-          ggplot2::geom_ribbon(ggplot2::aes(
-            ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se),
-            alpha = 0.2
+          ggplot2::geom_ribbon(
+            ggplot2::aes(
+              ymin = cuml_acc_mean_sub_se, ymax = cuml_acc_mean_pl_se
+            ), alpha = 0.2
           )
-        }
+      }
       tr_plts[[plt_name]] <- plt_tr
     }
 
@@ -235,7 +242,7 @@ plot_ppc <- function(train_indiv = list(),
 
     overall_avgs <- tryCatch(
       train_indiv[[3]], error = function(e) return(list())
-      )
+    )
     if (length(overall_avgs) > 0) {
       avg_plts <- list()
       if (!is.null(id)) {
@@ -269,7 +276,7 @@ plot_ppc <- function(train_indiv = list(),
           ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
           ggplot2::scale_fill_manual(
             name = "Trial Type", values = unlist(pal)
-            ) +
+          ) +
           cowplot::theme_half_open(
             font_size = font_size,
             font_family = font
@@ -280,20 +287,20 @@ plot_ppc <- function(train_indiv = list(),
           avg_plts[[avg_nm]] <- avg_plt +
             ggplot2::ggtitle(
               group_title, subtitle = "All trials (observed minus predicted)"
-              )
+            )
         } else if (avg_diff == l$block_size) {
           avg_plts[[avg_nm]] <- avg_plt +
             ggplot2::ggtitle(
               group_title, subtitle = "Final block (observed minus predicted)"
-              )
+            )
         } else {
           avg_plts[[avg_nm]] <- avg_plt +
             ggplot2::ggtitle(
               group_title,
               subtitle = paste0(
                 "Last ", avg_diff, " trials (observed minus predicted)"
-                )
               )
+            )
         }
       }
       plt_list$diffs_obs_pred <- avg_plts
@@ -315,14 +322,14 @@ plot_ppc <- function(train_indiv = list(),
 
     trial_groups <- tryCatch(
       train_trials[[2]], error = function(e) return(list())
-      )
+    )
     trial_plt_list <- list()
     for (trgrp in trial_groups) {
       skip_to_next <- FALSE
       tryCatch(
         plot_trials_df <- train_trials_df |> dplyr::filter(avg_type == trgrp),
         error = function(e) skip_to_next <<- TRUE
-        )
+      )
       if (!skip_to_next) {
         trial_plt_list[[trgrp]] <- plot_trials_df |>
           ggplot2::ggplot(ggplot2::aes(x = obs_mean, y = pred_post_mean,
@@ -337,11 +344,11 @@ plot_ppc <- function(train_indiv = list(),
           ggplot2::xlab("Observed mean A/C/E choice probability") +
           ggplot2::ylab(
             "Predicted mean A/C/E choice probability (\u00B1 95% HDI)"
-            ) +
+          ) +
           ggplot2::scale_color_manual(name = "Trial Type", values = pal) +
           ggplot2::scale_fill_manual(
             name = "Trial Type", values = unlist(pal)
-            ) +
+          ) +
           cowplot::theme_half_open(
             font_size = font_size,
             font_family = font
@@ -351,12 +358,14 @@ plot_ppc <- function(train_indiv = list(),
             group_title,
             subtitle = bquote(
               R^2 ~ "=" ~ .(
-              round(
-                cor(plot_trials_df$obs_mean, plot_trials_df$pred_post_mean)^2, 2
-              )) ~ "(" * .(substr(trgrp, 1, 1)) *
-              .(gsub("_", " ", substr(trgrp, 2, nchar(trgrp)))) * ")"
+                round(
+                  cor(plot_trials_df$obs_mean, plot_trials_df$pred_post_mean)^2,
+                  2
+                )
+              ) ~ "(" * .(substr(trgrp, 1, 1)) *
+                .(gsub("_", " ", substr(trgrp, 2, nchar(trgrp)))) * ")"
+            )
           )
-        )
       }
     }
     plt_list$indiv_posteriors <- trial_plt_list
@@ -375,7 +384,7 @@ plot_ppc <- function(train_indiv = list(),
       dplyr::arrange(trial_no) |>
       dplyr::mutate(
         group = ifelse(grepl("obs", choice_type), "Observed", "Predicted")
-        )
+      )
 
     if (!is.null(id)) {
       test_perf_df <- test_perf_df |> dplyr::filter(subjID == id)
@@ -385,12 +394,11 @@ plot_ppc <- function(train_indiv = list(),
     }
 
     grouped_bar_ppc <- plot_import(
-        parsed_list = NULL, types = "test", plt.test = pair_groups,
-        grp_compare = "group", test_df = test_perf_df,
-        import_single = import_single, legend_pos = legend_pos, pal = pal,
-        font = font, font_size = font_size
-      ) +
-      ggplot2::ggtitle(group_title, subtitle = "Test performance (grouped)")
+      parsed_list = NULL, types = "test", plt.test = pair_groups,
+      grp_compare = "group", test_df = test_perf_df,
+      import_single = import_single, legend_pos = legend_pos, pal = pal,
+      font = font, font_size = font_size
+    ) + ggplot2::ggtitle(group_title, subtitle = "Test performance (grouped)")
 
     if (length(indiv_pairs) > 0) {
       indiv_bar_ppc <- plot_import(
@@ -399,8 +407,8 @@ plot_ppc <- function(train_indiv = list(),
         import_single = import_single, legend_pos = legend_pos, pal = pal,
         font = font, font_size = font_size
       ) +
-      ggplot2::ggtitle(
-        group_title, subtitle = "Test performance (individual pairs)"
+        ggplot2::ggtitle(
+          group_title, subtitle = "Test performance (individual pairs)"
         )
 
       plt_list$test_perf <-

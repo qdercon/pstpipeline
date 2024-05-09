@@ -6,7 +6,7 @@
 \usage{
 plot_recovery(
   raw_pars,
-  sim_pars,
+  rec_pars,
   test = FALSE,
   affect = FALSE,
   alpha_par_nms = NULL,
@@ -20,7 +20,7 @@ plot_recovery(
 \arguments{
 \item{raw_pars}{Parameters outputted from \code{\link[=simulate_QL]{simulate_QL()}}.}
 
-\item{sim_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values
+\item{rec_pars}{\code{\link[cmdstanr:fit-method-summary]{cmdstanr::summary()}} containing the fitted parameter values
 for the relevant model.}
 
 \item{test}{Boolean indicating whether recovered parameters are from the test

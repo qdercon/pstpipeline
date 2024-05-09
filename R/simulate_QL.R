@@ -15,6 +15,8 @@
 #' @param test Simulate test choices in addition to training choices?
 #' @param affect Simulate subjective affect ratings (uses full passage-of-time
 #' model).
+#' @param time_pars Which time parameters to include in the affect model: either
+#' \code{"none"}; or either/both \code{"overall"} (default) or \code{"block"}.
 #' @param prev_sample An optional previous sample of id numbers (if you wish to
 #' simulate data for the same subset of individual parameters across a number
 #' of models).
@@ -43,27 +45,28 @@ simulate_QL <- function(summary_df = NULL,
                         gain_loss = TRUE,
                         test = FALSE,
                         affect = FALSE,
+                        time_pars = "overall",
                         prev_sample = NULL,
                         raw_df = NULL,
                         ...) {
 
   # to appease R CMD check
   parameter <- subjID <- value <- trial_no <- id_no <- aff_num <-
-  hidden_reward <- question_type <- missing_times <- trial_block <- adj <-
-  question_response <- aff_cond <- time_elapsed <- NULL
+    hidden_reward <- question_type <- missing_times <- trial_block <- adj <-
+    question_response <- outc_lag <- NULL
 
   l <- list(...)
 
   if (affect) {
+    time_prm <- match.arg(
+      time_pars, c("none", "overall", "block"), several.ok = TRUE
+    )
+    sample_time <- is.null(raw_df)
     if (is.null(l$question_order)) {
-      adj_order <- c("happy", "confident", "engaged")
+      l$question_order <- c("happy", "confident", "engaged")
     }
-    if (is.null(l$raw_df)) {
-      sample_time <- TRUE
-      if (is.null(l$time_pars)) l$time_pars <- c("block", "overall")
-      time_prm <- match.arg(l$time_pars, c("none", "overall", "block"), TRUE)
-    }
-    if (is.null(l$cond_model)) aff_cond <- FALSE
+    if (is.null(l$delta_model)) l$delta_model <- FALSE
+    if (is.null(l$int_max)) l$int_max <- 5
   }
 
   if (is.null(summary_df)) {
@@ -93,14 +96,14 @@ simulate_QL <- function(summary_df = NULL,
       )
     }
     if (affect) {
-      if (is.null(l$gamma_dens)) l$gamma_dens <- c(2, 2) # Beta(alpha, beta)
+      ids_tb <- tibble::tibble(id_no = ids_sample)
+
       if (is.null(l$w0_dens)) l$w0_dens <- c(0, 0.5) # Normal(mu, sigma)
       if (is.null(l$w1_o_dens)) l$w1_o_dens <- c(-0.5, 1) # Normal(mu, sigma)
       if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.2, 0.5) # Normal(mu, sigma)
       if (is.null(l$w2_dens)) l$w2_dens <- c(0.2, 0.1)
       if (is.null(l$w3_dens)) l$w3_dens <- c(0.2, 0.1)
-
-      ids_tb <- tibble::tibble(id_no = ids_sample)
+      if (is.null(l$gamma_dens)) l$gamma_dens <- c(2, 2) # Beta(alpha, beta)
 
       wt_df <-
         dplyr::bind_rows(
@@ -109,7 +112,7 @@ simulate_QL <- function(summary_df = NULL,
         ) |>
         dplyr::rowwise() |>
         dplyr::mutate(
-          aff_num = grep(adj, adj_order),
+          aff_num = grep(adj, l$question_order),
           w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
           w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
           w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
@@ -119,14 +122,35 @@ simulate_QL <- function(summary_df = NULL,
         ) |>
         dplyr::ungroup()
 
+      if (l$delta_model) {
+        wt_a <- wt_df |> dplyr::select(-w0, -w1_o, -w1_b)
+        # duplicate wt_b int_max times, with outc_lag = 0, 1, 2, ..., int_max
+        wt_b <- lapply(1:l$int_max, function(i) wt_a) |>
+          dplyr::bind_rows(.id = "outc_lag") |>
+          dplyr::rowwise() |>
+          dplyr::mutate(
+            outc_lag = as.integer(outc_lag),
+            w2 = w2 * rbeta(1, 1, outc_lag), # lower expectation w/ higher lag
+            w3 = w3 * rbeta(1, 1, outc_lag)
+          ) |>
+          dplyr::ungroup()
+        wt_df <- dplyr::bind_rows(wt_df, wt_b) |> dplyr::select(-gamma)
+      }
+
       pars_df <- dplyr::bind_rows(pars_df, wt_df)
 
-      if (!("block" %in% time_prm)) pars_df  <- pars_df |> dplyr::select(-w1_b)
-      if (!("overall" %in% time_prm)) pars_df <- pars_df |> dplyr::select(-w1_o)
+      if (!("block" %in% time_prm)) {
+        pars_df  <- pars_df |> dplyr::select(-w1_b)
+      }
+      if (!("overall" %in% time_prm)) {
+        pars_df <- pars_df |> dplyr::select(-w1_o)
+      }
     }
   } else {
     pars_df <- clean_summary(summary_df) |>
-      dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
+      dplyr::mutate(
+        adj = ifelse(is.na(aff_num), NA, l$question_order[aff_num])
+      ) |>
       tidyr::pivot_wider(names_from = parameter, values_from = mean)
 
     if (!is.null(prev_sample)) {
@@ -140,12 +164,12 @@ simulate_QL <- function(summary_df = NULL,
     if (!is.null(raw_df)) {
       if (test) raw_df <- raw_df[[1]]
       raw_df <- raw_df |>
-        dplyr::mutate(id_no = as.integer(
-          factor(subjID, levels = unique(raw_df$subjID)))) |>
+        dplyr::mutate(
+          id_no = as.integer(factor(subjID, levels = unique(raw_df$subjID)))
+        ) |>
         dplyr::inner_join(
           tibble::as_tibble(ids_sample), by = c("id_no" = "value")
         )
-      if (affect) sample_time <- FALSE
     }
   }
 
@@ -247,9 +271,19 @@ simulate_QL <- function(summary_df = NULL,
       training_results <- training_results |>
         dplyr::mutate(
           trial_time = NA,
-          question_type = rep(sample(adj_order), 120),
+          question_type = as.vector(
+            sapply(1:120, function(i) sample(l$question_order))
+          ),
           question_response = NA
         )
+
+      if (l$delta_model) {
+        training_results <- training_results |>
+          dplyr::group_by(question_type) |>
+          dplyr::mutate(
+            int_trials = trial_no - dplyr::lag(trial_no, default = 0)
+          )
+      }
 
       if (!sample_time) {
         time <- raw_df |>
@@ -260,17 +294,36 @@ simulate_QL <- function(summary_df = NULL,
 
       ev_vec <- rep(0, 360)
       pe_vec <- rep(0, 360)
+      qn_vec <- rep(0, 360)
       trial_time <- rep(0, 360)
       block_time <- rep(0, 360)
 
-      gamma <- stats::na.omit(indiv_pars$gamma)
-      w0    <- stats::na.omit(indiv_pars$w0)
-      if ("w1_o" %in% names(indiv_pars)) w1_o <- stats::na.omit(indiv_pars$w1_o)
-      else w1_o <- c(0, 0, 0)
-      if ("w1_b" %in% names(indiv_pars)) w1_b <- stats::na.omit(indiv_pars$w1_b)
-      else w1_b <- c(0, 0, 0)
-      w2    <- stats::na.omit(indiv_pars$w2)
-      w3    <- stats::na.omit(indiv_pars$w3)
+      w0  <- stats::na.omit(indiv_pars$w0)
+      gamma    <- stats::na.omit(indiv_pars$gamma)
+      if ("w1_o" %in% names(indiv_pars))
+        w1_o <- stats::na.omit(indiv_pars$w1_o)
+      else
+        w1_o <- c(0, 0, 0)
+      if ("w1_b" %in% names(indiv_pars))
+        w1_b <- stats::na.omit(indiv_pars$w1_b)
+      else
+        w1_b <- c(0, 0, 0)
+
+      if (!l$delta_model) {
+        w2    <- stats::na.omit(indiv_pars$w2)
+        w3    <- stats::na.omit(indiv_pars$w3)
+      } else {
+        w2 <- sapply(
+          1:l$int_max,
+          function(i) stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w2)
+        )
+        w3 <- sapply(
+          1:l$int_max,
+          function(i) stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w3)
+        )
+
+        int_trials <- training_results$int_trials
+      }
     }
 
     # Initial Q values
@@ -282,8 +335,6 @@ simulate_QL <- function(summary_df = NULL,
         if (!sample_time && i %in% missing_times) next
       }
 
-      Q_t <- Q
-      names(Q_t) <- c("Q_a", "Q_b", "Q_c", "Q_d", "Q_e", "Q_f")
       # probability to choose "correct" stimulus
       p_t <-
         (exp(Q[conds[i, 1]] * beta)) /
@@ -339,15 +390,30 @@ simulate_QL <- function(summary_df = NULL,
           block_time[i] <- time[time$trial_no == i, ]$block_time / 60
         }
 
-        q <- grep(training_results$question_type[i], adj_order)
+        q <- grep(training_results$question_type[i], l$question_order)
+        qn_vec[i] <- q
 
         rating <-
           w0[q] +
           w1_o[q] * trial_time[i] +
-          w1_b[q] * block_time[i] +
-          w2[q] * sum(sapply(1:i, function(j) gamma[q]^(i - j) * ev_vec[[j]])) +
-          w3[q] * sum(sapply(1:i, function(j) gamma[q]^(i - j) * pe_vec[[j]]))
+          w1_b[q] * block_time[i]
 
+        if (!l$delta_model) {
+          rating <- rating +
+            w2[q] * sum(
+              sapply(1:i, function(j) gamma[q]^(i - j) * ev_vec[[j]])
+            ) +
+            w3[q] * sum(
+              sapply(1:i, function(j) gamma[q]^(i - j) * pe_vec[[j]])
+            )
+        } else {
+          for (j in 1:int_trials[i]) {
+            t1 <- i + 1 # to include the current trial
+            rating <- rating +
+              w2[[qn_vec[[t1 - j]], j]] * ev_vec[[t1 - j]] +
+              w3[[qn_vec[[t1 - j]], j]] * pe_vec[[t1 - j]]
+          }
+        }
         training_results$question_response[i] <- plogis(rating) * 100
         training_results$trial_time[i]        <- trial_time[i] * 60 ## in mins
       }
@@ -376,10 +442,8 @@ simulate_QL <- function(summary_df = NULL,
 
         type <- as.numeric(
           paste0(
-            match(
-              tolower(conds_test[j, 1]), letters[1:6]),
-            match(
-              tolower(conds_test[j, 2]), letters[1:6])
+            match(tolower(conds_test[j, 1]), letters[1:6]),
+            match(tolower(conds_test[j, 2]), letters[1:6])
           )
         )
 
@@ -412,7 +476,8 @@ simulate_QL <- function(summary_df = NULL,
           raw_df |> dplyr::distinct(subjID, id_no), by = "id_no"
         ) |>
         dplyr::mutate(
-          id_no = as.integer(factor(id_no, levels = unique(all_res$id_no))))
+          id_no = as.integer(factor(id_no, levels = unique(all_res$id_no)))
+        )
       # to match up with summary for plotting
 
       all_res <- all_res |>
@@ -426,8 +491,8 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::mutate(trial_no_block = trial_no - (trial_block - 1) * 60) |>
       dplyr::mutate(
         question = ifelse(
-          question_type == adj_order[1], 1,
-          ifelse(question_type == adj_order[2], 2, 3)
+          question_type == l$question_order[1], 1,
+          ifelse(question_type == l$question_order[2], 2, 3)
         )
       ) |>
       dplyr::mutate(reward = ifelse(reward == 0, -1, reward)) |>
@@ -437,17 +502,10 @@ simulate_QL <- function(summary_df = NULL,
       dplyr::mutate(
         trial_no_q = order(trial_no, decreasing = FALSE),
         qn_response_prev = dplyr::lag(question_response),
-        time_elapsed = trial_time - dplyr::lag(trial_time)
+        trials_elapsed = trial_no - dplyr::lag(trial_no, default = 0)
       ) |>
       dplyr::ungroup() |>
       dplyr::arrange(id_no)
-
-    if (!aff_cond) {
-      all_res <- all_res |>
-        dplyr::mutate(qn_response_prev = -1, time_elapsed = -1)
-    } else {
-      training_df <- training_df |> tidyr::drop_na(time_elapsed)
-    }
   } else if (!is.null(raw_df)) {
     all_res <- all_res |>
       dplyr::left_join(raw_df |> dplyr::distinct(subjID, id_no), by = "id_no")

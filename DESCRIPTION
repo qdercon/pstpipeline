@@ -1,7 +1,7 @@
 Package: pstpipeline
 Type: Package
 Title: Probabilistic Selection Task (PST) pipeline: parsing, analysis, simulation, and plotting
-Version: 0.2.0
+Version: 0.3.0
 Author: Quentin Dercon
 Maintainer: <quentindercon@gmail.com>
 Description: A high-level hierarchical Bayesian analysis pipeline for the PST with memory optimisations.
@@ -27,9 +27,10 @@ Suggests:
     vipor,
     Matrix,
     jsonlite,
-    bayesplot
+    bayesplot,
+    patchwork
 Additional_repositories: https://mc-stan.org/r-packages/
 SystemRequirements: GNU make
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Roxygen: list(markdown = TRUE)

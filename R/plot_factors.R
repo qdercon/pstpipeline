@@ -44,7 +44,7 @@ plot_factors <- function(df,
 
   ## to appease R CMD check
   Factor <- Score <- Weight <- ..count.. <- alpha <- n_items <- id <- value <-
-  obs <- predicted <- question <- NULL
+    obs <- predicted <- question <- NULL
 
   if (any(plot_type == "factor_hist")) {
 
@@ -68,13 +68,13 @@ plot_factors <- function(df,
         tidyr::pivot_longer(
           cols = tidyselect::all_of(colnames), names_to = "Factor",
           values_to = "Score"
-          ) |>
+        ) |>
         dplyr::filter(Factor == colnames[f]) |>
         ggplot2::ggplot(ggplot2::aes(x = Score)) +
         ggplot2::geom_histogram(
           ggplot2::aes(y = ..count.., fill = !!group),
           colour = "black", alpha = 0.65, binwidth = 0.2, position = "identity"
-          )  +
+        )  +
         ggplot2::geom_line(
           ggplot2::aes(y = ..count.., colour = !!group),
           binwidth = 0.2, stat = "bin"
@@ -93,7 +93,7 @@ plot_factors <- function(df,
     }
     ret$hist_factors_all <- cowplot::plot_grid(
       plotlist = hist_factors, nrow = 1
-      )
+    )
   }
   if (any(plot_type == "r2_plot")) {
     df <- as.data.frame(df) |>
@@ -115,18 +115,18 @@ plot_factors <- function(df,
         name = "No. questions", breaks = n_item_vec,
         sec.axis = ggplot2::dup_axis(
           labels = alphas, name = expression(alpha)
-          )
-        ) +
+        )
+      ) +
       ggplot2::scale_y_continuous(name = expression(R^2)) +
       ggplot2::geom_vline(
         ggplot2::aes(xintercept = n_item_vec[index_alph]),
         linetype = "dashed"
-        ) +
+      ) +
       cowplot::theme_half_open(font_size = font_size, font_family = font) +
       ggplot2::theme(
         legend.position = c(0.75, 0.25),
         axis.text.x.top = ggplot2::element_text(angle = 90)
-        )
+      )
 
     ret$r2_plot <- r2_plot
   }
@@ -171,7 +171,7 @@ plot_factors <- function(df,
     heatmap <-
       tibble::as_tibble(
         df[["coefs"]], .name_repair = ~make.names(colnames, unique = TRUE)
-        ) |>
+      ) |>
       dplyr::mutate(question = names) |>
       dplyr::filter(!dplyr::if_all(.cols = 1:3, ~ . == 0)) |>
       tidyr::pivot_longer(cols = 1:3, names_to = "Factor",
@@ -186,7 +186,7 @@ plot_factors <- function(df,
       ggplot2::theme(
         axis.title.x = ggplot2::element_blank(),
         axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust = 1)
-        )
+      )
     ret$heatmap <- heatmap
   }
 

@@ -48,65 +48,65 @@ generate_posterior_quantities <-
            return_type = c("paths", "draws_list"),
            par_chains = getOption("mc.cores", 4)) {
 
-  if (grepl("_ppc", fit_mcmc$metadata()$model_name)) {
-    warning("Are you sure predictions don't already exist for this model?")
-  }
+    if (grepl("_ppc", fit_mcmc$metadata()$model_name)) {
+      warning("Are you sure predictions don't already exist for this model?")
+    }
 
-  if (grepl("test", fit_mcmc$metadata()$model_name)) train_test <- "test"
-  else train_test <- "training"
+    if (grepl("test", fit_mcmc$metadata()$model_name)) train_test <- "test"
+    else train_test <- "training"
 
-  if (grepl("gainloss", fit_mcmc$metadata()$model_name)) alphas <- "2a"
-  else alphas <- "1a"
+    if (grepl("gainloss", fit_mcmc$metadata()$model_name)) alphas <- "2a"
+    else alphas <- "1a"
 
-  return_type <- match.arg(return_type)
+    return_type <- match.arg(return_type)
 
-  out_dir <- file.path(getwd(), out_dir)
-  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+    out_dir <- file.path(getwd(), out_dir)
+    if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
-  stan_model <- cmdstanr::cmdstan_model(
-    system.file(
-      paste(
-        "extdata/stan_files/pst",
-        ifelse(alphas == "2a", "gainloss_Q", "Q"), train_test, "gq.stan",
-        sep = "_"
+    stan_model <- cmdstanr::cmdstan_model(
+      system.file(
+        paste(
+          "extdata/stan_files/pst",
+          ifelse(alphas == "2a", "gainloss_Q", "Q"), train_test, "gq.stan",
+          sep = "_"
         ),
-      package = "pstpipeline"
+        package = "pstpipeline"
       ),
     )
 
-  fit_gq <- stan_model$generate_quantities(
-    fitted_params = fit_mcmc,
-    data = data_list,
-    output_dir = out_dir,
-    parallel_chains = par_chains
-  )
-
-  ## rename csv output files
-  outnames <- fit_gq$output_files()
-  if (save_model_as == "") {
-    save_model_as <- paste(
-      fit_mcmc$metadata()[["model_name"]], "gq", sep = "_"
+    fit_gq <- stan_model$generate_quantities(
+      fitted_params = fit_mcmc,
+      data = data_list,
+      output_dir = out_dir,
+      parallel_chains = par_chains
     )
-  }
-  csv_files <- vector(mode = "character", length = length(outnames))
 
-  for (o in seq_along(outnames)) {
-    chain_no <- strsplit(basename(outnames[o]), "-")[[1]][3]
-    csv_files[o] <-
-      paste0(out_dir, "/", save_model_as,
-             paste0(
-               "_",
-               fit_mcmc$metadata()$iter_sampling * fit_mcmc$metadata()$chains,
-               "chain_", chain_no, ".csv"
-               )
-             )
-    file.rename(from = outnames[o], to = csv_files[o])
-  }
+    ## rename csv output files
+    outnames <- fit_gq$output_files()
+    if (save_model_as == "") {
+      save_model_as <- paste(
+        fit_mcmc$metadata()[["model_name"]], "gq", sep = "_"
+      )
+    }
+    csv_files <- vector(mode = "character", length = length(outnames))
 
-  if (return_type == "paths") return(csv_files)
-  else if (return_type == "draws_list") {
-    return(fit_gq$draws(variables = "y_pred", format = "list"))
-  } else {
-    return(fit_gq)
+    for (o in seq_along(outnames)) {
+      chain_no <- strsplit(basename(outnames[o]), "-")[[1]][3]
+      csv_files[o] <-
+        paste0(out_dir, "/", save_model_as,
+          paste0(
+            "_",
+            fit_mcmc$metadata()$iter_sampling * fit_mcmc$metadata()$chains,
+            "chain_", chain_no, ".csv"
+          )
+        )
+      file.rename(from = outnames[o], to = csv_files[o])
+    }
+
+    if (return_type == "paths") return(csv_files)
+    else if (return_type == "draws_list") {
+      return(fit_gq$draws(variables = "y_pred", format = "list"))
+    } else {
+      return(fit_gq)
+    }
   }
-}

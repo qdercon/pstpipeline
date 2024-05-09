@@ -158,15 +158,16 @@ plot_affect <- function(data,
       ggplot2::ggplot(
         ggplot2::aes(
           x = trial_no_q, y = mean_val, color = adj, fill = adj,
-          linetype = factor(type, levels = c("raw", "pred")))
+          linetype = factor(type, levels = c("raw", "pred"))
+        )
       ) +
       ggplot2::scale_x_continuous(
-        limits = c(0, 120), breaks = seq(0, 120, 20)) +
+        limits = c(0, 120), breaks = seq(0, 120, 20)
+      ) +
       # ggplot2::scale_y_continuous(limits = c(25, 72)) +
       ggplot2::geom_line(size = 1.1, alpha = 0.5) +
       ggplot2::geom_ribbon(
-        ggplot2::aes(
-          ymin = mean_val - se_val, ymax = mean_val + se_val),
+        ggplot2::aes(ymin = mean_val - se_val, ymax = mean_val + se_val),
         alpha = 0.3, colour = NA
       ) +
       ggplot2::scale_color_manual(name = NULL, values = pal) +

@@ -159,7 +159,6 @@ model {
     vector[ti] phi_vec;      // Vector of beta distribution precision
     vector[ti] z_vec;        // Vector of zeros
     
-    vector[3] gamma_vec;     // Vector of gamma weights
     row_vector[3] ev_sum;    // Vector of summed EVs by question
     row_vector[3] pe_sum;    // Vector of summed PEs by question
 
@@ -297,7 +296,6 @@ generated quantities {
     vector[ti] phi_vec;      // Vector of beta distribution precision
     vector[ti] z_vec;        // Vector of zeros
     
-    vector[3] gamma_vec;     // Vector of gamma weights
     row_vector[3] ev_sum;    // Vector of summed EVs by question
     row_vector[3] pe_sum;    // Vector of summed PEs by question
 

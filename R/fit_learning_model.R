@@ -109,9 +109,7 @@ fit_learning_model <- function(df_all,
                                exp_part,
                                affect = FALSE,
                                affect_sfx = c("3wt", "4wt_trial", "4wt_block",
-                                              "4wt_time", "5wt_time",
-                                              "cond_3wt", "cond_4wt",
-                                              "cond_5wt"),
+                                              "4wt_time", "5wt_time", "delta"),
                                adj_order = c("happy", "confident", "engaged"),
                                vb = TRUE,
                                ppc = vb,
@@ -140,8 +138,8 @@ fit_learning_model <- function(df_all,
       strwrap(
         "Loading posterior predictions following MCMC is memory intensive, and
         may result in crashes", prefix = " ", initial = ""
-        )
       )
+    )
   }
   if (any(outputs == "diagnostics") && vb) {
     warning("Diagnostics are for MCMC only.")
@@ -158,11 +156,11 @@ fit_learning_model <- function(df_all,
     if (is.null(l$tol_rel_obj)) l$tol_rel_obj <- 0.01
   } else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
-      # default (explicitly defined here for file naming)
+    # default (explicitly defined here for file naming)
     if (is.null(l$iter_warmup)) l$iter_warmup <- 1000
     # default (explicitly defined here for file naming)
     if (is.null(l$iter_sampling)) l$iter_sampling <- 1000
-      # default (explicitly defined here for file naming)
+    # default (explicitly defined here for file naming)
   }
 
   if (model_checks) {
@@ -172,8 +170,8 @@ fit_learning_model <- function(df_all,
 
   ## to appease R CMD check
   subjID <- exclusion <- final_block_AB <- choice <- trial_no <- trial_block <-
-    question_type <- reward <- trial_time <- question_response <-
-    time_elapsed <- NULL
+    question_type <- reward <- trial_time <- outc_no <- question_response <-
+    trials_elapsed <- NULL
 
   if (affect) aff_mod <- match.arg(affect_sfx)
 
@@ -181,7 +179,8 @@ fit_learning_model <- function(df_all,
     if (task_excl || accuracy_excl) {
       ids <- df_all[["ppt_info"]] |>
         dplyr::select(
-          subjID, exclusion, final_block_AB, tidyselect::any_of("distanced"))
+          subjID, exclusion, final_block_AB, tidyselect::any_of("distanced")
+        )
       if (accuracy_excl) ids <- ids |> dplyr::filter(final_block_AB >= 0.6)
       if (task_excl) ids <- ids |> dplyr::filter(exclusion == 0)
       ids <- ids |> dplyr::select(subjID, tidyselect::any_of("distanced"))
@@ -192,12 +191,12 @@ fit_learning_model <- function(df_all,
 
     training_df <- df_all[["training"]] |>
       dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
-      tidyr::drop_na(choice)
+      tidyr::drop_na(choice) # remove timed out trials
 
     if (exp_part == "test") {
       test_df <- df_all[["test"]] |>
         dplyr::right_join(tibble::as_tibble(ids), by = c("subjID")) |>
-        tidyr::drop_na(choice)
+        tidyr::drop_na(choice) # remove timed out trials
 
       raw_df <- list()
       raw_df$train <- data.table::as.data.table(training_df)
@@ -224,19 +223,13 @@ fit_learning_model <- function(df_all,
           dplyr::group_by(subjID, question_type) |>
           dplyr::mutate(
             trial_no_q = order(trial_no, decreasing = FALSE),
-            qn_response_prev = dplyr::lag(question_response),
-            time_elapsed = trial_time - dplyr::lag(trial_time)
+            qn_response_prev = dplyr::lag(question_response, default = -1),
+            # the most trials that can be elapsed is 5 if trials aren't missed
+            trials_elapsed = pmin(outc_no - dplyr::lag(outc_no, default = 0), 5)
           ) |>
           dplyr::ungroup()
 
-          if (grepl("cond", aff_mod)) {
-            training_df <- training_df |> tidyr::drop_na(time_elapsed)
-          } else {
-            training_df <- training_df |>
-              dplyr::mutate(qn_response_prev = -1, time_elapsed = -1)
-          }
-
-          raw_df <- data.table::as.data.table(training_df)
+        raw_df <- data.table::as.data.table(training_df)
       }
     }
   } else {
@@ -255,8 +248,7 @@ fit_learning_model <- function(df_all,
 
   if (all(outputs == "raw_df")) return(raw_df)
 
-  ## get info
-
+  ## get info a la hBayesDM
   if (exp_part == "training") {
     DT_trials <- raw_df[, .N, by = "subjID"]
     subjs     <- DT_trials$subjID
@@ -266,7 +258,13 @@ fit_learning_model <- function(df_all,
 
     general_info <- list(subjs, n_subj, t_subjs, t_max)
     names(general_info) <- c("subjs", "n_subj", "t_subjs", "t_max")
-  } else {
+
+    if (affect) {
+      # get max number of trials_elapsed for each subject, take the minimum
+      general_info[["i_max"]] <-
+        min(raw_df[, max(trials_elapsed), by = "subjID"][[2]])
+    }
+  } else if (exp_part == "test") {
     DT_train  <- raw_df$train[, .N, by = "subjID"]
     DT_test   <- raw_df$test[, .N, by = "subjID"]
     subjs     <- DT_train$subjID
@@ -303,12 +301,13 @@ fit_learning_model <- function(df_all,
         paste0(
           paste(
             "extdata/stan_files/pst",
-            ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"),
+            ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"
+          ),
           ifelse(ppc, "_ppc.stan", ".stan")
         ),
-      package = "pstpipeline"
+        package = "pstpipeline"
+      )
     )
-  )
 
   ## fit variational model if relevant
   if (vb) {
@@ -396,20 +395,21 @@ fit_learning_model <- function(df_all,
       )
     }
     if (affect) {
-      if (!grepl("cond", affect_sfx)) {
-        pars[["w0"]] <- c(-1, 0, 1)
-        pars[["gm"]] <- c(0, 0.5, 1)
-        if (!grepl("3wt", affect_sfx)) {
-          pars[["w1_o"]] <- c(-2, 0, 2)
-          if (grepl("5wt", affect_sfx)) pars[["w1_b"]] <- c(-2, 0, 2)
-        }
+      pars[["w0"]] <- c(-1, 0, 1)
+      if (!grepl("3wt", affect_sfx)) pars[["w1_o"]] <- c(-4, 0, 4)
+      if (grepl("5wt", affect_sfx)) pars[["w1_b"]] <- c(-2, 0, 2)
+      if (!grepl("delta", affect_sfx)) {
+        pars[["w2"]] <- c(-2, 0, 2)
+        pars[["w3"]] <- c(-2, 0, 2)
       } else {
-        pars[["w1_i"]] <- c(-2, 0, 2)
-        if (grepl("4wt", affect_sfx)) pars[["w1_c"]] <- c(-2, 0, 2)
-        if (grepl("5wt", affect_sfx)) pars[["w0"]] <- c(-2, 0, 2)
+        pars[["w1_o"]] <- c(-4, 0, 4)
+        # fix
+        pars[["wprev2"]] <- c(-2, 0, 2)
+        pars[["wprev3"]] <- c(-2, 0, 2)
+        pars[["wdelta2"]] <- c(-2, 0, 2)
+        pars[["wdelta3"]] <- c(-2, 0, 2)
       }
-      pars[["w2"]] <- c(-1, 0, 1)
-      pars[["w3"]] <- c(-1, 0, 1)
+      pars[["gm"]] <- c(0, 0.5, 1)
       pars[["phi"]] <- c(0, 10, 100)
     }
 
@@ -465,34 +465,38 @@ fit_learning_model <- function(df_all,
   if (any(outputs == "summary")) {
     ret$summary <- fit$summary()
     if (save_outputs) {
-      saveRDS(ret$summary, file = paste0(
-        out_dir, "/", save_model_as, "_summary", ".RDS")
-        )
+      saveRDS(
+        ret$summary,
+        file = paste0(out_dir, "/", save_model_as, "_summary", ".RDS")
+      )
     }
   }
   if (any(outputs == "draws_list")) {
     ret$draws <- fit$draws(format = "list")
-      # the least memory intensive format to load
+    # the least memory intensive format to load
     if (save_outputs) {
-      saveRDS(ret$draws, file = paste0(
-        out_dir, "/", save_model_as, "_draws_list", ".RDS")
-        )
+      saveRDS(
+        ret$draws,
+        file = paste0(out_dir, "/", save_model_as, "_draws_list", ".RDS")
+      )
     }
   }
   if (any(outputs == "stan_datalist")) {
     ret$stan_datalist <- data_cmdstan
     if (save_outputs) {
-      saveRDS(ret$stan_datalist, file = paste0(
-        out_dir, "/", save_model_as, "_stan_datalist", ".RDS")
-        )
+      saveRDS(
+        ret$stan_datalist,
+        file = paste0(out_dir, "/", save_model_as, "_stan_datalist", ".RDS")
+      )
     }
   }
   if (any(outputs == "raw_df")) {
     ret$raw_df <- raw_df
     if (save_outputs) {
-      saveRDS(ret$raw_df, file = paste0(
-        out_dir, "/", save_model_as, "_raw_df", ".RDS")
-        )
+      saveRDS(
+        ret$raw_df,
+        file = paste0(out_dir, "/", save_model_as, "_raw_df", ".RDS")
+      )
     }
   }
   if (any(outputs == "loo_obj")) {
@@ -510,17 +514,21 @@ fit_learning_model <- function(df_all,
       )
     }
     if (save_outputs) {
-      saveRDS(ret$loo_obj, file = paste0(
-        out_dir, "/", save_model_as, "_loo_obj", ".RDS")
-        )
+      saveRDS(
+        ret$loo_obj,
+        file = paste0(out_dir, "/", save_model_as, "_loo_obj", ".RDS")
+      )
     }
   }
   if (any(outputs == "diagnostics") && !vb) {
     ret$diagnostics <- fit$cmdstan_diagnose()
     if (save_outputs) {
-      saveRDS(ret$diagnostics, file = paste0(
-        out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS")
+      saveRDS(
+        ret$diagnostics,
+        file = paste0(
+          out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS"
         )
+      )
     }
   }
 
@@ -534,8 +542,9 @@ fit_learning_model <- function(df_all,
       to = paste0(
         out_dir, "/", save_model_as,
         ifelse(vb, paste0("_", l$output_samples), paste0("_chain_", chain_no)),
-        ".csv")
+        ".csv"
       )
+    )
   }
   return(ret)
 }
