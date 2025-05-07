@@ -8,15 +8,21 @@
 
 ## an R package to clean, analyse, and present data from a large online learning study
 
-**Full methods and results from this study can be found in the paper** <small>(† = equal contribution)</small>:
+**Full methods and results from this study can be found in the papers** <small>(† = equal contribution)</small>:
 
-> Dercon†, Q., Mehrhof†, S. Z., Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
+> Dercon, Q.†, Mehrhof, S. Z.†, Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
 
-All analyses in the paper can be visually inspected (and, in theory, re-run) via the following Jupyter notebooks, including model fitting and checks:
+and
+
+> Dercon, Q., Huys, Q. J. M., Rutledge, R. B., Nord, C. L. (2025). Common psychiatric treatments alter affective dynamics. Preprint on *PsyArXiv*. https://doi.org/10.31234/osf.io/q8r2b_v1
+
+All analyses in the papers can be visually inspected (and, in theory, re-run) via the following Jupyter notebooks:
 
 1. Data cleaning, transdiagnostic psychiatric symptom factor derivation, and plotting of behavioural data: [```data_cleaning_factor_derivation.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb).
 2. Fitting of all computational models, plus model checks, plots of posterior predictions, and parameter recovery: [```model_fitting_mcmc.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/model_fitting_mcmc.ipynb). (An [additional notebook](https://github.com/qdercon/pstpipeline/blob/main/notebooks/model_fitting_vb.ipynb) with models fitted via approximate inference is also provided, which can be far more easily re-run.)
 3. Outcome analyses including associations between model parameters and transdiagnostic symptom factors and the distancing intervention: [```main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/main_results.ipynb).
+4. Modelling and rationale for analyses of trial-by-trial affect ratings, including parameter recovery for the joint RL-affect models: [```affect_model_vb.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_model_vb.ipynb).
+5. Outcome analyses assessing the effects of treatments (cognitive distancing and self-reported antidepressant use) on components of affective dynamics: [```affect_main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_main_results.ipynb).
 
 ### Why an R package?
 
@@ -27,8 +33,6 @@ Instead, its main aims are as follows:
 1.  To make it easier for our specific analyses to be replicated by others without lengthy scripts and function definitions &mdash; the package loads all necessary dependencies and custom functions (see below) in the background.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
 3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
-
-**Update (06/23 + 12/23)**: The package has been extensively updated to include a number of extended $Q$-learning models which include trial-by-trial affect ratings (participants rated either their subjective happiness, confidence, or engagement after each trial). These models are versions of a computational model of subjective happiness derived by Rutledge *et al.* (2014) [[2](#references)], with additional parameters to capture time-dependent affective declines (recently termed "mood drift over time" [[3](#references)]). Most functions described below have been extensively updated to accomodate these models, all of which have examples (see documentation). Full details on the modelling and rationale can be found in the accompanying Jupyter notebook [```affect_model_vb.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_model_vb.ipynb). Note that MCMC is not possible for these models due to computational complexity, so approximate inference is used throughout. Results investigating the effects of treatments (cognitive distancing and self-reported antidepressant use) on components of affective dynamics, plus a number of exploratory analyses, can be found in a separate notebook [```affect_main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_main_results.ipynb). 
 
 ## Using the package
 
@@ -81,7 +85,7 @@ The raw data are rather large, so are shared here in the form of an ```R``` list
     - ```get_preds_by_chain``` automates the loading of posterior predictions obtained from running ```generate_posterior_quantities``` for plotting, by importing and summing the binary choice predictions chain-by-chain, and collating them into far smaller summaries. It also includes an optional method which can help prevent memory overload when loading large numbers of predictions.
         - ```get_subsample``` is a function to obtain a smaller subsample of individuals from the larger dataset, which may be helpful for demonstration purposes.
     - ```make_par_df``` creates a ```tibble::tibble()``` of model parameters by participant ID from the results of learning model fits.
-    - ```quantile_hdi``` is a function to get arbitrary quantiles of a posterior distribution, based on [```HDIofMCMC```](https://github.com/CCS-Lab/hBayesDM/blob/develop/R/R/HDIofMCMC.R) from the [hBayesDM](https://github.com/CCS-Lab/hBayesDM) package.
+    - ```quantile_hdi``` is a function to get arbitrary percentage highest density intervals (HDIs) of a posterior distribution, based on [```HDIofMCMC```](https://github.com/CCS-Lab/hBayesDM/blob/develop/R/R/HDIofMCMC.R) from the [hBayesDM](https://github.com/CCS-Lab/hBayesDM) package.
 
 ## References
 
