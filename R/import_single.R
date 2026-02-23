@@ -143,7 +143,9 @@ import_single <- function(jatos_txt_file,
       age:length(all_comp[[1]]), -question,
       -tidyselect::contains("_id", ignore.case = FALSE)
     ) |>
-    dplyr::summarise(dplyr::across(.fns = ~max(.x, na.rm = TRUE)))
+    dplyr::summarise(
+      dplyr::across(.cols = dplyr::everything(), .fns = ~max(.x, na.rm = TRUE))
+    )
 
   if (!is.null(demographics$neurological_disorder)) {
     if (demographics$neurological_disorder == "None") {
@@ -221,7 +223,9 @@ import_single <- function(jatos_txt_file,
       SPQ_cognitive_perceptual, SPQ_interpersonal, SPQ_disorganised,
       SPQ_total
     ) |>
-    dplyr::summarise(dplyr::across(.fns = ~max(.x, na.rm = TRUE)))
+    dplyr::summarise(
+      dplyr::across(.cols = dplyr::everything(), .fns = ~max(.x, na.rm = TRUE))
+    )
 
   ppt_info <- cbind(subjID, sessionID, studyID, distanced, digit_span,
                     catch_questions, demographics)
@@ -427,6 +431,20 @@ import_single <- function(jatos_txt_file,
   ppt_info$mean_rt <- mean(training$rt, na.rm = TRUE)
 
   if (add_sex && prolific) {
+    ns_env <- parent.env(environment())
+    if (!exists("exprtd_dmgrphcs", envir = ns_env, inherits = FALSE)) {
+      stop(
+        "Internal dataset 'exprtd_dmgrphcs' not found in package namespace. ",
+        "Reinstall/load pstpipeline with internal data."
+      )
+    }
+
+    exprtd_dmgrphcs <- get(
+      "exprtd_dmgrphcs",
+      envir = ns_env,
+      inherits = FALSE
+    )
+
     id_sex <- exprtd_dmgrphcs |>
       dplyr::select(participant_id, Sex) |>
       dplyr::rename(subjID = participant_id, sex_prolific = Sex) |>

@@ -8,3 +8,4 @@ outputs
 .github
 docker
 web_exp
+.venv

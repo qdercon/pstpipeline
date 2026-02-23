@@ -240,13 +240,13 @@ clean_summary <- function(summary) {
 
 make_par_df <- function(raw,
                         summary,
-                        rhat_upper,
-                        ess_lower,
+                        rhat_upper = Inf,
+                        ess_lower = 0,
                         bsl_trnsfm = function(x) x,
                         join_dem = TRUE,
                         adj_order = c("happy", "confident", "engaged")) {
 
-  subjID <- id_no <- aff_num <- parameter <- NULL
+  subjID <- id_no <- aff_num <- parameter <- rhat <- NULL
 
   if (is.null(raw$subjID)) {
     raw <- raw |> dplyr::mutate(subjID = as.character(id_no))
@@ -265,25 +265,48 @@ make_par_df <- function(raw,
     dplyr::rename(posterior_mean = mean) |>
     dplyr::mutate(adj = ifelse(is.na(aff_num), NA, adj_order[aff_num])) |>
     dplyr::right_join(ids, by = "id_no") |>
-    dplyr::group_by(subjID) |>
-    dplyr::filter(dplyr::if_any(
-      tidyselect::any_of("rhat"), ~!any(.x > rhat_upper)
-    )) |>
-    dplyr::filter(dplyr::if_any(
-      tidyselect::any_of(tidyselect::starts_with("ess_b")),
-      ~!any(.x < ess_lower)
-    )) |>
+    dplyr::group_by(subjID)
+
+  if ("rhat" %in% names(summ) && is.finite(rhat_upper)) {
+    summ <- summ |>
+      dplyr::filter(!any(rhat > rhat_upper))
+  }
+
+  ess_cols <- names(summ)[grepl("^ess_b", names(summ))]
+  if (length(ess_cols) > 0 && ess_lower > 0) {
+    summ <- summ |>
+      dplyr::filter(
+        !any(dplyr::if_any(tidyselect::all_of(ess_cols), ~.x < ess_lower))
+      )
+  }
+
+  summ <- summ |>
+    dplyr::ungroup() |>
     dplyr::select(
       tidyselect::vars_select_helpers$where(~!all(is.na(.x)))
-    ) |>
-    dplyr::ungroup()
+    )
 
   lost_ids <- n_id - length(unique(summ$subjID))
   if (lost_ids > 0) message(
     lost_ids, " individual(s) dropped due to high rhat and/or low bulk ESS."
   )
   if (join_dem) {
-    summ <- ppt_info |>
+    ns_env <- parent.env(environment())
+
+    if (exists("ppt_info", envir = ns_env, inherits = FALSE)) {
+      dem <- get("ppt_info", envir = ns_env, inherits = FALSE)
+    } else if (is.data.frame(raw)) {
+      dem <- raw |>
+        dplyr::distinct(subjID, .keep_all = TRUE)
+    } else {
+      warning(
+        "Cannot locate participant demographics; please join manually (e.g.,",
+        " from all_res$ppt_info)."
+      )
+      return(summ)
+    }
+
+    summ <- dem |>
       dplyr::inner_join(summ, by = "subjID")
   }
   return(summ)
