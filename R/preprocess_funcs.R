@@ -42,7 +42,7 @@ preprocess_func_train <- function(raw_data,
   )
 
   # Returned data_list will directly be passed to Stan
-  return(data_list)
+  data_list
 }
 
 preprocess_func_test <- function(raw_data_train,
@@ -102,7 +102,7 @@ preprocess_func_test <- function(raw_data_train,
   )
 
   # Returned data_list will directly be passed to Stan
-  return(data_list)
+  data_list
 }
 
 preprocess_func_affect <- function(raw_data, general_info) {
@@ -163,5 +163,5 @@ preprocess_func_affect <- function(raw_data, general_info) {
   )
 
   # Returned data_list will directly be passed to Stan
-  return(data_list)
+  data_list
 }

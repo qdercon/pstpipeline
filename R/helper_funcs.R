@@ -34,7 +34,7 @@ take_subsample <- function(parsed_list,
       dplyr::filter(subjID %in% ids)
   }
 
-  return(subsample)
+  subsample
 }
 
 #' Example probabilistic selection task data
@@ -61,6 +61,101 @@ NULL
 #' @noRd
 
 std <- function(x) sd(x, na.rm = TRUE) / sqrt(length(x))
+
+#' Parse ELBO at a target iteration from cmdstanr variational latent dynamics
+#'
+#' @param latent_path Path to latent dynamics CSV file.
+#' @param target_iter Iteration for which ELBO should be extracted.
+#'
+#' @returns A named list with parsed ELBO and debug context.
+#' @noRd
+
+extract_elbo_from_file <- function(latent_path,
+                                   target_iter = 100) {
+  if (length(latent_path) == 0 || is.na(latent_path) || latent_path == "") {
+    return(
+      list(
+        target_elbo = NA_real_,
+        parsed_rows = 0,
+        lines = character(0),
+        file = latent_path
+      )
+    )
+  }
+
+  if (!file.exists(latent_path)) {
+    return(
+      list(
+        target_elbo = NA_real_,
+        parsed_rows = 0,
+        lines = character(0),
+        file = latent_path
+      )
+    )
+  }
+
+  lines <- readLines(latent_path, warn = FALSE)
+  dat <- tryCatch(
+    utils::read.csv(
+      latent_path,
+      header = FALSE,
+      comment.char = "#",
+      stringsAsFactors = FALSE
+    ),
+    error = function(e) data.frame()
+  )
+
+  if (!is.data.frame(dat) || nrow(dat) == 0 || ncol(dat) < 2) {
+    return(
+      list(
+        target_elbo = NA_real_,
+        parsed_rows = 0,
+        lines = lines,
+        file = latent_path
+      )
+    )
+  }
+
+  iter_vals <- suppressWarnings(as.integer(dat[[1]]))
+  if (ncol(dat) >= 3) {
+    elbo_vals <- suppressWarnings(as.numeric(dat[[3]]))
+  } else {
+    elbo_vals <- suppressWarnings(as.numeric(dat[[2]]))
+  }
+
+  ok <- !is.na(iter_vals) & !is.na(elbo_vals)
+
+  if (!any(ok)) {
+    return(
+      list(
+        target_elbo = NA_real_,
+        parsed_rows = 0,
+        lines = lines,
+        file = latent_path
+      )
+    )
+  }
+
+  parsed_df <- data.frame(
+    iter = iter_vals[ok],
+    elbo = elbo_vals[ok],
+    stringsAsFactors = FALSE
+  )
+
+  target_idx <- which(parsed_df$iter == target_iter)
+  target_elbo <- if (length(target_idx) > 0) {
+    parsed_df$elbo[target_idx[length(target_idx)]]
+  } else {
+    NA_real_
+  }
+
+  list(
+    target_elbo = target_elbo,
+    parsed_rows = nrow(parsed_df),
+    lines = lines,
+    file = latent_path
+  )
+}
 
 #' Compute a single highest posterior density interval (HDI)
 #'
@@ -90,7 +185,7 @@ single_hdi <- function(vals,
   HDImin <- sortedPts[which.min(ciWidth)]
   HDImax <- sortedPts[which.min(ciWidth) + ciIdxInc]
   HDIlim <- c(HDImin, HDImax)
-  return(as.vector(t(HDIlim)))
+  as.vector(t(HDIlim))
 }
 
 #' Compute quantiles of a probability distrbution based on highest density
@@ -155,7 +250,7 @@ quantile_hdi <- function(var,
     seq_along(quantile), FUN = function(x) paste0(quantile[x] * 100, "%")
   )
 
-  return(ret)
+  ret
 }
 
 #' Define GLM family based on parameter name
@@ -170,8 +265,8 @@ quantile_hdi <- function(var,
 #' @noRd
 
 family_ch <- function(param) {
-  if (grepl("alpha|gamma", param)) return(Gamma(link = "log"))
-  else return(gaussian())
+  if (grepl("alpha|gamma", param)) Gamma(link = "log")
+  else gaussian()
 }
 
 #' Clean up summary output from cmdstanr
@@ -187,7 +282,7 @@ family_ch <- function(param) {
 clean_summary <- function(summary) {
   id_all <- variable <- NULL
   summary |>
-    dplyr::filter(grepl("alpha|beta|w|gamma", variable)) |>
+    dplyr::filter(grepl("alpha|beta|rho|pers|kappa|w|gamma", variable)) |>
     dplyr::filter(!grepl("_pr|_s|mu|sigma|_diff|_i", variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(tidyselect::matches("ess|rhat"))
@@ -309,7 +404,7 @@ make_par_df <- function(raw,
     summ <- dem |>
       dplyr::inner_join(summ, by = "subjID")
   }
-  return(summ)
+  summ
 }
 
 #' Define axis title name
@@ -344,12 +439,18 @@ axis_title <- function(param,
       a <- paste0("[", spl[2], "]")
     }
     if (length(spl) == 3) {
-      a <- paste0(a, "^", spl[3])
+      sup <- tolower(spl[3])
+      if (sup %in% c("neg", "minus")) {
+        sup <- '"(-)"'
+      } else if (sup %in% c("pos", "plus")) {
+        sup <- '"(+)"'
+      }
+      a <- paste0(a, "^", sup)
     }
   } else {
     a <- ""
   }
-  return(paste0(s, a))
+  paste0(s, a)
 }
 
 #' Extract posterior predictions from affect data models and assess fit
@@ -464,5 +565,5 @@ get_affect_ppc <- function(draws,
   ret$fit_df <- dplyr::left_join(fit_df, grps, by = "subjID")
   ret$indiv_ppcs <- indiv_ppcs
 
-  return(ret)
+  ret
 }

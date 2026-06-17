@@ -151,6 +151,5 @@ compare_block_diffs <- function(all_res,
     dplyr::mutate(
       block_group = factor(block_group, levels = rev(names(par_df_ls)))
     )
-
-  return(glm_pars_df)
+  glm_pars_df
 }

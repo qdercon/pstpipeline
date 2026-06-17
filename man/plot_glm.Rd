@@ -11,9 +11,11 @@ plot_glm(
   id.col = "parameter",
   test = FALSE,
   grp = id.col,
+  add_interaction = FALSE,
   fclr = id.col,
   axis_fixed = FALSE,
   grp_labs = NULL,
+  grp_reorder = NULL,
   plot_together = TRUE,
   ovrll_title = NULL,
   title_font_size = 16,
@@ -45,6 +47,10 @@ non-distanced).}
 \item{grp}{Optional group to plot separately on each plot, which should be
 the interaction variable specified in \code{\link[=parameter_glm]{parameter_glm()}}.}
 
+\item{add_interaction}{If \code{TRUE}, and \code{grp != id.col}, include the
+interaction term (\code{paste0(plot_var, ":", grp)}) as an additional middle
+group labelled \code{"(interaction term)"}.}
+
 \item{fclr}{To what variable should the colour scheme be applied? Defaults to
 \code{grp} = \code{id.col}.}
 
@@ -54,6 +60,10 @@ across all plots. Defaults to \code{FALSE}.}
 \item{grp_labs}{Optional labels for the groups defined by \code{grp}. It is
 recommended to first run the function with this kept as \code{NULL} to make
 sure you label the correct densities.}
+
+\item{grp_reorder}{Optional vector of labels to reorder the groups defined by
+\code{grp}. It is recommended to first run the function with this kept as
+\code{NULL} to make sure you reorder the correct densities.}
 
 \item{plot_together}{If \code{TRUE}, returns a panel with all plots plotted
 as defined by subsequent arguments. Otherwise a named list of plots is
@@ -75,7 +85,8 @@ plotted grid (passed to \code{\link[cowplot:plot_grid]{cowplot::plot_grid()}}). 
 boxes and lines respectively.}
 
 \item{coord_flip}{Plot horizontal (\code{TRUE}) or vertical (\code{FALSE})
-densities.}
+densities. If \code{TRUE} and \code{grp != id.col}, group order is reversed
+so the first level/label appears at the top.}
 
 \item{box_alpha, box_width, box_nudge}{Control the transparency, size, and
 position of the summary boxplot.}

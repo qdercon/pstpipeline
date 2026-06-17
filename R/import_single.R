@@ -59,28 +59,25 @@ import_single <- function(jatos_txt_file,
   }
 
   if (prolific) {
-    pro_id <- list(tryCatch(all_comp[[3]]$prolific_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$prolific_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$prolific_id[1],
-                            error = function(e) return(NA)))
+    pro_id <- list(
+      tryCatch(all_comp[[3]]$prolific_id[1], error = function(e) NA),
+      tryCatch(all_comp[[4]]$prolific_id[1], error = function(e) NA),
+      tryCatch(all_comp[[5]]$prolific_id[1], error = function(e) NA)
+    )
     pro_id <- pro_id[!is.na(pro_id)]
 
-    stu_id <- list(tryCatch(all_comp[[3]]$study_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$study_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$study_id[1],
-                            error = function(e) return(NA)))
+    stu_id <- list(
+      tryCatch(all_comp[[3]]$study_id[1], error = function(e) NA),
+      tryCatch(all_comp[[4]]$study_id[1], error = function(e) NA),
+      tryCatch(all_comp[[5]]$study_id[1], error = function(e) NA)
+    )
     stu_id <- stu_id[!is.na(stu_id)]
 
-    ses_id <- list(tryCatch(all_comp[[3]]$session_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[4]]$session_id[1],
-                            error = function(e) return(NA)),
-                   tryCatch(all_comp[[5]]$session_id[1],
-                            error = function(e) return(NA)))
+    ses_id <- list(
+      tryCatch(all_comp[[3]]$session_id[1], error = function(e) NA),
+      tryCatch(all_comp[[4]]$session_id[1], error = function(e) NA),
+      tryCatch(all_comp[[5]]$session_id[1], error = function(e) NA)
+    )
     ses_id <- ses_id[!is.na(ses_id)]
 
     if (!all(sapply(pro_id, FUN = identical, all_comp[[1]]$prolific_id[1]))) {
@@ -495,12 +492,10 @@ import_single <- function(jatos_txt_file,
       )
     }
     names(type) <- test_types
-    return(type)
+    type
   }
   type_key <- make_type_dict(chars)
-  get_type_val <- function(test_part, key) {
-    return(key[[test_part]])
-  }
+  get_type_val <- function(test_part, key) key[[test_part]]
 
   test_trials <- test_block |>
     dplyr::filter(!grepl("question", test_part)) |>
@@ -609,5 +604,5 @@ import_single <- function(jatos_txt_file,
       tidyr::drop_na()
     ret$issues_comments <- tibble::as_tibble(issues_comments)
   }
-  return(ret)
+  ret
 }

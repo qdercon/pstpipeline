@@ -9,3 +9,7 @@ outputs
 docker
 web_exp
 .venv
+^\.lintr$
+^\.positai$
+^\.claude$
+.vscode

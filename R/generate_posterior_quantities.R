@@ -63,16 +63,21 @@ generate_posterior_quantities <-
     out_dir <- file.path(getwd(), out_dir)
     if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
+    model_dir <- ifelse(
+      alphas == "2a", "choice_models/2-alpha", "choice_models/1-alpha"
+    )
+
     stan_model <- cmdstanr::cmdstan_model(
       system.file(
-        paste(
-          "extdata/stan_files/pst",
-          ifelse(alphas == "2a", "gainloss_Q", "Q"), train_test, "gq.stan",
-          sep = "_"
+        paste0(
+          "extdata/stan_files/", model_dir, "/pst_",
+          ifelse(alphas == "2a", "gainloss_Q", "Q"), "_", train_test, ".stan"
         ),
         package = "pstpipeline"
-      ),
+      )
     )
+
+    data_list$run_gq <- 1
 
     fit_gq <- stan_model$generate_quantities(
       fitted_params = fit_mcmc,
@@ -90,6 +95,10 @@ generate_posterior_quantities <-
     }
     csv_files <- vector(mode = "character", length = length(outnames))
 
+    if (return_type == "draws_list") {
+      draws_out <- fit_gq$draws(variables = "y_pred", format = "list")
+    }
+
     for (o in seq_along(outnames)) {
       chain_no <- strsplit(basename(outnames[o]), "-")[[1]][3]
       csv_files[o] <-
@@ -103,10 +112,10 @@ generate_posterior_quantities <-
       file.rename(from = outnames[o], to = csv_files[o])
     }
 
-    if (return_type == "paths") return(csv_files)
+    if (return_type == "paths") csv_files
     else if (return_type == "draws_list") {
-      return(fit_gq$draws(variables = "y_pred", format = "list"))
+      (draws_out)
     } else {
-      return(fit_gq)
+      cmdstanr::as_cmdstan_fit(csv_files)
     }
   }

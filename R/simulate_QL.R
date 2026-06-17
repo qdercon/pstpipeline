@@ -11,12 +11,16 @@
 #' @param sample_size How may sets of parameters to sample; defaults to 100 or
 #' the number of individuals in
 #' the \code{summary_df}.
-#' @param gain_loss Fit the dual learning rate model?
+#' @param model Learning model to simulate, one of \code{"1a"}, \code{"2a"},
+#' \code{"1a2r"}, or \code{"1a1c"}. Defaults to \code{"2a"}.
 #' @param test Simulate test choices in addition to training choices?
 #' @param affect Simulate subjective affect ratings (uses full passage-of-time
 #' model).
-#' @param time_pars Which time parameters to include in the affect model: either
-#' \code{"none"}; or either/both \code{"overall"} (default) or \code{"block"}.
+#' @param affect_sfx Affect model suffix to simulate. Mirrors
+#' [fit_learning_model()] and can be one of \code{"3wt"}, \code{"4wt_trial"},
+#' \code{"4wt_block"}, \code{"4wt_time"}, \code{"5wt_time"},
+#' \code{"delta"}, or \code{"delta-signed"}. If left as \code{NULL}, defaults
+#' to \code{"4wt_time"}.
 #' @param prev_sample An optional previous sample of id numbers (if you wish to
 #' simulate data for the same subset of individual parameters across a number
 #' of models).
@@ -42,10 +46,10 @@
 
 simulate_QL <- function(summary_df = NULL,
                         sample_size = NULL,
-                        gain_loss = TRUE,
+                        model = "2a",
                         test = FALSE,
                         affect = FALSE,
-                        time_pars = "overall",
+                        affect_sfx = NULL,
                         prev_sample = NULL,
                         raw_df = NULL,
                         ...) {
@@ -56,16 +60,42 @@ simulate_QL <- function(summary_df = NULL,
     question_response <- outc_lag <- NULL
 
   l <- list(...)
+  sim_model <- match.arg(model, c("1a", "2a", "1a2r", "1a1c"))
+
+  is_dual_alpha <- sim_model == "2a"
+  is_dual_sens <- sim_model == "1a2r"
+  is_collins_pers <- sim_model == "1a1c"
 
   if (affect) {
-    time_prm <- match.arg(
-      time_pars, c("none", "overall", "block"), several.ok = TRUE
+    affect_mod <- if (is.null(affect_sfx)) {
+      "4wt_time"
+    } else {
+      match.arg(
+        affect_sfx,
+        c(
+          "3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time",
+          "delta", "delta-signed"
+        )
+      )
+    }
+
+    time_prm <- switch(
+      affect_mod,
+      "3wt" = "none",
+      "4wt_trial" = "overall",
+      "4wt_block" = "block",
+      "4wt_time" = "overall",
+      "5wt_time" = c("overall", "block"),
+      "delta" = "overall",
+      "delta-signed" = "overall"
     )
+    is_delta_model <- affect_mod %in% c("delta", "delta-signed")
+    signed_delta_model <- affect_mod == "delta-signed"
+
     sample_time <- is.null(raw_df)
     if (is.null(l$question_order)) {
       l$question_order <- c("happy", "confident", "engaged")
     }
-    if (is.null(l$delta_model)) l$delta_model <- FALSE
     if (is.null(l$int_max)) l$int_max <- 5
   }
 
@@ -75,9 +105,12 @@ simulate_QL <- function(summary_df = NULL,
     if (is.null(l$alpha_pos_dens)) l$alpha_pos_dens <- l$alpha_dens
     if (is.null(l$alpha_neg_dens)) l$alpha_neg_dens <- l$alpha_dens
     if (is.null(l$beta_dens)) l$beta_dens <- c(3, 4) # Beta(alpha, beta) * 10
+    if (is.null(l$rho_pos_dens)) l$rho_pos_dens <- c(3, 4)
+    if (is.null(l$rho_neg_dens)) l$rho_neg_dens <- c(3, 4)
+    if (is.null(l$pers_dens)) l$pers_dens <- c(0, 0.5) # Normal(mu, sigma)
     ids_sample <- 1:sample_size
 
-    if (gain_loss) {
+    if (is_dual_alpha) {
       pars_df <- tibble::tibble(
         id_no = ids_sample,
         alpha_pos = rbeta(
@@ -86,6 +119,20 @@ simulate_QL <- function(summary_df = NULL,
         alpha_neg = rbeta(
           sample_size, l$alpha_neg_dens[1], l$alpha_neg_dens[2]
         ),
+        beta = rbeta(sample_size, l$beta_dens[1], l$beta_dens[2]) * 10
+      )
+    } else if (is_dual_sens) {
+      pars_df <- tibble::tibble(
+        id_no = ids_sample,
+        alpha = rbeta(sample_size, l$alpha_dens[1], l$alpha_dens[2]),
+        rho_pos = rbeta(sample_size, l$rho_pos_dens[1], l$rho_pos_dens[2]) * 10,
+        rho_neg = rbeta(sample_size, l$rho_neg_dens[1], l$rho_neg_dens[2]) * 10
+      )
+    } else if (is_collins_pers) {
+      pars_df <- tibble::tibble(
+        id_no = ids_sample,
+        alpha = rbeta(sample_size, l$alpha_dens[1], l$alpha_dens[2]),
+        pers = rnorm(sample_size, l$pers_dens[1], l$pers_dens[2]),
         beta = rbeta(sample_size, l$beta_dens[1], l$beta_dens[2]) * 10
       )
     } else {
@@ -103,37 +150,71 @@ simulate_QL <- function(summary_df = NULL,
       if (is.null(l$w1_b_dens)) l$w1_b_dens <- c(-0.2, 0.5) # Normal(mu, sigma)
       if (is.null(l$w2_dens)) l$w2_dens <- c(0.2, 0.1)
       if (is.null(l$w3_dens)) l$w3_dens <- c(0.2, 0.1)
+      if (is.null(l$w3_pos_dens)) l$w3_pos_dens <- l$w3_dens
+      if (is.null(l$w3_neg_dens)) l$w3_neg_dens <- l$w3_dens
       if (is.null(l$gamma_dens)) l$gamma_dens <- c(2, 2) # Beta(alpha, beta)
 
-      wt_df <-
-        dplyr::bind_rows(
-          list("happy" = ids_tb, "confident" = ids_tb, "engaged" = ids_tb),
-          .id = "adj"
-        ) |>
-        dplyr::rowwise() |>
-        dplyr::mutate(
-          aff_num = grep(adj, l$question_order),
-          w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
-          w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
-          w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
-          w2 = rnorm(1, l$w2_dens[1], l$w2_dens[2]),
-          w3 = rnorm(1, l$w3_dens[1], l$w3_dens[2]),
-          gamma = rbeta(1, l$gamma_dens[1], l$gamma_dens[2])
-        ) |>
-        dplyr::ungroup()
+      wt_ids <- dplyr::bind_rows(
+        list("happy" = ids_tb, "confident" = ids_tb, "engaged" = ids_tb),
+        .id = "adj"
+      )
 
-      if (l$delta_model) {
-        wt_a <- wt_df |> dplyr::select(-w0, -w1_o, -w1_b)
-        # duplicate wt_b int_max times, with outc_lag = 0, 1, 2, ..., int_max
-        wt_b <- lapply(1:l$int_max, function(i) wt_a) |>
-          dplyr::bind_rows(.id = "outc_lag") |>
+      if (signed_delta_model) {
+        wt_df <- wt_ids |>
           dplyr::rowwise() |>
           dplyr::mutate(
-            outc_lag = as.integer(outc_lag),
-            w2 = w2 * rbeta(1, 1, outc_lag), # lower expectation w/ higher lag
-            w3 = w3 * rbeta(1, 1, outc_lag)
+            aff_num = grep(adj, l$question_order),
+            w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
+            w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
+            w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
+            w2 = rnorm(1, l$w2_dens[1], l$w2_dens[2]),
+            w3_pos = rnorm(1, l$w3_pos_dens[1], l$w3_pos_dens[2]),
+            w3_neg = rnorm(1, l$w3_neg_dens[1], l$w3_neg_dens[2]),
+            gamma = rbeta(1, l$gamma_dens[1], l$gamma_dens[2])
           ) |>
           dplyr::ungroup()
+      } else {
+        wt_df <- wt_ids |>
+          dplyr::rowwise() |>
+          dplyr::mutate(
+            aff_num = grep(adj, l$question_order),
+            w0 = rnorm(1, l$w0_dens[1], l$w0_dens[2]),
+            w1_o = rnorm(1, l$w1_o_dens[1], l$w1_o_dens[2]),
+            w1_b = rnorm(1, l$w1_b_dens[1], l$w1_b_dens[2]),
+            w2 = rnorm(1, l$w2_dens[1], l$w2_dens[2]),
+            w3 = rnorm(1, l$w3_dens[1], l$w3_dens[2]),
+            gamma = rbeta(1, l$gamma_dens[1], l$gamma_dens[2])
+          ) |>
+          dplyr::ungroup()
+      }
+
+      if (is_delta_model) {
+        wt_a <- wt_df |> dplyr::select(-w0, -w1_o, -w1_b)
+        # duplicate wt_b int_max times, with outc_lag = 0, 1, 2, ..., int_max
+        if (signed_delta_model) {
+          wt_b <- lapply(1:l$int_max, function(i) wt_a) |>
+            dplyr::bind_rows(.id = "outc_lag") |>
+            dplyr::rowwise() |>
+            dplyr::mutate(
+              outc_lag = as.integer(outc_lag),
+              # lower expectation w/ higher lag
+              w2 = w2 * rbeta(1, 1, outc_lag),
+              w3_pos = w3_pos * rbeta(1, 1, outc_lag),
+              w3_neg = w3_neg * rbeta(1, 1, outc_lag)
+            ) |>
+            dplyr::ungroup()
+        } else {
+          wt_b <- lapply(1:l$int_max, function(i) wt_a) |>
+            dplyr::bind_rows(.id = "outc_lag") |>
+            dplyr::rowwise() |>
+            dplyr::mutate(
+              outc_lag = as.integer(outc_lag),
+              # lower expectation w/ higher lag
+              w2 = w2 * rbeta(1, 1, outc_lag),
+              w3 = w3 * rbeta(1, 1, outc_lag)
+            ) |>
+            dplyr::ungroup()
+        }
         wt_df <- dplyr::bind_rows(wt_df, wt_b) |> dplyr::select(-gamma)
       }
 
@@ -174,7 +255,7 @@ simulate_QL <- function(summary_df = NULL,
   }
 
   rewards <- function(i) {
-    return(
+    (
       rbind(
         data.frame(
           "trial_block" = i, "type" = rep(12, 20),
@@ -232,10 +313,21 @@ simulate_QL <- function(summary_df = NULL,
     indiv_pars <- pars_df |>
       dplyr::filter(id_no == ids_sample[id])
 
-    if (gain_loss) {
+    pers <- 0
+
+    if (is_dual_alpha) {
       alpha_pos <- stats::na.omit(indiv_pars$alpha_pos)
       alpha_neg <- stats::na.omit(indiv_pars$alpha_neg)
       beta      <- stats::na.omit(indiv_pars$beta)
+    } else if (is_dual_sens) {
+      alpha <- stats::na.omit(indiv_pars$alpha)
+      rho_pos <- stats::na.omit(indiv_pars$rho_pos)
+      rho_neg <- stats::na.omit(indiv_pars$rho_neg)
+      beta <- 1
+    } else if (is_collins_pers) {
+      alpha <- stats::na.omit(indiv_pars$alpha)
+      pers <- stats::na.omit(indiv_pars$pers)
+      beta <- stats::na.omit(indiv_pars$beta)
     } else {
       alpha <- stats::na.omit(indiv_pars$alpha)
       beta  <- stats::na.omit(indiv_pars$beta)
@@ -277,7 +369,7 @@ simulate_QL <- function(summary_df = NULL,
           question_response = NA
         )
 
-      if (l$delta_model) {
+      if (is_delta_model) {
         training_results <- training_results |>
           dplyr::group_by(question_type) |>
           dplyr::mutate(
@@ -299,7 +391,9 @@ simulate_QL <- function(summary_df = NULL,
       block_time <- rep(0, 360)
 
       w0  <- stats::na.omit(indiv_pars$w0)
-      gamma    <- stats::na.omit(indiv_pars$gamma)
+      if (!is_delta_model) {
+        gamma <- stats::na.omit(indiv_pars$gamma)
+      }
       if ("w1_o" %in% names(indiv_pars))
         w1_o <- stats::na.omit(indiv_pars$w1_o)
       else
@@ -309,18 +403,41 @@ simulate_QL <- function(summary_df = NULL,
       else
         w1_b <- c(0, 0, 0)
 
-      if (!l$delta_model) {
-        w2    <- stats::na.omit(indiv_pars$w2)
-        w3    <- stats::na.omit(indiv_pars$w3)
+      if (!is_delta_model) {
+        w2 <- stats::na.omit(indiv_pars$w2)
+        w3 <- stats::na.omit(indiv_pars$w3)
+        signed_w3 <- all(c("w3_pos", "w3_neg") %in% names(indiv_pars))
+        if (signed_w3) {
+          w3_pos <- stats::na.omit(indiv_pars$w3_pos)
+          w3_neg <- stats::na.omit(indiv_pars$w3_neg)
+        }
       } else {
         w2 <- sapply(
           1:l$int_max,
           function(i) stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w2)
         )
-        w3 <- sapply(
-          1:l$int_max,
-          function(i) stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w3)
-        )
+        signed_w3 <- all(c("w3_pos", "w3_neg") %in% names(indiv_pars))
+        if (signed_w3) {
+          w3_pos <- sapply(
+            1:l$int_max,
+            function(i) {
+              stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w3_pos)
+            }
+          )
+          w3_neg <- sapply(
+            1:l$int_max,
+            function(i) {
+              stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w3_neg)
+            }
+          )
+        } else {
+          w3 <- sapply(
+            1:l$int_max,
+            function(i) {
+              stats::na.omit(indiv_pars[indiv_pars$outc_lag == i, ]$w3)
+            }
+          )
+        }
 
         int_trials <- training_results$int_trials
       }
@@ -328,6 +445,7 @@ simulate_QL <- function(summary_df = NULL,
 
     # Initial Q values
     Q <- data.frame("A" = 0, "B" = 0, "C" = 0, "D" = 0, "E" = 0, "F" = 0)
+    prev_choice_symbol <- NA_character_
 
     for (i in 1:360) {
 
@@ -335,14 +453,26 @@ simulate_QL <- function(summary_df = NULL,
         if (!sample_time && i %in% missing_times) next
       }
 
-      # probability to choose "correct" stimulus
+      val_1 <- Q[[conds[i, 1]]]
+      val_2 <- Q[[conds[i, 2]]]
+      if (is_dual_sens) {
+        val_1 <- ifelse(val_1 >= 0, rho_pos * val_1, rho_neg * val_1)
+        val_2 <- ifelse(val_2 >= 0, rho_pos * val_2, rho_neg * val_2)
+      }
+      rep_1 <- ifelse(is_collins_pers && !is.na(prev_choice_symbol) &&
+                        conds[i, 1] == prev_choice_symbol, 1, 0)
+      rep_2 <- ifelse(is_collins_pers && !is.na(prev_choice_symbol) &&
+                        conds[i, 2] == prev_choice_symbol, 1, 0)
+
+      # probability to choose option1
       p_t <-
-        (exp(Q[conds[i, 1]] * beta)) /
-        (exp(Q[conds[i, 1]] * beta) + (exp(Q[conds[i, 2]] * beta)))
+        (exp(beta * val_1 + pers * rep_1)) /
+        (exp(beta * val_1 + pers * rep_1) + exp(beta * val_2 + pers * rep_2))
 
       # make choice
       choice <- sample(c(1, 0), 1, prob = c(p_t, 1 - p_t))
       choice_idx <- ifelse(choice == 1, 1, 2)
+      chosen_symbol <- as.character(conds[i, choice_idx])
 
       # rewarded?
       if (affect) {
@@ -354,19 +484,26 @@ simulate_QL <- function(summary_df = NULL,
       # incorrectly but hidden reward == 0
       # recoded as -1 for affect models to allow for negative EVs
 
-      ev <- Q[conds[i, choice_idx]]
-      pe <- reward - Q[conds[i, choice_idx]]
+      ev <- Q[[chosen_symbol]]
+      if (is_dual_sens) {
+        reward_tr <- ifelse(reward >= 0, rho_pos * reward, rho_neg * reward)
+        pe <- reward_tr - Q[[chosen_symbol]]
+      } else {
+        pe <- reward - Q[[chosen_symbol]]
+      }
 
       # update Q values
-      if (gain_loss) { # i.e., were they rewarded?
+      if (is_dual_alpha) {
         if (pe >= 0) {
-          Q[conds[i, choice_idx]] <- ev + alpha_pos * pe
+          Q[[chosen_symbol]] <- ev + alpha_pos * pe
         } else {
-          Q[conds[i, choice_idx]] <- ev + alpha_neg * pe
+          Q[[chosen_symbol]] <- ev + alpha_neg * pe
         }
       } else {
-        Q[conds[i, choice_idx]] <- ev + alpha * pe
+        Q[[chosen_symbol]] <- ev + alpha * pe
       }
+
+      prev_choice_symbol <- chosen_symbol
 
       training_results$choice[i] <- choice
       training_results$reward[i] <- reward
@@ -398,20 +535,44 @@ simulate_QL <- function(summary_df = NULL,
           w1_o[q] * trial_time[i] +
           w1_b[q] * block_time[i]
 
-        if (!l$delta_model) {
-          rating <- rating +
-            w2[q] * sum(
-              sapply(1:i, function(j) gamma[q]^(i - j) * ev_vec[[j]])
-            ) +
-            w3[q] * sum(
+        if (!is_delta_model) {
+          ev_sum <- sum(
+            sapply(1:i, function(j) gamma[q]^(i - j) * ev_vec[[j]])
+          )
+          if (signed_w3) {
+            pe_term <- sum(
+              sapply(
+                1:i,
+                function(j) {
+                  w3_j <- ifelse(pe_vec[[j]] >= 0, w3_pos[q], w3_neg[q])
+                  gamma[q]^(i - j) * w3_j * pe_vec[[j]]
+                }
+              )
+            )
+          } else {
+            pe_term <- w3[q] * sum(
               sapply(1:i, function(j) gamma[q]^(i - j) * pe_vec[[j]])
             )
+          }
+
+          rating <- rating +
+            w2[q] * ev_sum +
+            pe_term
         } else {
           for (j in 1:int_trials[i]) {
             t1 <- i + 1 # to include the current trial
+            if (signed_w3) {
+              w3_t <- ifelse(
+                pe_vec[[t1 - j]] >= 0,
+                w3_pos[[qn_vec[[t1 - j]], j]],
+                w3_neg[[qn_vec[[t1 - j]], j]]
+              )
+            } else {
+              w3_t <- w3[[qn_vec[[t1 - j]], j]]
+            }
             rating <- rating +
               w2[[qn_vec[[t1 - j]], j]] * ev_vec[[t1 - j]] +
-              w3[[qn_vec[[t1 - j]], j]] * pe_vec[[t1 - j]]
+              w3_t * pe_vec[[t1 - j]]
           }
         }
         training_results$question_response[i] <- plogis(rating) * 100
@@ -434,11 +595,39 @@ simulate_QL <- function(summary_df = NULL,
       )
 
       for (j in 1:60) {
-        p_t_test <- (exp(Q[conds_test[j, 1]] * beta)) /
-          (exp(Q[conds_test[j, 1]] * beta) + (exp(Q[conds_test[j, 2]] * beta)))
+        val_1_test <- Q[[conds_test[j, 1]]]
+        val_2_test <- Q[[conds_test[j, 2]]]
+        if (is_dual_sens) {
+          val_1_test <- ifelse(
+            val_1_test >= 0, rho_pos * val_1_test, rho_neg * val_1_test
+          )
+          val_2_test <- ifelse(
+            val_2_test >= 0, rho_pos * val_2_test, rho_neg * val_2_test
+          )
+        }
+        rep_1_test <- ifelse(
+          is_collins_pers && !is.na(prev_choice_symbol) &&
+            conds_test[j, 1] == prev_choice_symbol,
+          1,
+          0
+        )
+        rep_2_test <- ifelse(
+          is_collins_pers && !is.na(prev_choice_symbol) &&
+            conds_test[j, 2] == prev_choice_symbol,
+          1,
+          0
+        )
+        p_t_test <- (exp(beta * val_1_test + pers * rep_1_test)) /
+          (exp(beta * val_1_test + pers * rep_1_test) +
+             exp(beta * val_2_test + pers * rep_2_test))
         # probability to choose "correct" stimulus
         choice_test <- sample(c(1, 0), 1, prob = c(p_t_test, 1 - p_t_test))
         # make choice
+
+        chosen_symbol_test <- as.character(
+          conds_test[j, ifelse(choice_test == 1, 1, 2)]
+        )
+        prev_choice_symbol <- chosen_symbol_test
 
         type <- as.numeric(
           paste0(
@@ -525,5 +714,5 @@ simulate_QL <- function(summary_df = NULL,
   ret$sim <- data.table::as.data.table(all_res)
   ret$pars <- data.table::as.data.table(pars_df)
 
-  return(ret)
+  ret
 }

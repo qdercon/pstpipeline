@@ -574,6 +574,6 @@ import_multiple <- function(jatos_txt_file,
 
   }
 
-  return(ret)
+  ret
 
 }

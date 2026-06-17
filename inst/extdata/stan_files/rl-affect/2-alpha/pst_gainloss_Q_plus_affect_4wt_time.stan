@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Gain-loss Q-learning model for PST training data + affect
+// Gain-loss Q-learning model for PST training data + affect + overall time
 //------------------------------------------------------------------------------
 // References:
 //// https://www.pnas.org/doi/10.1073/pnas.1407535111
@@ -9,6 +9,7 @@
 //------------------------------------------------------------------------------
 
 data {
+  int<lower=0,upper=1> run_gq; // 1 to run generated quantities, 0 to skip
   int<lower=1> N, T;                // # participants, max # of trials
   array[N] int Tsubj;               // # of trials for acquisition phase
 
@@ -19,6 +20,7 @@ data {
 
   array[N] row_vector[T] affect;    // includes 0 and 1, needs to be transformed
   array[N, T] int question;         // from 1 to 3 (happy, confident, engaged)
+  array[N] row_vector[T] ovl_time;  // in hours to keep weights relatively small
 }
 
 transformed data {
@@ -38,6 +40,12 @@ transformed data {
   for (i in 1:N) {
     affect_tr[i] = ((affect[i] * (N - 1)) + 0.5) / N;
   }
+
+  // transpose time for efficient indexing
+  array[N] vector[T] ovl_time_tr;
+  for (i in 1:N) {
+    ovl_time_tr[i] = to_vector(ovl_time[i]);
+  }
 }
 
 parameters {
@@ -46,8 +54,8 @@ parameters {
   vector<lower=0>[3] sigma_ql;
 
   // group-level weights
-  matrix[3, 3] mu_wt; // 3 questions x 3 weights
-  matrix<lower=0>[3, 3] sigma_wt;
+  matrix[3, 4] mu_wt; // 3 questions x 4 weights
+  matrix<lower=0>[3, 4] sigma_wt;
 
   // group-level parameters for decay factor (gamma)
   vector[3] mu_gm;
@@ -64,6 +72,7 @@ parameters {
 
   // individual-level weights + forgetting factor
   matrix[N, 3] w0_pr;
+  matrix[N, 3] w1_o_pr;
   matrix[N, 3] w2_pr;
   matrix[N, 3] w3_pr;
   matrix[N, 3] gm_pr;
@@ -82,6 +91,7 @@ transformed parameters {
   beta      = Phi_approx(mu_ql[3] + sigma_ql[3] * beta_pr) * 10;
 
   matrix[N, 3] w0;
+  matrix[N, 3] w1_o;
   matrix[N, 3] w2;
   matrix[N, 3] w3;
   matrix<lower=0, upper=1>[N, 3] gamma;
@@ -89,8 +99,9 @@ transformed parameters {
 
   for (q in 1:3) {
     w0[:, q]    = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
-    w2[:, q]    = mu_wt[q, 2] + sigma_wt[q, 2] * w2_pr[:, q];
-    w3[:, q]    = mu_wt[q, 3] + sigma_wt[q, 3] * w3_pr[:, q];
+    w1_o[:, q]  = mu_wt[q, 2] + sigma_wt[q, 2] * w1_o_pr[:, q];
+    w2[:, q]    = mu_wt[q, 3] + sigma_wt[q, 3] * w2_pr[:, q];
+    w3[:, q]    = mu_wt[q, 4] + sigma_wt[q, 4] * w3_pr[:, q];
     gamma[:, q] = Phi_approx(mu_gm[q] + sigma_gm[q] * gm_pr[:, q]);
     phi[:, q]   = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
@@ -123,6 +134,7 @@ model {
   // priors on the weights + gamma + beta distribution precision
   for (q in 1:3) {
     w0_pr[:, q]   ~ normal(0, 1);
+    w1_o_pr[:, q] ~ normal(0, 1);
     w2_pr[:, q]   ~ normal(0, 1);
     w3_pr[:, q]   ~ normal(0, 1);
     gm_pr[:, q]   ~ normal(0, 1);
@@ -142,12 +154,12 @@ model {
     vector[ti] delta;        // Difference in EVs between options
 
     vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_o_vec;     // Vector of w1_o weights
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
     vector[ti] phi_vec;      // Vector of beta distribution precision
     vector[ti] z_vec;        // Vector of zeros
     
-    vector[3] gamma_vec;     // Vector of gamma weights
     row_vector[3] ev_sum;    // Vector of summed EVs by question
     row_vector[3] pe_sum;    // Vector of summed PEs by question
 
@@ -189,23 +201,25 @@ model {
       pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]  = w0[i, qn];
-      w2_vec[t]  = w2[i, qn];
-      w3_vec[t]  = w3[i, qn];
-      phi_vec[t] = phi[i, qn];
+      w0_vec[t]   = w0[i, qn];
+      w1_o_vec[t] = w1_o[i, qn];
+      w2_vec[t]   = w2[i, qn];
+      w3_vec[t]   = w3[i, qn];
+      phi_vec[t]  = phi[i, qn];
 
       // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
       ev_sum = ev_sum .* gamma[i, :];
       pe_sum = pe_sum .* gamma[i, :];
     }
-
+    
     // increment log density for choice for participant i
     choice[i, :ti] ~ bernoulli_logit(beta[i] * delta);
     
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w2_vec .* ev_dcy + 
+      w1_o_vec .* ovl_time_tr[i][:ti] + 
+      w2_vec .* ev_dcy +
       w3_vec .* pe_dcy
     );
 
@@ -225,6 +239,7 @@ generated quantities {
   real<lower=0,upper=10> mu_beta;
 
   vector[3] mu_w0;
+  vector[3] mu_w1_o;
   vector[3] mu_w2;
   vector[3] mu_w3;
   vector[3] mu_gamma;
@@ -241,12 +256,14 @@ generated quantities {
   mu_beta      = Phi_approx(mu_ql[3]) * 10;
 
   mu_w0    = mu_wt[:, 1];
-  mu_w2    = mu_wt[:, 2];
-  mu_w3    = mu_wt[:, 3];
+  mu_w1_o  = mu_wt[:, 2];
+  mu_w2    = mu_wt[:, 3];
+  mu_w3    = mu_wt[:, 4];
   mu_gamma = Phi_approx(mu_gm);
 
   // difference in weights between questions
   vector[3] w0_diff;
+  vector[3] w1_o_diff;
   vector[3] w2_diff;
   vector[3] w3_diff;
   vector[3] gamma_diff;
@@ -255,10 +272,11 @@ generated quantities {
   array[3] int comp = { 2, 3, 3 };
 
   w0_diff    = mu_w0[bsl] - mu_w0[comp];
+  w1_o_diff  = mu_w1_o[bsl] - mu_w1_o[comp];
   w2_diff    = mu_w2[bsl] - mu_w2[comp];
   w3_diff    = mu_w3[bsl] - mu_w3[comp];
   gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
-  
+
   // calculate log-likelihoods and posterior predictions
   for (i in 1:N) {
     int ti;
@@ -273,12 +291,12 @@ generated quantities {
     vector[ti] delta;        // Difference in EVs between options
 
     vector[ti] w0_vec;       // Vector of w0 weights
+    vector[ti] w1_o_vec;     // Vector of w1_o weights
     vector[ti] w2_vec;       // Vector of w2 weights
     vector[ti] w3_vec;       // Vector of w3 weights
     vector[ti] phi_vec;      // Vector of beta distribution precision
     vector[ti] z_vec;        // Vector of zeros
     
-    vector[3] gamma_vec;     // Vector of gamma weights
     row_vector[3] ev_sum;    // Vector of summed EVs by question
     row_vector[3] pe_sum;    // Vector of summed PEs by question
 
@@ -322,10 +340,11 @@ generated quantities {
       pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]  = w0[i, qn];
-      w2_vec[t]  = w2[i, qn];
-      w3_vec[t]  = w3[i, qn];
-      phi_vec[t] = phi[i, qn];
+      w0_vec[t]   = w0[i, qn];
+      w1_o_vec[t] = w1_o[i, qn];
+      w2_vec[t]   = w2[i, qn];
+      w3_vec[t]   = w3[i, qn];
+      phi_vec[t]  = phi[i, qn];
 
       // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
       ev_sum = ev_sum .* gamma[i, :];
@@ -338,6 +357,7 @@ generated quantities {
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
+      w1_o_vec .* ovl_time_tr[i][:ti] +
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );

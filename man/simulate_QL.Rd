@@ -7,10 +7,10 @@
 simulate_QL(
   summary_df = NULL,
   sample_size = NULL,
-  gain_loss = TRUE,
+  model = "2a",
   test = FALSE,
   affect = FALSE,
-  time_pars = "overall",
+  affect_sfx = NULL,
   prev_sample = NULL,
   raw_df = NULL,
   ...
@@ -25,15 +25,19 @@ of size \code{sample_size} will be taken from specified distributions.}
 the number of individuals in
 the \code{summary_df}.}
 
-\item{gain_loss}{Fit the dual learning rate model?}
+\item{model}{Learning model to simulate, one of \code{"1a"}, \code{"2a"},
+\code{"1a2r"}, or \code{"1a1c"}. Defaults to \code{"2a"}.}
 
 \item{test}{Simulate test choices in addition to training choices?}
 
 \item{affect}{Simulate subjective affect ratings (uses full passage-of-time
 model).}
 
-\item{time_pars}{Which time parameters to include in the affect model: either
-\code{"none"}; or either/both \code{"overall"} (default) or \code{"block"}.}
+\item{affect_sfx}{Affect model suffix to simulate. Mirrors
+\code{\link[=fit_learning_model]{fit_learning_model()}} and can be one of \code{"3wt"}, \code{"4wt_trial"},
+\code{"4wt_block"}, \code{"4wt_time"}, \code{"5wt_time"},
+\code{"delta"}, or \code{"delta-signed"}. If left as \code{NULL}, defaults
+to \code{"4wt_time"}.}
 
 \item{prev_sample}{An optional previous sample of id numbers (if you wish to
 simulate data for the same subset of individual parameters across a number

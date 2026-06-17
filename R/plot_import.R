@@ -678,7 +678,6 @@ plot_import <- function(parsed_list,
     ret$test$test_perf <- plot_test
   }
 
-  if (length(ret) == 1 && length(ret[[1]]) == 1) ret <- ret[[1]][[1]]
-  else if (length(ret) == 1) ret <- ret[[1]]
-  return(ret)
+  if (length(ret) == 1 && length(ret[[1]]) == 1) ret[[1]][[1]]
+  else if (length(ret) == 1) ret[[1]]
 }

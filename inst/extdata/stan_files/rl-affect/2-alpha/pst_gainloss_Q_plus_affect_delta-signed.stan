@@ -8,6 +8,7 @@
 //------------------------------------------------------------------------------
 
 data {
+  int<lower=0,upper=1> run_gq; // 1 to run generated quantities, 0 to skip
   int<lower=1> N, T, I;               // # participants, max # of trials, max (theoretical) # of intervening trials
   array[N] int Tsubj;                 // # of trials for acquisition phase
 
@@ -42,8 +43,8 @@ parameters {
   vector<lower=0>[3] sigma_ql;
 
   // group-level weights
-  matrix[3, 4] mu_wt; // 3 questions x 4 weights
-  matrix<lower=0>[3, 4] sigma_wt;
+  matrix[3, 5] mu_wt; // 3 questions x 5 weights
+  matrix<lower=0>[3, 5] sigma_wt;
 
   // group-level beta distribution precision (phi)
   vector[3] aff_mu_phi;
@@ -60,13 +61,16 @@ parameters {
 
   // time-dependent weights (2nd level, by individual)
   matrix[N, 3] w2_i_pr;
-  matrix[N, 3] w3_i_pr;
+  matrix[N, 3] w3_pos_i_pr;
+  matrix[N, 3] w3_neg_i_pr;
   matrix<lower=0>[N, 3] sigma_w2_pr;
-  matrix<lower=0>[N, 3] sigma_w3_pr;
+  matrix<lower=0>[N, 3] sigma_w3_pos_pr;
+  matrix<lower=0>[N, 3] sigma_w3_neg_pr;
   
   // individual-level time-point weight parameters (3rd level)
   array[N] matrix[3, I] w2_pr;
-  array[N] matrix[3, I] w3_pr;
+  array[N] matrix[3, I] w3_pos_pr;
+  array[N] matrix[3, I] w3_neg_pr;
 
   // individual-level beta distribution precision parameter
   matrix[N, 3] phi_pr;
@@ -84,33 +88,37 @@ transformed parameters {
   matrix[N, 3] w0;
   matrix[N, 3] w1_o;
   matrix[N, 3] w2_i;
-  matrix[N, 3] w3_i;
+  matrix[N, 3] w3_pos_i;
+  matrix[N, 3] w3_neg_i;
   matrix[N, 3] phi;
 
   for (q in 1:3) {
-    w0[:, q]   = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
-    w1_o[:, q] = mu_wt[q, 2] + sigma_wt[q, 2] * w1_o_pr[:, q];
-    w2_i[:, q] = mu_wt[q, 3] + sigma_wt[q, 3] * w2_i_pr[:, q];
-    w3_i[:, q] = mu_wt[q, 4] + sigma_wt[q, 4] * w3_i_pr[:, q];
-    phi[:, q]  = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
+    w0[:, q]       = mu_wt[q, 1] + sigma_wt[q, 1] * w0_pr[:, q];
+    w1_o[:, q]     = mu_wt[q, 2] + sigma_wt[q, 2] * w1_o_pr[:, q];
+    w2_i[:, q]     = mu_wt[q, 3] + sigma_wt[q, 3] * w2_i_pr[:, q];
+    w3_pos_i[:, q] = mu_wt[q, 4] + sigma_wt[q, 4] * w3_pos_i_pr[:, q];
+    w3_neg_i[:, q] = mu_wt[q, 5] + sigma_wt[q, 5] * w3_neg_i_pr[:, q];
+    phi[:, q]      = exp(aff_mu_phi[q] + aff_sigma_phi[q] * phi_pr[:, q]);
   }
 
   // time-dependent weights
   array[N] matrix[3, I] w2;
-  array[N] matrix[3, I] w3;
+  array[N] matrix[3, I] w3_pos;
+  array[N] matrix[3, I] w3_neg;
 
   // get individuals' weights for each trial back
   for (i in 1:N) {
     for (q in 1:3) { // over all lags I
-      w2[i, q, :] = w2_i[i, q] + sigma_w2_pr[i, q] * w2_pr[i, q, :];
-      w3[i, q, :] = w3_i[i, q] + sigma_w3_pr[i, q] * w3_pr[i, q, :];
+      w2[i, q, :]     = w2_i[i, q] + sigma_w2_pr[i, q] * w2_pr[i, q, :];
+      w3_pos[i, q, :] = w3_pos_i[i, q] + sigma_w3_pos_pr[i, q] * w3_pos_pr[i, q, :];
+      w3_neg[i, q, :] = w3_neg_i[i, q] + sigma_w3_neg_pr[i, q] * w3_neg_pr[i, q, :];
     }
   }
 }
 
 model {
   // hyperpriors on QL parameters
-  mu_ql    ~ normal(0, 1);
+  mu_ql    ~ normal(-0.5, 0.5); // informative prior to help with convergence, based on non-signed model
   sigma_ql ~ normal(0, 0.2);
 
   // hyperpriors on the weights
@@ -130,16 +138,19 @@ model {
 
   // priors on the mean-level weights and beta distribution precision
   for (q in 1:3) {
-    w0_pr[:, q]       ~ normal(0, 1);
-    w1_o_pr[:, q]     ~ normal(0, 1);
-    w2_i_pr[:, q]     ~ normal(0, 1);
-    w3_i_pr[:, q]     ~ normal(0, 1);
-    sigma_w2_pr[:, q] ~ exponential(0.1);
-    sigma_w3_pr[:, q] ~ exponential(0.1);
-    phi_pr[:, q]      ~ normal(0, 1);
+    w0_pr[:, q]           ~ normal(0, 1);
+    w1_o_pr[:, q]         ~ normal(0, 1);
+    w2_i_pr[:, q]         ~ normal(0, 1);
+    w3_pos_i_pr[:, q]     ~ normal(0, 1);
+    w3_neg_i_pr[:, q]     ~ normal(0, 1);
+    sigma_w2_pr[:, q]     ~ exponential(0.1);
+    sigma_w3_pos_pr[:, q] ~ exponential(0.1);
+    sigma_w3_neg_pr[:, q] ~ exponential(0.1);
+    phi_pr[:, q]          ~ normal(0, 1);
     for (j in 1:I) {
-      w2_pr[:, q, j]  ~ normal(0, 1);
-      w3_pr[:, q, j]  ~ normal(0, 1);
+      w2_pr[:, q, j]      ~ normal(0, 1);
+      w3_pos_pr[:, q, j]  ~ normal(0, 1);
+      w3_neg_pr[:, q, j]  ~ normal(0, 1);
     }
   }
 
@@ -157,7 +168,8 @@ model {
     vector[ti] delta;        // Difference in EVs between options
 
     vector[ti] ev_vec;       // Vector of summed EVs by trial
-    vector[ti] pe_vec;       // Vector of summed PEs by trial
+    vector[ti] pos_pe_vec;   // Vector of summed positive PEs by trial
+    vector[ti] neg_pe_vec;   // Vector of summed negative PEs by trial
     vector[ti] phi_vec;      // Vector of beta distribution precision by trial
     vector[ti] eta_vec;      // Linear predictor for affect by trial
 
@@ -185,7 +197,8 @@ model {
 
       // store summed EVs and PEs for this trial
       ev_vec[t] = ev[co];
-      pe_vec[t] = pe;
+      pos_pe_vec[t] = (pe > 0) ? pe : 0;
+      neg_pe_vec[t] = (pe < 0) ? pe : 0;
 
       // initial value of linear predictor for affect at trial t
       eta = w0[i, question[i, t]] + w1_o[i, question[i, t]] * ovl_time[i, t];
@@ -195,7 +208,8 @@ model {
         int t1 = t + 1; // so as to include the current trial
         eta += (
           w2[i][question[i, t1 - j], j] * ev_vec[t1 - j] + 
-          w3[i][question[i, t1 - j], j] * pe_vec[t1 - j]
+          w3_pos[i][question[i, t1 - j], j] * pos_pe_vec[t1 - j] + 
+          w3_neg[i][question[i, t1 - j], j] * neg_pe_vec[t1 - j]
         );
       }
 
@@ -257,7 +271,8 @@ generated quantities {
       vector[ti] delta;        // Difference in EVs between options
 
       vector[ti] ev_vec;       // Vector of summed EVs by trial
-      vector[ti] pe_vec;       // Vector of summed PEs by trial
+      vector[ti] pos_pe_vec;   // Vector of summed positive PEs by trial
+      vector[ti] neg_pe_vec;   // Vector of summed negative PEs by trial
       vector[ti] phi_vec;      // Vector of beta distribution precision by trial
       vector[ti] eta_vec;      // Linear predictor for affect by trial
 
@@ -287,7 +302,8 @@ generated quantities {
 
         // store summed EVs and PEs for this trial
         ev_vec[t] = ev[co];
-        pe_vec[t] = pe;
+        pos_pe_vec[t] = (pe > 0) ? pe : 0;
+        neg_pe_vec[t] = (pe < 0) ? pe : 0;
 
         // initial value of linear predictor for affect at trial t
         eta = w0[i, question[i, t]] + w1_o[i, question[i, t]] * ovl_time[i, t];
@@ -297,7 +313,8 @@ generated quantities {
           int t1 = t + 1; // so as to include the current trial
           eta += (
             w2[i][question[i, t1 - j], j] * ev_vec[t1 - j] + 
-            w3[i][question[i, t1 - j], j] * pe_vec[t1 - j]
+            w3_pos[i][question[i, t1 - j], j] * pos_pe_vec[t1 - j] + 
+            w3_neg[i][question[i, t1 - j], j] * neg_pe_vec[t1 - j]
           );
         }
 
