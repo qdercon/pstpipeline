@@ -195,7 +195,7 @@ parameter_glm <- function(summary_df = list(),
     )
     par_ls[[par]] <- cmdstan_fit$draws(format = "df") |>
       dplyr::rename_with(
-        .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
+        .fn = function(n) beta_names[as.numeric(gsub("\\D", "", n))],
         .cols = tidyselect::starts_with("beta")
       )
   }
@@ -211,7 +211,7 @@ parameter_glm <- function(summary_df = list(),
       )
       par_ls_recode[[par]] <- cmdstan_fit$draws(format = "df") |>
         dplyr::rename_with(
-          .fn = function(n) return(beta_names[as.numeric(gsub("\\D", "", n))]),
+          .fn = function(n) beta_names[as.numeric(gsub("\\D", "", n))],
           .cols = tidyselect::starts_with("beta")
         ) |>
         dplyr::mutate(recode = TRUE)
@@ -226,5 +226,5 @@ parameter_glm <- function(summary_df = list(),
     pars_df <- dplyr::bind_rows(pars_df, pars_df_recode) |>
       dplyr::rename(!!int_nm := recode)
   }
-  return(pars_df)
+  pars_df
 }

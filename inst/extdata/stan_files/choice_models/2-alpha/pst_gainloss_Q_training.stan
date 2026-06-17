@@ -1,6 +1,7 @@
-// Q-learning model for PST training data
+// Gain-loss Q-learning model for PST training data (incl. posterior predictive checks)
 data {
-int<lower=1> N, T;          // # participants, max # of trials
+  int<lower=0,upper=1> run_gq; // 1 to run generated quantities, 0 to skip
+  int<lower=1> N, T;          // # participants, max # of trials
   array[N] int Tsubj;         // # of trials for acquisition phase
 
   array[N, T] int option1;    // LHS option (1-6)
@@ -17,20 +18,23 @@ transformed data {
 
 parameters {
   // Group-level parameters
-  vector[2] mu_pr;
-  vector<lower=0>[2] sigma;
+  vector[3] mu_pr;
+  vector<lower=0>[3] sigma;
 
   // Subject-level parameters for Matt trick
-  vector[N] alpha_pr;
+  vector[N] alpha_pos_pr;
+  vector[N] alpha_neg_pr;
   vector[N] beta_pr;
 }
 
 transformed parameters {
-  vector<lower=0,upper=1>[N] alpha;
+  vector<lower=0,upper=1>[N] alpha_pos;
+  vector<lower=0,upper=1>[N] alpha_neg;
   vector<lower=0,upper=10>[N] beta;
 
-  alpha = Phi_approx(mu_pr[1] + sigma[1] * alpha_pr);
-  beta  = Phi_approx(mu_pr[2] + sigma[2] * beta_pr) * 10;
+  alpha_pos = Phi_approx(mu_pr[1] + sigma[1] * alpha_pos_pr);
+  alpha_neg = Phi_approx(mu_pr[2] + sigma[2] * alpha_neg_pr);
+  beta      = Phi_approx(mu_pr[3] + sigma[3] * beta_pr) * 10;
 }
 
 model {
@@ -39,13 +43,15 @@ model {
   sigma ~ normal(0, 0.2);
 
   // Priors for subject-level parameters
-  alpha_pr ~ normal(0, 1);
-  beta_pr  ~ normal(0, 1);
+  alpha_pos_pr ~ normal(0, 1);
+  alpha_neg_pr ~ normal(0, 1);
+  beta_pr      ~ normal(0, 1);
 
   for (i in 1:N) {
     int co;         // Chosen option
     real delta;     // Difference between two options
     real pe;        // Prediction error
+    real alpha;
     vector[6] ev;   // Expected values
 
     ev = initial_values;
@@ -59,27 +65,36 @@ model {
       choice[i, t] ~ bernoulli_logit(beta[i] * delta);
 
       pe = reward[i, t] - ev[co];
-      ev[co] += alpha[i] * pe;
+      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
+      ev[co] += alpha * pe;
     }
   }
 }
 
 generated quantities {
   // For group-level parameters
-  real<lower=0,upper=1>  mu_alpha;
+  real<lower=0,upper=1>  mu_alpha_pos;
+  real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
 
-  // initialise log-likelihood vector
+  // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
+  vector[N] neg_ones;
+  matrix[run_gq ? N : 0, T] y_pred;
 
-  mu_alpha = Phi_approx(mu_pr[1]);
-  mu_beta  = Phi_approx(mu_pr[2]) * 10;
+  neg_ones = rep_vector(-1, N);
+  if (run_gq) y_pred = rep_matrix(neg_ones, T);
+
+  mu_alpha_pos = Phi_approx(mu_pr[1]);
+  mu_alpha_neg = Phi_approx(mu_pr[2]);
+  mu_beta      = Phi_approx(mu_pr[3]) * 10;
 
   {
     for (i in 1:N) {
       int co;         // Chosen option
       real delta;     // Difference between two options
       real pe;        // Prediction error
+      real alpha;
       vector[6] ev;   // Expected values
 
       ev = initial_values;
@@ -93,8 +108,12 @@ generated quantities {
         delta = ev[option1[i, t]] - ev[option2[i, t]];
         log_lik[i] += bernoulli_logit_lpmf(choice[i, t] | beta[i] * delta);
 
+        // generate posterior prediction for current trial
+        if (run_gq) y_pred[i, t] =  bernoulli_logit_rng(beta[i] * delta);
+
         pe = reward[i, t] - ev[co];
-        ev[co] += alpha[i] * pe;
+        alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
+        ev[co] += alpha * pe;
       }
     }
   }

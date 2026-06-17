@@ -6,4 +6,13 @@ outputs
 data-raw/*.txt
 data-raw/subjID_key_scramble.csv
 .DS_Store
-R/.lintr
+.lintr
+.venv
+.vscode
+.ipynb_checkpoints
+
+# Keep only Stan source files under inst/extdata/stan_files
+inst/extdata/stan_files/**/*
+!inst/extdata/stan_files/**/
+!inst/extdata/stan_files/**/*.stan
+.positai

@@ -214,19 +214,19 @@ plot_recovery <- function(raw_pars,
   if (!affect) {
     pred_plots$heatmap <- htmps[[1]]
     if (!plot_together) {
-      return(pred_plots)
+      pred_plots
     } else {
       ql_plots <- pred_plots$cor_plots
       ql_plots$heatmap <- pred_plots$heatmap
       plot <- cowplot::plot_grid(plotlist = ql_plots, nrow = 1)
-      return(plot)
+      plot
     }
   } else {
     pred_plots$heatmaps <- list()
     pred_plots$heatmaps$ql <- htmps[[1]]
     pred_plots$heatmaps$wts <- htmps[[2]]
     if (!plot_together) {
-      return(pred_plots)
+      pred_plots
     } else {
       ql_plots <- pred_plots$cor_plots[grep("alpha|beta", all_pars)]
       ql_plots$heatmap <- pred_plots$heatmap$ql
@@ -268,7 +268,7 @@ plot_recovery <- function(raw_pars,
         message("Unable to coerce plots together, returning list of plots.")
         return(pred_plots)
       }
-      return(plot)
+      plot
     }
   }
 }

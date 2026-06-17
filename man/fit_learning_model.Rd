@@ -6,12 +6,16 @@
 \usage{
 fit_learning_model(
   df_all,
-  model,
-  exp_part,
+  model = c("1a", "2a", "1a2r", "1a1c"),
+  exp_part = c("training", "test"),
   affect = FALSE,
-  affect_sfx = c("3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time", "delta"),
+  affect_sfx = c("3wt", "4wt_trial", "4wt_block", "4wt_time", "5wt_time", "delta",
+    "delta-signed"),
   adj_order = c("happy", "confident", "engaged"),
   vb = TRUE,
+  vb_elbo_retry = vb,
+  vb_elbo_threshold = -9999999,
+  vb_max_retries = 100,
   ppc = vb,
   par_recovery = FALSE,
   task_excl = TRUE,
@@ -42,6 +46,15 @@ numerical order in the model output.}
 
 \item{vb}{Use variational inference to get the approximate posterior? Default
 is \code{TRUE} for computational efficiency.}
+
+\item{vb_elbo_retry}{If \code{vb = TRUE}, should the algorithm retry with
+different random seeds if the initial ELBO is too low? Defaults to \code{vb}.}
+
+\item{vb_elbo_threshold}{The minimum acceptable initial ELBO when
+\code{vb_elbo_retry = TRUE}. Defaults to -9999999.}
+
+\item{vb_max_retries}{Maximum number of seeds to try if
+\code{vb_elbo_retry = TRUE}. Defaults to 15.}
 
 \item{ppc}{Generate quantities including mean parameters, log likelihood, and
 posterior predictions? Intended for use with variational algorithm; for MCMC

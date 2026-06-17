@@ -272,8 +272,9 @@ get_preds_by_chain <- function(out_files,
 
       if (length(splits[[1]]) > 0 || length(splits[[2]]) > 0) {
         max_trial <- seq(0, l$n_trials, trials_per_block)
-        trial_nums <- sapply(strsplit(names(preds), "_"),
-                             function(g) return(as.integer(g[3])))
+        trial_nums <- sapply(
+          strsplit(names(preds), "_"), function(g) as.integer(g[3])
+        )
         pred_names <- lapply(
           split(trial_nums, cut(trial_nums, max_trial)),
           function(h) h <- paste0(l$pred_var, "_", h)
@@ -427,5 +428,5 @@ get_preds_by_chain <- function(out_files,
   ret$indiv_obs_df <- indiv_obs_df
   ret$trial_obs_df <- trial_obs_df
 
-  return(ret)
+  ret
 }

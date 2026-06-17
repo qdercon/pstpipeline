@@ -8,8 +8,8 @@ information}
 make_par_df(
   raw,
   summary,
-  rhat_upper,
-  ess_lower,
+  rhat_upper = Inf,
+  ess_lower = 0,
   bsl_trnsfm = function(x) x,
   join_dem = TRUE,
   adj_order = c("happy", "confident", "engaged")

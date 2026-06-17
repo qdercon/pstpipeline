@@ -24,6 +24,12 @@
 #' numerical order in the model output.
 #' @param vb Use variational inference to get the approximate posterior? Default
 #' is \code{TRUE} for computational efficiency.
+#' @param vb_elbo_retry If \code{vb = TRUE}, should the algorithm retry with
+#' different random seeds if the initial ELBO is too low? Defaults to \code{vb}.
+#' @param vb_elbo_threshold The minimum acceptable initial ELBO when
+#' \code{vb_elbo_retry = TRUE}. Defaults to -9999999.
+#' @param vb_max_retries Maximum number of seeds to try if
+#' \code{vb_elbo_retry = TRUE}. Defaults to 15.
 #' @param ppc Generate quantities including mean parameters, log likelihood, and
 #' posterior predictions? Intended for use with variational algorithm; for MCMC
 #' it is recommended to run the separate [generate_posterior_quantities()]
@@ -105,13 +111,18 @@
 #' @export
 
 fit_learning_model <- function(df_all,
-                               model,
-                               exp_part,
+                               model = c("1a", "2a", "1a2r", "1a1c"),
+                               exp_part = c("training", "test"),
                                affect = FALSE,
-                               affect_sfx = c("3wt", "4wt_trial", "4wt_block",
-                                              "4wt_time", "5wt_time", "delta"),
+                               affect_sfx = c(
+                                 "3wt", "4wt_trial", "4wt_block", "4wt_time",
+                                 "5wt_time", "delta", "delta-signed"
+                               ),
                                adj_order = c("happy", "confident", "engaged"),
                                vb = TRUE,
+                               vb_elbo_retry = vb,
+                               vb_elbo_threshold = -9999999,
+                               vb_max_retries = 100,
                                ppc = vb,
                                par_recovery = FALSE,
                                task_excl = TRUE,
@@ -125,6 +136,8 @@ fit_learning_model <- function(df_all,
                                ...) {
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
+  model <- match.arg(model)
+  exp_part <- match.arg(exp_part)
 
   if (exp_part == "test" && affect) {
     stop("Affect models will not work for test data.")
@@ -287,30 +300,114 @@ fit_learning_model <- function(df_all,
     else data_cmdstan <- preprocess_func_train(raw_df, general_info)
   }
 
+  data_cmdstan$run_gq <- ifelse(ppc, 1, 0)
+
   if (all(outputs == "stan_datalist")) return(data_cmdstan)
 
   cmdstanr::check_cmdstan_toolchain(fix = TRUE, quiet = TRUE)
 
   ## write relevant stan model to memory and preprocess data
-  label <- ifelse(
+  pref <- switch(
+    model,
+    "1a" = "Q",
+    "2a" = "gainloss_Q",
+    "1a2r" = "Q_dualsens",
+    "1a1c" = "Q_collinspers",
+    stop("Invalid model specified.")
+  )
+  suff <- ifelse(
     !affect, exp_part, paste("plus_affect", aff_mod, sep = "_")
   )
-  stan_model <-
-    cmdstanr::cmdstan_model(
-      system.file(
-        paste0(
-          paste(
-            "extdata/stan_files/pst",
-            ifelse(model == "2a", "gainloss_Q", "Q"), label, sep = "_"
-          ),
-          ifelse(ppc, "_ppc.stan", ".stan")
-        ),
-        package = "pstpipeline"
+
+  if (affect) {
+    model_dir <- ifelse(
+      grepl("2a", model),
+      "rl-affect/2-alpha",
+      "rl-affect/1-alpha"
+    )
+  } else {
+    model_dir <- ifelse(
+      grepl("2a", model), "choice_models/2-alpha", "choice_models/1-alpha"
+    )
+  }
+
+  stan_rel_path <- paste0(
+    "extdata/stan_files/", model_dir, "/pst_", pref, "_", suff, ".stan"
+  )
+  stan_path <- system.file(stan_rel_path, package = "pstpipeline")
+
+  if (identical(stan_path, "")) {
+    stop(
+      paste0(
+        "Stan model file not found at ", stan_rel_path, ". ",
+        "Please check whether you have provided the correct affect_sfx."
       )
     )
+  }
+
+  stan_model <- cmdstanr::cmdstan_model(stan_path)
 
   ## fit variational model if relevant
   if (vb) {
+    if (vb_elbo_retry) {
+      best_seed <- l$seed
+      success <- FALSE
+
+      for (attempt in 1:vb_max_retries) {
+        test_seed <- sample.int(.Machine$integer.max, 1)
+
+        # Run a very short VB to check initial ELBO
+        test_fit <- NULL
+
+        attempt_out_dir <- file.path(
+          tempdir(), paste0("vb_seed_check_", test_seed)
+        )
+        if (!dir.exists(attempt_out_dir)) {
+          dir.create(attempt_out_dir, recursive = TRUE)
+        }
+
+        test_fit <- tryCatch(
+          {
+            stan_model$variational(
+              data = data_cmdstan,
+              seed = test_seed,
+              iter = 100, # Short run just to get initial ELBO
+              refresh = 0,
+              output_samples = 1,
+              save_latent_dynamics = TRUE,
+              show_messages = FALSE,
+              show_exceptions = FALSE,
+              algorithm = l$algorithm,
+              output_dir = attempt_out_dir
+            )
+          }, error = function(e) {
+            NULL
+          }
+        )
+
+        if (!is.null(test_fit)) {
+          latent_file <- tryCatch(
+            test_fit$latent_dynamics_files()[1],
+            error = function(e) ""
+          )
+
+          parsed_elbo <- extract_elbo_from_file(latent_file, target_iter = 100)
+
+          elbo_for_check <- parsed_elbo$target_elbo
+
+          if (!is.na(elbo_for_check) && elbo_for_check > vb_elbo_threshold) {
+            best_seed <- test_seed
+            success <- TRUE
+            break
+          }
+        }
+      }
+      if (!success) {
+        stop("Could not find a seed with an acceptable initial ELBO.")
+      }
+      l$seed <- best_seed
+    }
+
     fit <- stan_model$variational(
       data = data_cmdstan,
       seed = l$seed,
@@ -340,7 +437,7 @@ fit_learning_model <- function(df_all,
             ret[[paste0(p, "_pr")]] <-
               as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
           }
-          return(ret)
+          ret
         }
       } else {
         function() {
@@ -357,18 +454,26 @@ fit_learning_model <- function(df_all,
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[2,")]),
               as.vector(m_vb[startsWith(names(m_vb), "sigma_wt[3,")])
             ),
+            mu_gm = as.vector(m_vb[startsWith(names(m_vb), "mu_gm")]),
+            sigma_gm = as.vector(m_vb[startsWith(names(m_vb), "sigma_gm")]),
             aff_mu_phi = as.vector(m_vb[startsWith(names(m_vb), "aff_mu_phi")]),
             aff_sigma_phi = as.vector(
               m_vb[startsWith(names(m_vb), "aff_sigma_phi")]
             )
           )
 
-          for (p in names(parameters)[1:3]) {
+          matrix_pars <- c(
+            "w0", "w1_o", "w1_b", "w2", "w3", "w3_pos", "w3_neg",
+            "gm", "phi"
+          )
+          vec_pars <- setdiff(names(parameters), matrix_pars)
+
+          for (p in vec_pars) {
             ret[[paste0(p, "_pr")]] <-
               as.vector(m_vb[startsWith(names(m_vb), paste0(p, "_pr"))])
           }
 
-          for (q in names(parameters)[-(1:3)]) {
+          for (q in intersect(names(parameters), matrix_pars)) {
             m_vb_tr <- m_vb[
               names(m_vb[startsWith(names(m_vb), paste0(q, "_pr"))])
             ]
@@ -378,13 +483,25 @@ fit_learning_model <- function(df_all,
               as.vector(m_vb_tr[endsWith(names(m_vb_tr), ",3]")])
             )
           }
-          return(ret)
+          ret
         }
       }
     }
     if (model == "1a") {
       pars <- list(
         "alpha" = c(0, 0.5, 1),
+        "beta" = c(0, 1, 10)
+      )
+    } else if (model == "1a2r") {
+      pars <- list(
+        "alpha" = c(0, 0.5, 1),
+        "rho_pos" = c(0, 1, 10),
+        "rho_neg" = c(0, 1, 10)
+      )
+    } else if (model == "1a1c") {
+      pars <- list(
+        "alpha" = c(0, 0.5, 1),
+        "pers" = c(0, 0.5, 1),
         "beta" = c(0, 1, 10)
       )
     } else {
@@ -403,11 +520,13 @@ fit_learning_model <- function(df_all,
         pars[["w3"]] <- c(-2, 0, 2)
       } else {
         pars[["w1_o"]] <- c(-4, 0, 4)
-        # fix
-        pars[["wprev2"]] <- c(-2, 0, 2)
-        pars[["wprev3"]] <- c(-2, 0, 2)
-        pars[["wdelta2"]] <- c(-2, 0, 2)
-        pars[["wdelta3"]] <- c(-2, 0, 2)
+        pars[["w2"]] <- c(-2, 0, 2)
+        if (grepl("signed", affect_sfx)) {
+          pars[["w3_pos"]] <- c(-2, 0, 2)
+          pars[["w3_neg"]] <- c(-2, 0, 2)
+        } else {
+          pars[["w3"]] <- c(-2, 0, 2)
+        }
       }
       pars[["gm"]] <- c(0, 0.5, 1)
       pars[["phi"]] <- c(0, 10, 100)
@@ -546,5 +665,5 @@ fit_learning_model <- function(df_all,
       )
     )
   }
-  return(ret)
+  ret
 }

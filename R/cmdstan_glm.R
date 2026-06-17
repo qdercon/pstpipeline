@@ -226,7 +226,7 @@ cmdstan_glm <- function(formula,
     ...
   )
 
-  return(stanfit)
+  stanfit
 }
 
 
@@ -243,8 +243,7 @@ validate_weights <- function(w) {
       stop("Negative weights are not allowed.",
            call. = FALSE)
   }
-
-  return(w)
+  w
 }
 
 validate_offset <- function(o, y) {
@@ -259,5 +258,5 @@ validate_offset <- function(o, y) {
         ), domain = NA, call. = FALSE
       )
   }
-  return(o)
+  o
 }

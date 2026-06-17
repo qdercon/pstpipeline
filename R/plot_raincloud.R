@@ -259,5 +259,5 @@ plot_raincloud <- function(summary_df,
       ggplot2::scale_x_discrete(name = NULL, labels = par_labs) +
       ggplot2::ylab("Predicted factor score")
   }
-  return(rain_plot)
+  rain_plot
 }

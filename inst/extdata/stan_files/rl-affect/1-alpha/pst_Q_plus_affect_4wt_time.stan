@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Gain-loss Q-learning model for PST training data + affect + block number
+// Q-learning model for PST training data + affect + overall time
 //------------------------------------------------------------------------------
 // References:
 //// https://www.pnas.org/doi/10.1073/pnas.1407535111
@@ -9,6 +9,7 @@
 //------------------------------------------------------------------------------
 
 data {
+  int<lower=0,upper=1> run_gq;      // 1 to run generated quantities, 0 to skip
   int<lower=1> N, T;                // # participants, max # of trials
   array[N] int Tsubj;               // # of trials for acquisition phase
 
@@ -19,7 +20,7 @@ data {
 
   array[N] row_vector[T] affect;    // includes 0 and 1, needs to be transformed
   array[N, T] int question;         // from 1 to 3 (happy, confident, engaged)
-  array[N, T] int block_no;         // from 1 to 6
+  array[N] row_vector[T] ovl_time;  // in hours to keep weights relatively small
 }
 
 transformed data {
@@ -40,17 +41,17 @@ transformed data {
     affect_tr[i] = ((affect[i] * (N - 1)) + 0.5) / N;
   }
 
-  // transpose block number for efficient indexing
-  array[N] vector[T] block_no_tr;
+  // transpose time for efficient indexing
+  array[N] vector[T] ovl_time_tr;
   for (i in 1:N) {
-    block_no_tr[i] = to_vector(block_no[i]);
+    ovl_time_tr[i] = to_vector(ovl_time[i]);
   }
 }
 
 parameters {
   // group-level RL parameters
-  vector[3] mu_ql;
-  vector<lower=0>[3] sigma_ql;
+  vector[2] mu_ql;
+  vector<lower=0>[2] sigma_ql;
 
   // group-level weights
   matrix[3, 4] mu_wt; // 3 questions x 4 weights
@@ -65,8 +66,7 @@ parameters {
   vector<lower=0>[3] aff_sigma_phi;
 
   // individual-level RL parameters
-  vector[N] alpha_pos_pr;
-  vector[N] alpha_neg_pr;
+  vector[N] alpha_pr;
   vector[N] beta_pr;
 
   // individual-level weights + forgetting factor
@@ -81,13 +81,11 @@ parameters {
 }
 
 transformed parameters {
-  vector<lower=0, upper=1>[N] alpha_pos;
-  vector<lower=0, upper=1>[N] alpha_neg;
-  vector<lower=0, upper=10>[N] beta;
+  vector<lower=0,upper=1>[N] alpha;
+  vector<lower=0,upper=10>[N] beta;
 
-  alpha_pos = Phi_approx(mu_ql[1] + sigma_ql[1] * alpha_pos_pr);
-  alpha_neg = Phi_approx(mu_ql[2] + sigma_ql[2] * alpha_neg_pr);
-  beta      = Phi_approx(mu_ql[3] + sigma_ql[3] * beta_pr) * 10;
+  alpha = Phi_approx(mu_ql[1] + sigma_ql[1] * alpha_pr);
+  beta  = Phi_approx(mu_ql[2] + sigma_ql[2] * beta_pr) * 10;
 
   matrix[N, 3] w0;
   matrix[N, 3] w1_o;
@@ -126,9 +124,8 @@ model {
   aff_sigma_phi ~ exponential(0.1);
 
   // priors on QL parameters
-  alpha_pos_pr ~ normal(0, 1);
-  alpha_neg_pr ~ normal(0, 1);
-  beta_pr      ~ normal(0, 1);
+  alpha_pr ~ normal(0, 1);
+  beta_pr  ~ normal(0, 1);
 
   // priors on the weights + gamma + beta distribution precision
   for (q in 1:3) {
@@ -147,8 +144,7 @@ model {
     int co;                  // Chosen option
     int qn;                  // Question number
     real pe;                 // Prediction error
-    real alpha;              // Learning rate (positive or negative)
-    
+
     vector[6] ev;            // Expected values per symbol
     vector[ti] delta;        // Difference in EVs between options
 
@@ -176,7 +172,7 @@ model {
     pe_sum  = init_sum;
     ev_dcy  = z_vec;
     pe_dcy  = z_vec;
-    
+
     // initialise at machine precision to ensure shape parameters > 0
     shape_a = rep_vector(machine_precision(), ti);
     shape_b = rep_vector(machine_precision(), ti);
@@ -188,12 +184,11 @@ model {
 
       // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
       delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
-      
+
       pe = reward[i, t] - ev[co];
       pe_sum += pe;
 
-      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
-      ev[co] += alpha * pe;
+      ev[co] += alpha[i] * pe;
       ev_sum += ev[co];
 
       // store summed EVs and PEs for this trial
@@ -201,25 +196,25 @@ model {
       pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]   = w0[i, qn];
+      w0_vec[t]  = w0[i, qn];
       w1_o_vec[t] = w1_o[i, qn];
-      w2_vec[t]   = w2[i, qn];
-      w3_vec[t]   = w3[i, qn];
-      phi_vec[t]  = phi[i, qn];
+      w2_vec[t]  = w2[i, qn];
+      w3_vec[t]  = w3[i, qn];
+      phi_vec[t] = phi[i, qn];
 
       // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
       ev_sum = ev_sum .* gamma[i, :];
       pe_sum = pe_sum .* gamma[i, :];
     }
-    
+
     // increment log density for choice for participant i
     choice[i, :ti] ~ bernoulli_logit(beta[i] * delta);
     
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* block_no_tr[i][:ti] + 
-      w2_vec .* ev_dcy + 
+      w1_o_vec .* ovl_time_tr[i][:ti] + 
+      w2_vec .* ev_dcy +
       w3_vec .* pe_dcy
     );
 
@@ -234,8 +229,7 @@ model {
 
 generated quantities {
   // group-level parameter means
-  real<lower=0,upper=1>  mu_alpha_pos;
-  real<lower=0,upper=1>  mu_alpha_neg;
+  real<lower=0,upper=1>  mu_alpha;
   real<lower=0,upper=10> mu_beta;
 
   vector[3] mu_w0;
@@ -248,12 +242,11 @@ generated quantities {
   vector[N] log_lik;
   array[N] row_vector[T] y_pred;
 
-  y_pred = rep_array(neg_ones, N);
+  y_pred   = rep_array(neg_ones, N);
 
   // calculate moments of the group-level posterior distributions
-  mu_alpha_pos = Phi_approx(mu_ql[1]);
-  mu_alpha_neg = Phi_approx(mu_ql[2]);
-  mu_beta      = Phi_approx(mu_ql[3]) * 10;
+  mu_alpha = Phi_approx(mu_ql[1]);
+  mu_beta  = Phi_approx(mu_ql[2]) * 10;
 
   mu_w0    = mu_wt[:, 1];
   mu_w1_o  = mu_wt[:, 2];
@@ -284,8 +277,7 @@ generated quantities {
     int co;                  // Chosen option
     int qn;                  // Question number
     real pe;                 // Prediction error
-    real alpha;              // Learning rate (positive or negative)
-    
+
     vector[6] ev;            // Expected values per symbol
     vector[ti] delta;        // Difference in EVs between options
 
@@ -331,8 +323,7 @@ generated quantities {
       pe = reward[i, t] - ev[co];
       pe_sum += pe;
 
-      alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
-      ev[co] += alpha * pe;
+      ev[co] += alpha[i] * pe;
       ev_sum += ev[co];
 
       // store summed EVs and PEs for this trial
@@ -340,24 +331,24 @@ generated quantities {
       pe_dcy[t] = pe_sum[qn];
       
       // store weights and beta distribution precision for convenience
-      w0_vec[t]   = w0[i, qn];
+      w0_vec[t]  = w0[i, qn];
       w1_o_vec[t] = w1_o[i, qn];
-      w2_vec[t]   = w2[i, qn];
-      w3_vec[t]   = w3[i, qn];
-      phi_vec[t]  = phi[i, qn];
+      w2_vec[t]  = w2[i, qn];
+      w3_vec[t]  = w3[i, qn];
+      phi_vec[t] = phi[i, qn];
 
       // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
       ev_sum = ev_sum .* gamma[i, :];
       pe_sum = pe_sum .* gamma[i, :];
     }
-
+    
     // increment log likelihood for choice for participant i
     log_lik[i] += bernoulli_logit_lpmf(choice[i, :ti] | beta[i] * delta);
-    
+
     // calculate conditional mean of the beta distribution
     aff_mu_cond = inv_logit(
       w0_vec + 
-      w1_o_vec .* block_no_tr[i][:ti] + 
+      w1_o_vec .* ovl_time_tr[i][:ti] +
       w2_vec .* ev_dcy + 
       w3_vec .* pe_dcy
     );

@@ -79,7 +79,7 @@ GeomFlatViolin <-
     draw_key = ggplot2::draw_key_polygon,
 
     default_aes = ggplot2::aes(
-      weight = 1, colour = "grey20", fill = "white", size = 0.5,
+      weight = 1, colour = "grey20", fill = "white", linewidth = 0.5,
       alpha = NA, linetype = "solid"
     ),
 

@@ -1,12 +1,18 @@
-// Gain-loss Q-learning model for PST training data
+// Gain-loss Q-learning model for PST test data (incl. posterior predictive checks)
 data {
-  int<lower=1> N, T;          // # participants, max # of trials
-  array[N] int Tsubj;         // # of trials for acquisition phase
+  int<lower=0,upper=1> run_gq; // 1 to run generated quantities, 0 to skip
+  int<lower=1> N, T, T_t;       // # participants, max # trials, max # test trials
+  array[N] int Tsubj;           // # of trials for acquisition phase
+  array[N] int Tsubj_t;         // # of trials for test phase
 
-  array[N, T] int option1;    // LHS option (1-6)
-  array[N, T] int option2;    // RHS option (1-6)
-  array[N, T] int choice;     // choice (1 = chose option 1, 3, or 5)
-  matrix[N, T] reward;        // coded as 1 (reward) or -1 (no reward)
+  array[N, T] int option1;      // LHS option (1-6)
+  array[N, T] int option2;      // RHS option (1-6)
+  array[N, T] int choice;       // choice (1 = chose option 1, 3, or 5)
+  matrix[N, T] reward;          // coded as 1 (reward) or -1 (no reward)
+
+  array[N, T_t] int option1_t;  // LHS option (1-6) in test phase
+  array[N, T_t] int option2_t;  // RHS option (1-6) in test phase
+  array[N, T_t] int choice_t;   // choice (1 = chose option 1, 3, or 5) in test
 }
 
 transformed data {
@@ -48,7 +54,8 @@ model {
 
   for (i in 1:N) {
     int co;         // Chosen option
-    real delta;     // Difference between two options
+    real delta;     // Difference between two options (training)
+    real delta_t;   // Difference between two options (test)
     real pe;        // Prediction error
     real alpha;
     vector[6] ev;   // Expected values
@@ -67,6 +74,13 @@ model {
       alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
       ev[co] += alpha * pe;
     }
+
+    // Test phase
+    for (u in 1:Tsubj_t[i]) {
+      // Softmax
+      delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
+      choice_t[i, u] ~ bernoulli_logit(beta[i] * delta_t);
+    }
   }
 }
 
@@ -75,9 +89,14 @@ generated quantities {
   real<lower=0,upper=1>  mu_alpha_pos;
   real<lower=0,upper=1>  mu_alpha_neg;
   real<lower=0,upper=10> mu_beta;
-
-  // initialise log-likelihood vector
+  
+  // initialise log-likelihood vector and posterior prediction matrix
   vector[N] log_lik;
+  vector[N] neg_ones;
+  matrix[N, T_t] y_pred;
+
+  neg_ones = rep_vector(-1, N);
+  y_pred   = rep_matrix(neg_ones, T_t);
 
   mu_alpha_pos = Phi_approx(mu_pr[1]);
   mu_alpha_neg = Phi_approx(mu_pr[2]);
@@ -87,6 +106,7 @@ generated quantities {
     for (i in 1:N) {
       int co;         // Chosen option
       real delta;     // Difference between two options
+      real delta_t;   // Difference between two options
       real pe;        // Prediction error
       real alpha;
       vector[6] ev;   // Expected values
@@ -106,7 +126,15 @@ generated quantities {
         alpha = (pe >= 0) ? alpha_pos[i] : alpha_neg[i];
         ev[co] += alpha * pe;
       }
+
+      // Test phase
+      for (u in 1:Tsubj_t[i]) {
+        delta_t = ev[option1_t[i, u]] - ev[option2_t[i, u]];
+        // increment log-likelihood
+        log_lik[i] += bernoulli_logit_lpmf(choice_t[i, u] | beta[i] * delta_t);
+        // generate posterior prediction for current trial
+        y_pred[i, u] =  bernoulli_logit_rng(beta[i] * delta_t);
+      }
     }
   }
 }
-

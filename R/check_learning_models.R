@@ -73,10 +73,8 @@ check_learning_models <- function(draws,
           draws, variables = c("mu_alpha_pos", "mu_alpha_neg", "mu_beta")
         ),
         error = function(e) {
-          return(
-            cmdstanr::read_cmdstan_csv(
-              draws, variables = c("mu_alpha", "mu_beta")
-            )
+          cmdstanr::read_cmdstan_csv(
+            draws, variables = c("mu_alpha", "mu_beta")
           )
         }
       )[["post_warmup_draws"]]
@@ -142,7 +140,7 @@ check_learning_models <- function(draws,
           font_size = font_size,
           font_family = font
         )
-      return(plt)
+      plt
     }
 
     for (p in seq_along(pars)) {
@@ -170,7 +168,6 @@ check_learning_models <- function(draws,
     ret$diagnostics$rank_hist <- bayesplot::mcmc_rank_hist(mu_pars)
   }
 
-  if (length(ret) == 1 && length(ret[[1]]) == 1) return(ret[[1]][[1]])
-  else return(ret)
-
+  if (length(ret) == 1 && length(ret[[1]]) == 1) ret[[1]][[1]]
+  else ret
 }

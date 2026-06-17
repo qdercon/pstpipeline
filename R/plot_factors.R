@@ -190,6 +190,6 @@ plot_factors <- function(df,
     ret$heatmap <- heatmap
   }
 
-  if (length(ret) == 1) return(ret[[1]])
-  else return(ret)
+  if (length(ret) == 1) ret[[1]]
+  else ret
 }

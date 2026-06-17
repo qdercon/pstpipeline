@@ -149,7 +149,7 @@ plot_ppc <- function(train_indiv = list(),
       dplyr::select(-acc_type) |>
       dplyr::group_by(subjID, type, choice_type)
 
-    trial_lags <- tryCatch(train_indiv[[2]], error = function(e) return(list()))
+    trial_lags <- tryCatch(train_indiv[[2]], error = function(e) list())
     for (lag in trial_lags) {
       col_name <- rlang::sym(paste0("cuml_accuracy_l", lag))
       train_indiv_df <- train_indiv_df |>
@@ -241,7 +241,7 @@ plot_ppc <- function(train_indiv = list(),
     if (length(tr_plts) > 0) plt_list$training_cum_prob <- tr_plts
 
     overall_avgs <- tryCatch(
-      train_indiv[[3]], error = function(e) return(list())
+      train_indiv[[3]], error = function(e) list()
     )
     if (length(overall_avgs) > 0) {
       avg_plts <- list()
@@ -321,7 +321,7 @@ plot_ppc <- function(train_indiv = list(),
       dplyr::mutate(type = strsplit(sub("_", "\01", type), "\01")[[1]][1])
 
     trial_groups <- tryCatch(
-      train_trials[[2]], error = function(e) return(list())
+      train_trials[[2]], error = function(e) list()
     )
     trial_plt_list <- list()
     for (trgrp in trial_groups) {
@@ -372,8 +372,8 @@ plot_ppc <- function(train_indiv = list(),
   }
   if (length(test_perf) > 0) {
 
-    pair_groups <- tryCatch(test_perf[[2]], error = function(e) return(list()))
-    indiv_pairs <- tryCatch(test_perf[[3]], error = function(e) return(list()))
+    pair_groups <- tryCatch(test_perf[[2]], error = function(e) list())
+    indiv_pairs <- tryCatch(test_perf[[3]], error = function(e) list())
 
     test_perf_df <- test_perf[[1]] |>
       dplyr::select(-tidyselect::contains("cuml_accuracy")) |>
@@ -420,5 +420,5 @@ plot_ppc <- function(train_indiv = list(),
       plt_list$test_perf <- grouped_bar_ppc
     }
   }
-  return(plt_list)
+  plt_list
 }

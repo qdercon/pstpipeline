@@ -232,7 +232,7 @@ cmdstan_glm.fit <-
           } else {
             x.scale <- sd(x)
           }
-          return(x.scale)
+          x.scale
         }))
     }
     prior_scale <-
@@ -392,7 +392,7 @@ cmdstan_glm.fit <-
       )
     }
 
-    return(fit)
+    fit
 
   }
 
@@ -563,7 +563,7 @@ make_eta <- function(location, what = c("mode", "mean", "median", "log"), K) {
                         f.upper = -.Machine$double.xmax)$root)
   }
 
-  return(eta)
+  eta
 }
 
 # rstanarm::stan_glm.fit internal fns ------------------------------------------
@@ -582,7 +582,7 @@ validate_family <- function(f) {
   if (!is(f, "family"))
     stop("'family' must be a family.", call. = FALSE)
 
-  return(f)
+  f
 }
 
 # Center a matrix x and return extra stuff
@@ -612,7 +612,7 @@ center_x <- function(x, sparse) {
     xbar <- xbar[!sel]
   }
 
-  return(nlist(xtemp, xbar, has_intercept))
+  nlist(xtemp, xbar, has_intercept)
 }
 
 
@@ -630,7 +630,7 @@ nlist <- function(...) {
     names(out)[!has_name] <- nms[!has_name]
   }
 
-  return(out)
+  out
 }
 
 is.gaussian <- function(x) x == "gaussian"
@@ -652,13 +652,13 @@ set_prior_scale <- function(scale, default, link) {
   if (isTRUE(link == "probit"))
     scale <- scale * dnorm(0) / dlogis(0)
 
-  return(scale)
+  scale
 }
 
 drop_redundant_dims <- function(data) {
   drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
   data[, drop_dim] <- lapply(data[, drop_dim, drop = FALSE], drop)
-  return(data)
+  data
 }
 
 validate_data <- function(data, if_missing = NULL) {
@@ -690,7 +690,7 @@ check_constant_vars <- function(mf) {
          paste(names(is_constant)[is_constant], collapse = ", "),
          call. = FALSE)
   }
-  return(mf)
+  mf
 }
 
 # Deal with priors
@@ -834,7 +834,7 @@ validate_glm_outcome_support <- function(y, family) {
     stop("All outcome values must be positive for inverse-Gaussian models.",
          call. = FALSE)
   }
-  return(y)
+  y
 }
 
 # Generate fake y variable to use if prior_PD and no y is specified
@@ -850,7 +850,7 @@ fake_y_for_prior_PD <- function(N, family) {
     # valid for gamma, inverse gaussian, beta
     fake_y <- runif(N)
   }
-  return(fake_y)
+  fake_y
 }
 
 # Create "prior.info" attribute needed for prior_summary()
@@ -967,7 +967,7 @@ summarize_glm_prior <-
       aux_name = aux_name
     ))
 
-    return(prior_list)
+    prior_list
   }
 
 # If y is a 1D array keep any names but convert to vector (used in stan_glm)
@@ -980,7 +980,7 @@ array1D_check <- function(y) {
     if (!is.null(nms))
       names(y) <- nms
   }
-  return(y)
+  y
 }
 
 # rename aux parameter based on family
@@ -1017,7 +1017,7 @@ array1D_check <- function(y) {
       idx[j] <- k
     }
   }
-  return(idx)
+  idx
 }
 
 # Maybe broadcast

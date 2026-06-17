@@ -77,21 +77,34 @@ plot_affect <- function(data,
 
     data <- data |> dplyr::filter(!is.na(adj))
 
-    p <- unique(data$parameter)
-    labs <- c(
-      expression(w[0]), expression(w[1]), expression(w[1]^b),
-      expression(w[1]^o), expression(w[2]), expression(w[3]), "\u03B3"
+    # Keep a stable parameter order while allowing optional split terms.
+    param_levels <- c(
+      "w0", "w1", "w1_b", "w1_o", "w2", "w3", "w3_neg", "w3_pos", "gamma"
     )
+    present_levels <- intersect(param_levels, unique(data$parameter))
+    extra_levels <- setdiff(unique(data$parameter), param_levels)
+    ordered_levels <- c(present_levels, sort(extra_levels))
 
-    if (any(grepl("w1_o", p)) && !any(grepl("w1_b", p)))
-      labs <- labs[c(1, 2, 5, 6, 7)]
-    else if (!any(grepl("w1_o", p))) labs <- labs[c(1, 5, 6, 7)]
-    else labs <- labs[c(1, 3, 4, 5, 6, 7)] # for "full" model
+    axis_labels <- as.expression(
+      lapply(
+        ordered_levels,
+        function(prm) {
+          rlang::parse_expr(
+            axis_title(
+              param = prm,
+              p = 1,
+              test = FALSE,
+              alpha_par = FALSE,
+              alpha_par_nms = NULL
+            )
+          )
+        }
+      )
+    )
 
     weight_plot <- data |>
       dplyr::mutate(
-        # move gamma to end of plot
-        parameter = ifelse(parameter == "gamma", "zgamma", parameter),
+        parameter = factor(parameter, levels = ordered_levels),
         adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj)))
       ) |>
       ggplot2::ggplot(
@@ -128,7 +141,7 @@ plot_affect <- function(data,
       ) +
       ggplot2::scale_color_manual(name = NULL, values = pal) +
       ggplot2::scale_fill_manual(name = NULL, values = pal) +
-      ggplot2::scale_x_discrete(name = "Parameter", labels = labs) +
+      ggplot2::scale_x_discrete(name = "Parameter", labels = axis_labels) +
       ggplot2::scale_y_continuous(
         name = "Posterior mean",
         trans = scales::pseudo_log_trans(sigma = 0.1),
@@ -136,7 +149,7 @@ plot_affect <- function(data,
       ) +
       cowplot::theme_half_open(font_family = font, font_size = font_size) +
       ggplot2::theme(legend.position = legend_pos)
-    return(weight_plot)
+    weight_plot
   } else if (plt_type == "grouped") {
     if (is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     ppc_list <- lapply(
@@ -180,7 +193,7 @@ plot_affect <- function(data,
         font = font
       ) +
       ggplot2::theme(legend.position = c(0.85, 0.85))
-    return(grouped_plot)
+    grouped_plot
   } else if (plt_type == "individual") {
     if (is.null(pal)) {
       pal <- c("#ffc9b5", "#648767", "#b1ddf1", "#95a7ce", "#987284", "#3d5a80")
@@ -250,6 +263,6 @@ plot_affect <- function(data,
         )  +
         ggplot2::theme(legend.position = legend_pos)
     }
-    return(indiv_ppc_plots)
+    indiv_ppc_plots
   }
 }

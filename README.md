@@ -8,21 +8,26 @@
 
 ## an R package to clean, analyse, and present data from a large online learning study
 
-**Full methods and results from this study can be found in the papers** <small>(† = equal contribution)</small>:
+### Full methods and results from this study can be found in the papers **<small>(† = equal contribution)</small>:**
 
 > Dercon, Q.†, Mehrhof, S. Z.†, Sandhu, T. R., Hitchcock, C., Lawson, R. P., Pizzagalli, D. A., Dalgleish, T., & Nord, C. L. (2023). A core component of psychological therapy causes adaptive changes in computational learning mechanisms. *Psychological Medicine*, 1–11. https://doi.org/10.1017/S0033291723001587
 
 and
 
-> Dercon, Q., Huys, Q. J. M., Rutledge, R. B., Nord, C. L. (2025). Common psychiatric treatments alter affective dynamics. Preprint on *PsyArXiv*. https://doi.org/10.31234/osf.io/q8r2b_v1
+> Dercon, Q., Huys, Q. J. M., Rutledge, R. B., Nord, C. L. (2025). Common psychiatric treatments alter affective dynamics. *eLife* **14**:RP107269. https://doi.org/10.7554/eLife.107269.1
 
-All analyses in the papers can be visually inspected (and, in theory, re-run) via the following Jupyter notebooks:
+All analyses in the papers can be visually inspected (and, in theory, re-run) via the following Jupyter notebooks.
+
+#### Paper 1 (*Psychological Medicine*):
 
 1. Data cleaning, transdiagnostic psychiatric symptom factor derivation, and plotting of behavioural data: [```data_cleaning_factor_derivation.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/data_cleaning_factor_derivation.ipynb).
 2. Fitting of all computational models, plus model checks, plots of posterior predictions, and parameter recovery: [```model_fitting_mcmc.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/model_fitting_mcmc.ipynb). (An [additional notebook](https://github.com/qdercon/pstpipeline/blob/main/notebooks/model_fitting_vb.ipynb) with models fitted via approximate inference is also provided, which can be far more easily re-run.)
 3. Outcome analyses including associations between model parameters and transdiagnostic symptom factors and the distancing intervention: [```main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/main_results.ipynb).
-4. Modelling and rationale for analyses of trial-by-trial affect ratings, including parameter recovery for the joint RL-affect models: [```affect_model_vb.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_model_vb.ipynb).
-5. Outcome analyses assessing the effects of treatments (cognitive distancing and self-reported antidepressant use) on components of affective dynamics: [```affect_main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_main_results.ipynb).
+
+#### Paper 2 (*eLife*):
+
+1. Modelling and rationale for analyses of trial-by-trial affect ratings, including parameter recovery for the joint RL-affect models: [```affect_model_vb.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_model_vb.ipynb).
+2. Outcome analyses assessing the effects of treatments (cognitive distancing and self-reported antidepressant use) on components of affective dynamics: [```affect_main_results.ipynb```](https://github.com/qdercon/pstpipeline/blob/main/notebooks/affect_main_results.ipynb).
 
 ### Why an R package?
 
@@ -32,7 +37,7 @@ Instead, its main aims are as follows:
 
 1.  To make it easier for our specific analyses to be replicated by others without lengthy scripts and function definitions &mdash; the package loads all necessary dependencies and custom functions (see below) in the background.
 2.  To demonstrate a complete pre- and post-processing pipeline for a common learning task, which (hopefully) shows that such workflows are a) not overwhelmingly difficult to adopt, and b) can elicit valuable mechanistic insights.
-3.  To do the above in a high-level manner, while still giving the user control over key aspects - most functionality of the package can be achieved with single-line function calls.
+3.  To do the above in a high-level manner, enabling complex analyses to be relatively readable - most functionality of the package can be achieved with single-line function calls.
 
 ## Using the package
 
@@ -53,7 +58,7 @@ A Docker container containing all package dependencies is also provided - see th
 
 ### I just want the data!
 
-The raw data are rather large, so are shared here in the form of an ```R``` list saved as an ```.RDS``` file. See the [data-raw](https://github.com/qdercon/pstpipeline/tree/main/data-raw) folder and its accompanying [README](https://github.com/qdercon/pstpipeline/blob/main/data-raw#readme) for more details on how save the raw data and/or extract it as ```.csv``` files or ```pandas.DataFrame()``` objects.
+The raw data are rather large, so are shared here in the form of an ```R``` list saved as an ```.rds``` file. See the [data-raw](https://github.com/qdercon/pstpipeline/tree/main/data-raw) folder and its accompanying [README](https://github.com/qdercon/pstpipeline/blob/main/data-raw#readme) for more details on how save the raw data and/or extract it as ```.csv``` files or ```pandas.DataFrame()``` objects.
 
 ## Key functions
 

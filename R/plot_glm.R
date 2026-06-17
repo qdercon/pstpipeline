@@ -15,6 +15,9 @@
 #' @param test Boolean indicating whether summaries are from the test phase.
 #' @param grp Optional group to plot separately on each plot, which should be
 #' the interaction variable specified in [parameter_glm()].
+#' @param add_interaction If \code{TRUE}, and \code{grp != id.col}, include the
+#' interaction term (\code{paste0(plot_var, ":", grp)}) as an additional middle
+#' group labelled \code{"(interaction term)"}.
 #' @param fclr To what variable should the colour scheme be applied? Defaults to
 #' \code{grp} = \code{id.col}.
 #' @param axis_fixed Logical indicating whether the y-axis should be fixed
@@ -22,6 +25,9 @@
 #' @param grp_labs Optional labels for the groups defined by \code{grp}. It is
 #' recommended to first run the function with this kept as \code{NULL} to make
 #' sure you label the correct densities.
+#' @param grp_reorder Optional vector of labels to reorder the groups defined by
+#' \code{grp}. It is recommended to first run the function with this kept as
+#' \code{NULL} to make sure you reorder the correct densities.
 #' @param plot_together If \code{TRUE}, returns a panel with all plots plotted
 #' as defined by subsequent arguments. Otherwise a named list of plots is
 #' returned.
@@ -37,7 +43,8 @@
 #' @param cred Vector, length 2, which defines the % HDI covered by the boxplot
 #' boxes and lines respectively.
 #' @param coord_flip Plot horizontal (\code{TRUE}) or vertical (\code{FALSE})
-#' densities.
+#' densities. If \code{TRUE} and \code{grp != id.col}, group order is reversed
+#' so the first level/label appears at the top.
 #' @param box_alpha,box_width,box_nudge Control the transparency, size, and
 #' position of the summary boxplot.
 #' @param pal,font_size,font Same as [plot_import()].
@@ -84,9 +91,11 @@ plot_glm <- function(par_df,
                      id.col = "parameter",
                      test = FALSE,
                      grp = id.col,
+                     add_interaction = FALSE,
                      fclr = id.col,
                      axis_fixed = FALSE,
                      grp_labs = NULL,
+                     grp_reorder = NULL,
                      plot_together = TRUE,
                      ovrll_title = NULL,
                      title_font_size = 16,
@@ -126,12 +135,59 @@ plot_glm <- function(par_df,
 
   plots <- list()
   pars <- unique(par_df[[id.col]])
-  if (!is.factor(par_df[[grp]])) par_df[[grp]] <- factor(par_df[[grp]])
   if (grp != id.col) {
     if (!is.null(par_df[[paste0(grp, "_recode")]])) {
+      grp_in <- grp
       grp <- paste0(grp, "_recode")
     }
-    if (is.null(grp_labs)) grp_labs <- levels(factor(par_df[[grp]]))
+    if (!is.factor(par_df[[grp]]) || !is.null(grp_reorder)) {
+      if (is.null(grp_reorder)) grp_order <- unique(par_df[[grp]])
+      else if (
+        !setequal(as.character(grp_reorder), as.character(unique(par_df[[grp]])))
+      ) stop("grp_reorder does not contain the same group labels as grp.")
+      else grp_order <- grp_reorder
+      par_df[[grp]] <- factor(par_df[[grp]], levels = grp_order)
+    }
+    grp_levels <- levels(par_df[[grp]])
+    grps <- grp_levels
+
+    if (is.null(grp_labs) || length(grp_labs) != length(grp_levels)) {
+      grp_labs <- grp_levels
+    }
+
+    if (coord_flip) {
+      par_df[[grp]] <- factor(par_df[[grp]], levels = rev(levels(par_df[[grp]])))
+      grp_levels <- rev(grp_levels)
+      grp_labs <- rev(grp_labs)
+    }
+
+    if (add_interaction) {
+      if (length(grp_levels) != 2) {
+        stop("add_interaction is only designed for two-level groups.")
+      }
+      int_col <- paste0(plot_var, ":", grp_in)
+      if (!int_col %in% colnames(par_df)) {
+        stop(paste0(
+          "add_interaction is TRUE, but ", int_col,
+          " was not found in parameter data frame."
+        ))
+      }
+      int_df <- par_df
+      if (grp != grp_in) {
+        int_df <- int_df[as.character(int_df[[grp]]) == grps[1], ]
+      }
+      int_df[["value"]] <- int_df[[int_col]]
+      int_df[[grp]] <- "(interaction term)"
+      grp_labs <- c(grp_labs[1], "(interaction term)", grp_labs[2])
+
+      # plot formatting
+      if (fclr == grp) int_df[[fclr]] <- grp_levels[1]
+      grp_levels <- c(grp_levels[1], "(interaction term)", grp_levels[2])
+      par_df <- dplyr::bind_rows(par_df, int_df)
+      par_df[[grp]] <- factor(par_df[[grp]], levels = grp_levels)
+      box_width <- c(box_width, box_width * 0.65, box_width)
+      box_nudge <- c(box_nudge, max(0.1, box_nudge * 0.65), box_nudge)
+    }
   }
   grp <- rlang::sym(grp)
   nc <- length(unique(par_df[[fclr]]))
@@ -166,10 +222,12 @@ plot_glm <- function(par_df,
         title <- "Estimated mean difference in"
         plot <- par_df_tr |>
           ggplot2::ggplot(
-            ggplot2::aes(x = !!grp, y = value, fill = !!fclr, colour = !!fclr)
+            ggplot2::aes(
+              x = !!grp, y = value, fill = !!fclr, colour = !!fclr
+            )
           )
       }
-      if (p == 1 | !coord_flip) y_labels <- grp_labs
+      if (p == 1 || !coord_flip || !plot_together) y_labels <- grp_labs
       else y_labels <- NULL
 
       axs_ttl <- bquote(
@@ -179,6 +237,24 @@ plot_glm <- function(par_df,
           )
         )
       )
+
+      if (add_interaction && grp_in != id.col) {
+        int_pos <- which(grp_levels == "(interaction term)")
+
+        plot <- plot +
+          ggplot2::annotate(
+            "rect",
+            xmin = int_pos - 0.5, xmax = int_pos + 0.5,
+            ymin = -Inf, ymax = Inf,
+            fill = "grey90", alpha = 0.5
+          )
+
+        y_labels <- ifelse(
+          seq_along(y_labels) == int_pos,
+          paste0("<i style='color:grey50'>", y_labels, "</i>"),
+          y_labels
+        )
+      }
 
       plot <- plot +
         geom_flat_violin() +
@@ -199,13 +275,17 @@ plot_glm <- function(par_df,
         ) +
         ggplot2::geom_hline(ggplot2::aes(yintercept = 0), alpha = 0.5,
                             linetype = "dashed") +
-        ggplot2::guides(colour = "none", fill = "none") +
+        ggplot2::guides(colour = "none", fill = "none", alpha = "none") +
         ggplot2::scale_colour_manual(values = pal[[p]]) +
         ggplot2::scale_fill_manual(values = pal[[p]]) +
         ggplot2::scale_x_discrete(name = NULL, labels = y_labels) +
         cowplot::theme_half_open(
           font_size = font_size,
           font_family = font
+        ) +
+        ggplot2::theme(
+          axis.text.x = ggtext::element_markdown(),
+          axis.text.y = ggtext::element_markdown()
         )
 
       if (axis_fixed) {
@@ -222,7 +302,7 @@ plot_glm <- function(par_df,
   }
 
   if (!plot_together) {
-    return(plots)
+    plots
   } else {
     plot_panel <- cowplot::plot_grid(
       plotlist = plots, rel_widths = plt_rel_widths, nrow = plt_rows
@@ -243,6 +323,6 @@ plot_glm <- function(par_df,
         title, plot_panel, nrow = 2, rel_heights = title_rel_ht
       )
     }
-    return(plot_panel)
+    plot_panel
   }
 }
