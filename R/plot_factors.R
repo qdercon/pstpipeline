@@ -109,7 +109,7 @@ plot_factors <- function(df,
 
     r2_plot <- df |>
       ggplot2::ggplot(ggplot2::aes(x = n_items, y = R2, colour = Factor)) +
-      ggplot2::geom_line(size = 0.8) +
+      ggplot2::geom_line(linewidth = 0.8) +
       ggplot2::scale_colour_manual(values = unlist(pal)) +
       ggplot2::scale_x_continuous(
         name = "No. questions", breaks = n_item_vec,
