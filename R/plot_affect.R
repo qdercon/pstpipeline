@@ -71,9 +71,16 @@ plot_affect <- function(data,
     posterior_mean <- NULL
 
   if (plt_type == "weights") {
+    if (is.null(pal)) pal <- c("#ffc9b5", "#95a7ce", "#987284")
     cred <- sort(cred)
     cred_l1 <- (1 - cred[2]) / 2
     cred_l2 <- (1 - cred[1]) / 2
+
+    # capitalised to match the "adj" values below, keeps factor levels (and
+    # so colour/fill mapping to pal) aligned with adj_order
+    adj_order_cap <- paste0(
+      toupper(substr(adj_order, 1, 1)), substr(adj_order, 2, nchar(adj_order))
+    )
 
     data <- data |> dplyr::filter(!is.na(adj))
 
@@ -105,12 +112,14 @@ plot_affect <- function(data,
     weight_plot <- data |>
       dplyr::mutate(
         parameter = factor(parameter, levels = ordered_levels),
-        adj = paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj)))
+        adj = factor(
+          paste0(toupper(substr(adj, 1, 1)), substr(adj, 2, nchar(adj))),
+          levels = adj_order_cap
+        )
       ) |>
       ggplot2::ggplot(
         ggplot2::aes(
-          x = parameter, y = posterior_mean, color = factor(adj),
-          fill = factor(adj)
+          x = parameter, y = posterior_mean, color = adj, fill = adj
         )
       ) +
       geom_flat_violin(
@@ -165,6 +174,7 @@ plot_affect <- function(data,
     )
     grouped_plot <-
       data.table::rbindlist(ppc_list) |>
+      dplyr::mutate(adj = factor(adj, levels = adj_order)) |>
       dplyr::group_by(adj, type, trial_no_q) |>
       dplyr::mutate(mean_val = mean(value), se_val = std(value)) |>
       dplyr::distinct(trial_no_q, adj, type, mean_val, se_val) |>
@@ -178,7 +188,7 @@ plot_affect <- function(data,
         limits = c(0, 120), breaks = seq(0, 120, 20)
       ) +
       # ggplot2::scale_y_continuous(limits = c(25, 72)) +
-      ggplot2::geom_line(size = 1.1, alpha = 0.5) +
+      ggplot2::geom_line(linewidth = 1.1, alpha = 0.5) +
       ggplot2::geom_ribbon(
         ggplot2::aes(ymin = mean_val - se_val, ymax = mean_val + se_val),
         alpha = 0.3, colour = NA
@@ -257,7 +267,9 @@ plot_affect <- function(data,
         ggplot2::annotation_custom(
           grid::textGrob(
             bquote("Pseudo-" ~ R^2 ~ "=" ~ .(round(r2, 2))),
-            gp = grid::gpar(fontsize = font_size + 2, col = "steelblue4"),
+            gp = grid::gpar(
+              fontsize = font_size * 0.8, col = "steelblue4", fontfamily = font
+            ),
             x = r2_coords[1], y = r2_coords[2]
           )
         )  +

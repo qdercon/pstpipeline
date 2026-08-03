@@ -16,6 +16,11 @@ fit_learning_model(
   vb_elbo_retry = vb,
   vb_elbo_threshold = -9999999,
   vb_max_retries = 100,
+  vb_sd_check = vb_elbo_retry,
+  vb_sd_threshold = 0.05,
+  vb_sd_ignore_pars = character(0),
+  vb_sd_max_retries = 10,
+  init = NULL,
   ppc = vb,
   par_recovery = FALSE,
   task_excl = TRUE,
@@ -25,7 +30,11 @@ fit_learning_model(
   out_dir = "outputs/cmdstan",
   outputs = c("raw_df", "summary", "draws_list"),
   save_outputs = TRUE,
+  return_outputs = !save_outputs,
   cores = getOption("mc.cores", 4),
+  threads_per_chain = cores,
+  grainsize = 1,
+  prior_only = FALSE,
   ...
 )
 }
@@ -47,14 +56,54 @@ numerical order in the model output.}
 \item{vb}{Use variational inference to get the approximate posterior? Default
 is \code{TRUE} for computational efficiency.}
 
-\item{vb_elbo_retry}{If \code{vb = TRUE}, should the algorithm retry with
-different random seeds if the initial ELBO is too low? Defaults to \code{vb}.}
+\item{vb_elbo_retry}{Should the algorithm retry with different random seeds
+if the initial ELBO is too low? Applies both to the main VB fit (if
+\code{vb = TRUE}) and to the VB fit used to generate MCMC initial values
+(if \code{vb = FALSE} and \code{init} is not otherwise supplied). Defaults
+to \code{vb}.}
 
 \item{vb_elbo_threshold}{The minimum acceptable initial ELBO when
 \code{vb_elbo_retry = TRUE}. Defaults to -9999999.}
 
 \item{vb_max_retries}{Maximum number of seeds to try if
 \code{vb_elbo_retry = TRUE}. Defaults to 15.}
+
+\item{vb_sd_check}{If \code{vb = TRUE}, should the algorithm additionally
+retry with different seeds when the fitted posterior shows implausibly
+little between-participant variation in one or more parameters (see
+\code{\link[=check_par_sd]{check_par_sd()}})? Each attempt requires a full VB refit, so this is
+considerably more expensive than \code{vb_elbo_retry}. Defaults to
+\code{vb_elbo_retry}.}
+
+\item{vb_sd_threshold}{Passed to \code{\link[=check_par_sd]{check_par_sd()}} on each attempt. Defaults
+to \code{0.01}.}
+
+\item{vb_sd_ignore_pars}{Passed to \code{\link[=check_par_sd]{check_par_sd()}} on each attempt, for
+parameters known to be poorly identified (e.g., \code{"w1_o"}). Defaults to
+none.}
+
+\item{vb_sd_max_retries}{Maximum number of full VB refits to attempt if
+\code{vb_sd_check = TRUE}, distinct from \code{vb_max_retries} (which
+governs the cheap initial-ELBO probe only). Defaults to 10.}
+
+\item{init}{Initial values for MCMC sampling (ignored if \code{vb = TRUE}).
+One of:
+\itemize{
+\item \code{NULL} (default): build deterministic default initial values
+from each parameter's plausible range (see the internal \code{pars}
+list) - group-level means are set from the range's mid-point (inverted
+through that parameter's link function), group-level SDs to a small
+positive value, and every individual-level parameter to the group mean.
+\item A single number: use this as the seed for a variational fit whose
+posterior means become the initial values (see \code{"vb"} below), for a
+reproducible alternative to \code{vb_elbo_retry}'s seed search.
+\item \code{"vb"}: generate initial values from a variational fit,
+subject to \code{vb_elbo_retry}/\code{vb_elbo_threshold}/
+\code{vb_max_retries} as for the main VB fit (\code{vb_sd_check} is not
+applied here).
+\item Anything else (e.g. a list or function in one of the formats
+accepted by \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}}): passed through unchanged.
+}}
 
 \item{ppc}{Generate quantities including mean parameters, log likelihood, and
 posterior predictions? Intended for use with variational algorithm; for MCMC
@@ -87,15 +136,44 @@ In addition to the defaults, other options are "model_env" (note this is
 saved automatically, regardless of \code{save_outputs}), and "loo_obj". The
 latter includes the theoretical expected log-predictive density (ELPD) for a
 new dataset, plus the leave-one-out information criterion (LOOIC), a fully
-Bayesian metric for model comparison; this requires the \pkg{loo} package.}
+Bayesian metric for model comparison; this requires the \pkg{loo} package,
+and is computed via \code{\link[=calculate_elpd_loo]{calculate_elpd_loo()}}.}
 
 \item{save_outputs}{Save the specified outputs to the disk? Will save to
 \code{out_dir}.}
+
+\item{return_outputs}{Include the requested \code{outputs} directly in the
+returned list? Defaults to the opposite of \code{save_outputs}.
+Set to \code{FALSE} (only together with \code{save_outputs = TRUE}) to
+avoid holding large fitted objects (draws, raw data, etc.) in memory -
+e.g., across many sequential fits in the same notebook/session - in which
+case the returned list contains the file path each output was saved to
+instead, to be reloaded later with \code{readRDS()} as needed.}
 
 \item{cores}{Maximum number of chains to run in parallel. Defaults to
 \code{options(mc.cores = cores)}
 or 4 if this is not set (this option will then apply for the rest of the
 session).}
+
+\item{threads_per_chain}{Number of threads to use for within-chain
+parallelisation via \code{reduce_sum}. Defaults to 1 (no within-chain
+threading). Only the models whose Stan code contains a \code{reduce_sum}
+call (currently all affect models in \code{rl-affect/}) benefit from this;
+for other models it is silently ignored. When \code{> 1}, the model is
+compiled with threading support (\code{cpp_options = list(stan_threads =
+TRUE)}) and the threads are passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} /
+\code{\link[cmdstanr:model-method-variational]{cmdstanr::variational()}}. Note the total number of threads used is
+\code{cores * threads_per_chain} for MCMC, so keep this product at or below
+the number of physical cores.}
+
+\item{grainsize}{\code{reduce_sum} grainsize, i.e. the recommended number of
+participants to sum per partial job. Defaults to 1, which lets the scheduler
+choose automatically. Only relevant when \code{threads_per_chain > 1}.}
+
+\item{prior_only}{Sample from the prior only (i.e. skip the likelihood), for
+prior predictive checks? Only supported by models with a \code{prior_only}
+data flag (currently all affect models in \code{rl-affect/}). Defaults to
+\code{FALSE}.}
 
 \item{...}{Other arguments passed to \code{\link[cmdstanr:model-method-sample]{cmdstanr::sample()}} and/or
 \link{check_learning_models}. See the

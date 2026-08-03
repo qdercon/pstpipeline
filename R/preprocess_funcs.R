@@ -114,17 +114,22 @@ preprocess_func_affect <- function(raw_data, general_info) {
   t_max   <- general_info$t_max
   i_max   <- general_info$i_max
 
-  # Initialize (model-specific) data arrays
+  # Initialize (model-specific) data arrays. Padding (for participants with
+  # fewer than t_max trials) uses in-range sentinels so that the values still
+  # satisfy the newer models' data constraints (e.g. option1 <lower=1,upper=6>,
+  # choice <lower=0,upper=1>, question <lower=1,upper=3>). Padded entries lie
+  # beyond Tsubj[i] and are never read by any model (all slice `[i, 1:ti]`).
   affect    <- array(0, c(n_subj, t_max))
-  block_no  <- array(0, c(n_subj, t_max))
-  ovl_trial <- array(0, c(n_subj, t_max))
+  block_no  <- array(1, c(n_subj, t_max))
+  ovl_trial <- array(1, c(n_subj, t_max))
   ovl_time  <- array(0, c(n_subj, t_max))
+  blk_time  <- array(0, c(n_subj, t_max))
   int_trls  <- array(0, c(n_subj, t_max))
-  question  <- array(0, c(n_subj, t_max))
+  question  <- array(1, c(n_subj, t_max))
 
-  option1 <- array(-1, c(n_subj, t_max))
-  option2 <- array(-1, c(n_subj, t_max))
-  choice  <- array(-1, c(n_subj, t_max))
+  option1 <- array(1, c(n_subj, t_max))
+  option2 <- array(1, c(n_subj, t_max))
+  choice  <- array(0, c(n_subj, t_max))
   reward  <- array(-1, c(n_subj, t_max))
 
   # Write from raw_data to the data arrays
@@ -140,6 +145,7 @@ preprocess_func_affect <- function(raw_data, general_info) {
     block_no[i, 1:t]  <- DT_subj$trial_block
     ovl_trial[i, 1:t] <- DT_subj$trial_no_group # ovl question no., by question
     ovl_time[i, 1:t]  <- DT_subj$trial_time / 60 # in hours
+    blk_time[i, 1:t]  <- DT_subj$block_time / 60 # in hours, since block start
     int_trls[i, 1:t]  <- DT_subj$trials_elapsed
     affect[i, 1:t]    <- DT_subj$question_response / 100
   }
@@ -159,6 +165,7 @@ preprocess_func_affect <- function(raw_data, general_info) {
     ovl_trial   = ovl_trial,
     int_trials  = int_trls,
     ovl_time    = ovl_time,
+    blk_time    = blk_time,
     question    = question
   )
 

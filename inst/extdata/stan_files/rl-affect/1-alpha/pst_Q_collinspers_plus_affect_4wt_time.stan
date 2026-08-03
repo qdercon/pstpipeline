@@ -9,37 +9,144 @@
 //// https://psyarxiv.com/bwv58 (passage-of-time-dysphoria, inspired time pars)
 //------------------------------------------------------------------------------
 
+functions {
+  matrix pst_regressors(int ti,
+                        array[] int option1_i,
+                        array[] int option2_i,
+                        array[] int choice_i,
+                        row_vector reward_i,
+                        array[] int question_i,
+                        real alpha_i,
+                        real alpha_neg_i,
+                        row_vector gamma_i) {
+    matrix[ti, 3] out;
+    vector[6] ev        = rep_vector(0, 6);      // expected values per symbol
+    row_vector[3] ev_sum = rep_row_vector(0, 3); // summed EVs by question
+    row_vector[3] pe_sum = rep_row_vector(0, 3); // summed PEs by question
+
+    for (t in 1:ti) {
+      int co = (choice_i[t] > 0) ? option1_i[t] : option2_i[t];
+      int qn = question_i[t];
+      real pe;
+      real a;
+
+      // Luce choice rule (i.e., EVs of non-seen options assumed not to matter)
+      out[t, 1] = ev[option1_i[t]] - ev[option2_i[t]];
+
+      pe = reward_i[t] - ev[co];
+
+      ev_sum += ev[co];
+      pe_sum += pe;
+
+      a = (pe >= 0) ? alpha_i : alpha_neg_i;
+      ev[co] += a * pe;
+
+      // store summed EVs and PEs for this trial
+      out[t, 2] = ev_sum[qn];
+      out[t, 3] = pe_sum[qn];
+
+      // decay EVs and PEs (i.e., gamma weighted sum over prev. trials)
+      ev_sum = ev_sum .* gamma_i;
+      pe_sum = pe_sum .* gamma_i;
+    }
+    return out;
+  }
+
+  /* Conditional mean of the Beta distribution for one participant. */
+  vector affect_mu(matrix reg,
+                   array[] int question_i,
+                   row_vector w0_i,
+                   row_vector w1_o_i,
+                   row_vector w2_i,
+                   row_vector w3_i,
+                   vector ovl_time_i) {
+    return inv_logit(to_vector(w0_i[question_i])
+                     + to_vector(w1_o_i[question_i]) .* ovl_time_i
+                     + to_vector(w2_i[question_i])   .* reg[ : , 2]
+                     + to_vector(w3_i[question_i])   .* reg[ : , 3]);
+  }
+
+  /* Beta shape parameters from the conditional mean mu and precision phi
+     (Smithson & Verkuilen, 2006). Offset by machine precision so both shapes
+     stay strictly positive as mu -> 0/1 or phi -> 0; beta_proportion_lpdf
+     cannot guarantee this internally, which is what causes the frequent
+     rejected proposals under ADVI/HMC. */
+  matrix affect_shapes(vector mu_i, vector phi_i) {
+    int ti = num_elements(mu_i);
+    matrix[ti, 2] out;
+    out[ : , 1] = mu_i .* phi_i + machine_precision();
+    out[ : , 2] = (1 - mu_i) .* phi_i + machine_precision();
+    return out;
+  }
+
+  /* Sliced over participants for reduce_sum. */
+  real partial_sum_lpmf(array[] int seq_i, int start, int end,
+                        array[] int Tsubj,
+                        array[,] int option1,
+                        array[,] int option2,
+                        array[,] int choice,
+                        matrix reward,
+                        array[,] int question,
+                        array[] row_vector affect_tr,
+                        array[] vector ovl_time_tr,
+                        vector alpha,
+                        vector alpha_neg,
+                        vector beta,
+                        matrix w0,
+                        matrix w1_o,
+                        matrix w2,
+                        matrix w3,
+                        matrix gamma,
+                        matrix phi) {
+    real lp = 0;
+    for (n in 1:size(seq_i)) {
+      int i  = seq_i[n];
+      int ti = Tsubj[i];
+      array[ti] int qn = question[i, 1:ti];
+
+      matrix[ti, 3] reg = pst_regressors(ti, option1[i], option2[i], choice[i],
+                                         reward[i], question[i],
+                                         alpha[i], alpha_neg[i], gamma[i]);
+
+      vector[ti] mu = affect_mu(reg, qn, w0[i], w1_o[i], w2[i], w3[i],
+                                ovl_time_tr[i][1:ti]);
+      matrix[ti, 2] shapes = affect_shapes(mu, to_vector(phi[i, qn]));
+
+      lp += bernoulli_logit_lupmf(choice[i, 1:ti] | beta[i] * reg[ : , 1]);
+      lp += beta_lupdf(affect_tr[i][1:ti] | shapes[ : , 1], shapes[ : , 2]);
+    }
+    return lp;
+  }
+}
+
 data {
   int<lower=0,upper=1> run_gq;      // 1 to run generated quantities, 0 to skip
+  int<lower=0,upper=1> prior_only;  // 1 to sample the prior (for prior PCs)
+  int<lower=1> grainsize;           // reduce_sum grainsize; 1 = let Stan choose
   int<lower=1> N, T;                // # participants, max # of trials
-  array[N] int Tsubj;               // # of trials for acquisition phase
+  array[N] int<lower=1,upper=T> Tsubj;  // # of trials for acquisition phase
 
-  array[N, T] int option1;          // LHS option (1-6)
-  array[N, T] int option2;          // RHS option (1-6)
-  array[N, T] int choice;           // choice (1 = chose option 1, 3, or 5)
-  matrix[N, T] reward;              // coded as 1 (reward) or -1 (no reward)
+  array[N, T] int<lower=1,upper=6> option1;  // LHS option (1-6)
+  array[N, T] int<lower=1,upper=6> option2;  // RHS option (1-6)
+  array[N, T] int<lower=0,upper=1> choice;   // choice (1 = chose option 1)
+  matrix[N, T] reward;                       // coded as 1 (reward) or -1 (no)
 
-  array[N] row_vector[T] affect;    // includes 0 and 1, needs to be transformed
-  array[N, T] int question;         // from 1 to 3 (happy, confident, engaged)
-  array[N] row_vector[T] ovl_time;  // in hours to keep weights relatively small
+  array[N] row_vector<lower=0,upper=1>[T] affect;  // includes 0 and 1
+  array[N, T] int<lower=1,upper=3> question;       // 1 happy, 2 conf, 3 engag
+  array[N] row_vector<lower=0>[T] ovl_time;        // in hours
 }
 
 transformed data {
-  vector[6] inits;
-  vector[T] zeros;
-  row_vector[3] init_sum;
-  row_vector[T] neg_ones;
+  array[N] int seq_i;
+  for (i in 1:N) seq_i[i] = i;
 
-  inits = rep_vector(0, 6);
-  zeros = rep_vector(0, T);
-  init_sum = rep_row_vector(0, 3);
-  neg_ones = rep_row_vector(-1, T);
-
+  // transform affect to be strictly between 0 and 1 (Smithson & Verkuilen, 2006)
   array[N] row_vector[T] affect_tr;
   for (i in 1:N) {
     affect_tr[i] = ((affect[i] * (N - 1)) + 0.5) / N;
   }
 
+  // transpose time for efficient indexing
   array[N] vector[T] ovl_time_tr;
   for (i in 1:N) {
     ovl_time_tr[i] = to_vector(ovl_time[i]);
@@ -106,14 +213,14 @@ model {
 
   for (q in 1:3) {
     mu_wt[q]    ~ normal(0, 1);
-    sigma_wt[q] ~ exponential(0.1);
+    sigma_wt[q] ~ exponential(1);
   }
 
   mu_gm    ~ normal(0, 1);
-  sigma_gm ~ exponential(0.1);
+  sigma_gm ~ exponential(1);
 
   aff_mu_phi    ~ normal(0, 1);
-  aff_sigma_phi ~ exponential(0.1);
+  aff_sigma_phi ~ exponential(1);
 
   alpha_pr ~ normal(0, 1);
   pers_pr  ~ normal(0, 1);
@@ -128,212 +235,66 @@ model {
     phi_pr[:, q]  ~ normal(0, 1);
   }
 
-  for (i in 1:N) {
-    int ti;
-    ti = Tsubj[i];
-
-    int co;
-    int qn;
-    real pe;
-    real alpha_t;
-
-    vector[6] ev;
-    vector[ti] delta;
-
-    vector[ti] w0_vec;
-    vector[ti] w1_o_vec;
-    vector[ti] w2_vec;
-    vector[ti] w3_vec;
-    vector[ti] phi_vec;
-    vector[ti] z_vec;
-
-    row_vector[3] ev_sum;
-    row_vector[3] pe_sum;
-
-    vector[ti] ev_dcy;
-    vector[ti] pe_dcy;
-
-    vector[ti] aff_mu_cond;
-    vector[ti] shape_a;
-    vector[ti] shape_b;
-
-    z_vec   = zeros[:ti];
-    ev      = inits;
-    ev_sum  = init_sum;
-    pe_sum  = init_sum;
-    ev_dcy  = z_vec;
-    pe_dcy  = z_vec;
-
-    shape_a = rep_vector(machine_precision(), ti);
-    shape_b = rep_vector(machine_precision(), ti);
-
-    for (t in 1:ti) {
-      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-      qn = question[i, t];
-
-      delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
-
-      pe = reward[i, t] - ev[co];
-      pe_sum += pe;
-
-      alpha_t = (pe >= 0) ? alpha[i] : alpha_neg[i];
-      ev[co] += alpha_t * pe;
-      ev_sum += ev[co];
-
-      ev_dcy[t] = ev_sum[qn];
-      pe_dcy[t] = pe_sum[qn];
-
-      w0_vec[t]   = w0[i, qn];
-      w1_o_vec[t] = w1_o[i, qn];
-      w2_vec[t]   = w2[i, qn];
-      w3_vec[t]   = w3[i, qn];
-      phi_vec[t]  = phi[i, qn];
-
-      ev_sum = ev_sum .* gamma[i, :];
-      pe_sum = pe_sum .* gamma[i, :];
-    }
-
-    choice[i, :ti] ~ bernoulli_logit(beta[i] * delta);
-
-    aff_mu_cond = inv_logit(
-      w0_vec +
-      w1_o_vec .* ovl_time_tr[i][:ti] +
-      w2_vec .* ev_dcy +
-      w3_vec .* pe_dcy
-    );
-
-    shape_a += aff_mu_cond .* phi_vec;
-    shape_b += phi_vec .* (1 - aff_mu_cond);
-
-    affect_tr[i][:ti] ~ beta(shape_a, shape_b);
+  if (!prior_only) {
+    target += reduce_sum(partial_sum_lupmf, seq_i, grainsize,
+                         Tsubj, option1, option2, choice, reward, question,
+                         affect_tr, ovl_time_tr, alpha, alpha_neg, beta,
+                         w0, w1_o, w2, w3, gamma, phi);
   }
 }
 
 generated quantities {
-  real<lower=0,upper=1>  mu_alpha;
-  real<lower=0,upper=1>  mu_pers;
-  real<lower=0,upper=1>  mu_alpha_neg;
-  real<lower=0,upper=10> mu_beta;
+  real<lower=0,upper=1>  mu_alpha     = Phi_approx(mu_ql[1]);
+  real<lower=0,upper=1>  mu_pers      = Phi_approx(mu_ql[2]);
+  real<lower=0,upper=1>  mu_alpha_neg = mu_alpha * (1 - mu_pers);
+  real<lower=0,upper=10> mu_beta      = Phi_approx(mu_ql[3]) * 10;
 
-  vector[3] mu_w0;
-  vector[3] mu_w1_o;
-  vector[3] mu_w2;
-  vector[3] mu_w3;
-  vector[3] mu_gamma;
+  vector[3] mu_w0    = mu_wt[ : , 1];
+  vector[3] mu_w1_o  = mu_wt[ : , 2];
+  vector[3] mu_w2    = mu_wt[ : , 3];
+  vector[3] mu_w3    = mu_wt[ : , 4];
+  vector[3] mu_gamma = Phi_approx(mu_gm);
+  vector[3] mu_phi   = exp(aff_mu_phi);
 
-  vector[N] log_lik;
-  array[N] row_vector[T] y_pred;
-
-  y_pred = rep_array(neg_ones, N);
-
-  mu_alpha     = Phi_approx(mu_ql[1]);
-  mu_pers      = Phi_approx(mu_ql[2]);
-  mu_alpha_neg = mu_alpha * (1 - mu_pers);
-  mu_beta      = Phi_approx(mu_ql[3]) * 10;
-
-  mu_w0    = mu_wt[:, 1];
-  mu_w1_o  = mu_wt[:, 2];
-  mu_w2    = mu_wt[:, 3];
-  mu_w3    = mu_wt[:, 4];
-  mu_gamma = Phi_approx(mu_gm);
-
-  vector[3] w0_diff;
-  vector[3] w1_o_diff;
-  vector[3] w2_diff;
-  vector[3] w3_diff;
-  vector[3] gamma_diff;
-
-  array[3] int bsl = { 1, 1, 2 };
+  array[3] int bsl  = { 1, 1, 2 };
   array[3] int comp = { 2, 3, 3 };
 
-  w0_diff    = mu_w0[bsl] - mu_w0[comp];
-  w1_o_diff  = mu_w1_o[bsl] - mu_w1_o[comp];
-  w2_diff    = mu_w2[bsl] - mu_w2[comp];
-  w3_diff    = mu_w3[bsl] - mu_w3[comp];
-  gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
+  vector[3] w0_diff    = mu_w0[bsl]    - mu_w0[comp];
+  vector[3] w1_o_diff  = mu_w1_o[bsl]  - mu_w1_o[comp];
+  vector[3] w2_diff    = mu_w2[bsl]    - mu_w2[comp];
+  vector[3] w3_diff    = mu_w3[bsl]    - mu_w3[comp];
+  vector[3] gamma_diff = mu_gamma[bsl] - mu_gamma[comp];
+  vector[3] phi_diff   = mu_phi[bsl]   - mu_phi[comp];
 
-  for (i in 1:N) {
-    int ti;
-    ti = Tsubj[i];
+  // posterior predictions and log-likelihoods
+  vector[run_gq ? N : 0] log_lik;
+  array[run_gq ? N : 0] row_vector[T] y_pred;
 
-    int co;
-    int qn;
-    real pe;
-    real alpha_t;
+  if (run_gq) {
+    for (i in 1:N) {
+      real ll_choice_i = 0;
+      real ll_affect_i = 0;
+      int ti = Tsubj[i];
+      array[ti] int qn = question[i, 1:ti];
 
-    vector[6] ev;
-    vector[ti] delta;
+      matrix[ti, 3] reg = pst_regressors(ti, option1[i], option2[i], choice[i],
+                                         reward[i], question[i],
+                                         alpha[i], alpha_neg[i], gamma[i]);
 
-    vector[ti] w0_vec;
-    vector[ti] w1_o_vec;
-    vector[ti] w2_vec;
-    vector[ti] w3_vec;
-    vector[ti] phi_vec;
-    vector[ti] z_vec;
+      vector[ti] mu     = affect_mu(reg, qn, w0[i], w1_o[i], w2[i], w3[i],
+                                    ovl_time_tr[i][1:ti]);
+      vector[ti] ph     = to_vector(phi[i, qn]);
+      matrix[ti, 2] shapes = affect_shapes(mu, ph);
 
-    row_vector[3] ev_sum;
-    row_vector[3] pe_sum;
+      ll_choice_i = bernoulli_logit_lpmf(choice[i, 1:ti] | beta[i] * reg[ : , 1]);
+      ll_affect_i = beta_lpdf(affect_tr[i][1:ti] | shapes[ : , 1], shapes[ : , 2]);
+      log_lik[i] = ll_choice_i + ll_affect_i;
 
-    vector[ti] ev_dcy;
-    vector[ti] pe_dcy;
-
-    vector[ti] aff_mu_cond;
-    vector[ti] shape_a;
-    vector[ti] shape_b;
-
-    z_vec   = zeros[:ti];
-    ev      = inits;
-    ev_sum  = init_sum;
-    pe_sum  = init_sum;
-    ev_dcy  = z_vec;
-    pe_dcy  = z_vec;
-
-    shape_a = rep_vector(machine_precision(), ti);
-    shape_b = rep_vector(machine_precision(), ti);
-
-    log_lik[i] = 0;
-
-    for (t in 1:ti) {
-      co = (choice[i, t] > 0) ? option1[i, t] : option2[i, t];
-      qn = question[i, t];
-
-      delta[t] = ev[option1[i, t]] - ev[option2[i, t]];
-
-      pe = reward[i, t] - ev[co];
-      pe_sum += pe;
-
-      alpha_t = (pe >= 0) ? alpha[i] : alpha_neg[i];
-      ev[co] += alpha_t * pe;
-      ev_sum += ev[co];
-
-      ev_dcy[t] = ev_sum[qn];
-      pe_dcy[t] = pe_sum[qn];
-
-      w0_vec[t]   = w0[i, qn];
-      w1_o_vec[t] = w1_o[i, qn];
-      w2_vec[t]   = w2[i, qn];
-      w3_vec[t]   = w3[i, qn];
-      phi_vec[t]  = phi[i, qn];
-
-      ev_sum = ev_sum .* gamma[i, :];
-      pe_sum = pe_sum .* gamma[i, :];
+      // posterior predictions, back-transformed to the original scale
+      y_pred[i] = rep_row_vector(-1, T);
+      y_pred[i][1:ti] =
+        ((to_row_vector(beta_rng(shapes[ : , 1], shapes[ : , 2])) * N) - 0.5)
+        / (N - 1);
     }
-
-    log_lik[i] += bernoulli_logit_lpmf(choice[i, :ti] | beta[i] * delta);
-
-    aff_mu_cond = inv_logit(
-      w0_vec +
-      w1_o_vec .* ovl_time_tr[i][:ti] +
-      w2_vec .* ev_dcy +
-      w3_vec .* pe_dcy
-    );
-
-    shape_a += aff_mu_cond .* phi_vec;
-    shape_b += phi_vec .* (1 - aff_mu_cond);
-
-    log_lik[i] += beta_lpdf(affect_tr[i][:ti] | shape_a, shape_b);
-
-    y_pred[i][:ti] =
-      ((to_row_vector(beta_rng(shape_a, shape_b)) * N) - 0.5) / (N - 1);
   }
 }

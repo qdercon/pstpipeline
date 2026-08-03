@@ -269,6 +269,24 @@ family_ch <- function(param) {
   else gaussian()
 }
 
+#' Identify individual-level learning-model parameters among Stan variable
+#' names
+#'
+#' \code{is_learning_model_var} matches the (base or bracket-indexed) variable
+#' names used throughout the package (e.g., in \code{clean_summary}), excluding
+#' group-level hyperparameters and generated quantities such as \code{y_pred}
+#' and \code{log_lik}.
+#'
+#' @param x Character vector of variable names.
+#'
+#' @returns A logical vector, the same length as \code{x}.
+#' @noRd
+
+is_learning_model_var <- function(x) {
+  grepl("alpha|beta|rho|pers|kappa|w|gamma", x) &
+    !grepl("_pr|_s|mu|sigma|_diff|_i|pointwise", x)
+}
+
 #' Clean up summary output from cmdstanr
 #'
 #' \code{clean_summary} returns a long format [tibble::tibble()] with individual
@@ -282,8 +300,7 @@ family_ch <- function(param) {
 clean_summary <- function(summary) {
   id_all <- variable <- NULL
   summary |>
-    dplyr::filter(grepl("alpha|beta|rho|pers|kappa|w|gamma", variable)) |>
-    dplyr::filter(!grepl("_pr|_s|mu|sigma|_diff|_i", variable)) |>
+    dplyr::filter(is_learning_model_var(variable)) |>
     dplyr::select(
       variable, mean, tidyselect::any_of(tidyselect::matches("ess|rhat"))
     ) |>
@@ -405,6 +422,110 @@ make_par_df <- function(raw,
       dplyr::inner_join(summ, by = "subjID")
   }
   summ
+}
+
+#' Calculate the expected log pointwise predictive density via PSIS-LOO
+#'
+#' \code{calculate_elpd_loo} computes an approximate leave-one-out
+#' cross-validation estimate ([loo::loo()]) from a fitted
+#' [cmdstanr::CmdStanMCMC] or [cmdstanr::CmdStanVB] model's \code{log_lik}
+#' generated quantity. When \code{fit} comes from variational inference,
+#' [loo::loo_approximate_posterior()] is used instead of [loo::loo()], since
+#' ordinary PSIS-LOO assumes exact posterior draws.
+#'
+#' @param fit A [cmdstanr::CmdStanMCMC] or [cmdstanr::CmdStanVB] object, e.g.
+#' \code{fit_learning_model(..., outputs = "model_env")$fit}.
+#' @param cores Number of cores to use for computing PSIS-LOO. Defaults to
+#' \code{options(mc.cores)} or 4 if this is not set.
+#'
+#' @returns A [loo::loo()] object (class \code{psis_loo} for MCMC fits, or
+#' \code{psis_loo_ap} for variational fits).
+#'
+#' @examples \dontrun{
+#' data(example_data)
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   exp_part = "training",
+#'   outputs = "model_env"
+#' )
+#' calculate_elpd_loo(fit$fit)
+#' }
+#'
+#' @export
+
+calculate_elpd_loo <- function(fit, cores = getOption("mc.cores", 4)) {
+  if (!inherits(fit, "CmdStanVB")) {
+    return(fit$loo(cores = cores, save_psis = TRUE))
+  }
+
+  draws <- fit$draws(
+    variables = c("log_lik", "lp__", "lp_approx__"), format = "matrix"
+  )
+  ll_cols <- grep("^log_lik(\\[|$)", colnames(draws))
+
+  log_lik_mat <- as.matrix(draws[, ll_cols, drop = FALSE])
+  log_p <- as.numeric(draws[, "lp__"])
+  log_g <- as.numeric(draws[, "lp_approx__"])
+
+  loo::loo_approximate_posterior(
+    log_lik_mat, log_p, log_g, cores = cores, save_psis = TRUE
+  )
+}
+
+#' Check for collapsed between-participant variation in learning-model
+#' parameters
+#'
+#' \code{check_par_sd} flags individual-level parameters (optionally split by
+#' affect adjective / outcome lag) whose posterior means show implausibly
+#' little variation across participants - a known pathology when fitting
+#' complex models (e.g., affect models with many free parameters) with
+#' mean-field variational inference. Used internally by
+#' [fit_learning_model()] when \code{vb_sd_check = TRUE}, but can also be run
+#' directly on any saved fit's summary.
+#'
+#' @param summary A [cmdstanr::summary()] data frame.
+#' @param threshold Minimum acceptable standard deviation of posterior means
+#' across participants; parameter/adjective/lag combinations with a lower (or
+#' \code{NA}) SD are flagged. Defaults to \code{0.01}.
+#' @param ignore_pars Character vector of base parameter names (e.g.
+#' \code{"w1_o"}) to exclude from the check, for parameters known to be
+#' poorly identified. Defaults to none.
+#'
+#' @returns A list with \code{sd_df} (standard deviation of posterior means
+#' for every parameter/adjective/lag combination, ordered ascending),
+#' \code{collapsed} (the subset flagged as below \code{threshold}), and
+#' \code{pass} (\code{TRUE} if nothing was flagged).
+#'
+#' @examples \dontrun{
+#' fit <- fit_learning_model(
+#'   example_data$nd,
+#'   model = "2a",
+#'   vb = TRUE,
+#'   exp_part = "training",
+#'   vb_sd_check = FALSE
+#' )
+#' check_par_sd(fit$summary)
+#' }
+#'
+#' @export
+
+check_par_sd <- function(summary,
+                         threshold = 0.01,
+                         ignore_pars = character(0)) {
+  parameter <- aff_num <- outc_lag <- mean <- NULL
+
+  sd_df <- clean_summary(summary) |>
+    dplyr::filter(!parameter %in% ignore_pars) |>
+    dplyr::group_by(parameter, aff_num, outc_lag) |>
+    dplyr::summarise(
+      sd = stats::sd(mean, na.rm = TRUE), n = dplyr::n(), .groups = "drop"
+    ) |>
+    dplyr::arrange(sd)
+
+  collapsed <- sd_df |> dplyr::filter(is.na(sd) | sd < threshold)
+
+  list(sd_df = sd_df, collapsed = collapsed, pass = nrow(collapsed) == 0)
 }
 
 #' Define axis title name

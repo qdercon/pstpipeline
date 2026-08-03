@@ -24,12 +24,47 @@
 #' numerical order in the model output.
 #' @param vb Use variational inference to get the approximate posterior? Default
 #' is \code{TRUE} for computational efficiency.
-#' @param vb_elbo_retry If \code{vb = TRUE}, should the algorithm retry with
-#' different random seeds if the initial ELBO is too low? Defaults to \code{vb}.
+#' @param vb_elbo_retry Should the algorithm retry with different random seeds
+#' if the initial ELBO is too low? Applies both to the main VB fit (if
+#' \code{vb = TRUE}) and to the VB fit used to generate MCMC initial values
+#' (if \code{vb = FALSE} and \code{init} is not otherwise supplied). Defaults
+#' to \code{vb}.
 #' @param vb_elbo_threshold The minimum acceptable initial ELBO when
 #' \code{vb_elbo_retry = TRUE}. Defaults to -9999999.
 #' @param vb_max_retries Maximum number of seeds to try if
 #' \code{vb_elbo_retry = TRUE}. Defaults to 15.
+#' @param vb_sd_check If \code{vb = TRUE}, should the algorithm additionally
+#' retry with different seeds when the fitted posterior shows implausibly
+#' little between-participant variation in one or more parameters (see
+#' [check_par_sd()])? Each attempt requires a full VB refit, so this is
+#' considerably more expensive than \code{vb_elbo_retry}. Defaults to
+#' \code{vb_elbo_retry}.
+#' @param vb_sd_threshold Passed to [check_par_sd()] on each attempt. Defaults
+#' to \code{0.01}.
+#' @param vb_sd_ignore_pars Passed to [check_par_sd()] on each attempt, for
+#' parameters known to be poorly identified (e.g., \code{"w1_o"}). Defaults to
+#' none.
+#' @param vb_sd_max_retries Maximum number of full VB refits to attempt if
+#' \code{vb_sd_check = TRUE}, distinct from \code{vb_max_retries} (which
+#' governs the cheap initial-ELBO probe only). Defaults to 10.
+#' @param init Initial values for MCMC sampling (ignored if \code{vb = TRUE}).
+#' One of:
+#' \itemize{
+#'   \item \code{NULL} (default): build deterministic default initial values
+#'   from each parameter's plausible range (see the internal \code{pars}
+#'   list) - group-level means are set from the range's mid-point (inverted
+#'   through that parameter's link function), group-level SDs to a small
+#'   positive value, and every individual-level parameter to the group mean.
+#'   \item A single number: use this as the seed for a variational fit whose
+#'   posterior means become the initial values (see \code{"vb"} below), for a
+#'   reproducible alternative to \code{vb_elbo_retry}'s seed search.
+#'   \item \code{"vb"}: generate initial values from a variational fit,
+#'   subject to \code{vb_elbo_retry}/\code{vb_elbo_threshold}/
+#'   \code{vb_max_retries} as for the main VB fit (\code{vb_sd_check} is not
+#'   applied here).
+#'   \item Anything else (e.g. a list or function in one of the formats
+#'   accepted by [cmdstanr::sample()]): passed through unchanged.
+#' }
 #' @param ppc Generate quantities including mean parameters, log likelihood, and
 #' posterior predictions? Intended for use with variational algorithm; for MCMC
 #' it is recommended to run the separate [generate_posterior_quantities()]
@@ -54,13 +89,38 @@
 #' saved automatically, regardless of \code{save_outputs}), and "loo_obj". The
 #' latter includes the theoretical expected log-predictive density (ELPD) for a
 #' new dataset, plus the leave-one-out information criterion (LOOIC), a fully
-#' Bayesian metric for model comparison; this requires the \pkg{loo} package.
+#' Bayesian metric for model comparison; this requires the \pkg{loo} package,
+#' and is computed via [calculate_elpd_loo()].
 #' @param save_outputs Save the specified outputs to the disk? Will save to
 #' \code{out_dir}.
+#' @param return_outputs Include the requested \code{outputs} directly in the
+#' returned list? Defaults to the opposite of \code{save_outputs}.
+#' Set to \code{FALSE} (only together with \code{save_outputs = TRUE}) to
+#' avoid holding large fitted objects (draws, raw data, etc.) in memory -
+#' e.g., across many sequential fits in the same notebook/session - in which
+#' case the returned list contains the file path each output was saved to
+#' instead, to be reloaded later with \code{readRDS()} as needed.
 #' @param cores Maximum number of chains to run in parallel. Defaults to
 #' \code{options(mc.cores = cores)}
 #' or 4 if this is not set (this option will then apply for the rest of the
 #' session).
+#' @param threads_per_chain Number of threads to use for within-chain
+#' parallelisation via \code{reduce_sum}. Defaults to 1 (no within-chain
+#' threading). Only the models whose Stan code contains a \code{reduce_sum}
+#' call (currently all affect models in \code{rl-affect/}) benefit from this;
+#' for other models it is silently ignored. When \code{> 1}, the model is
+#' compiled with threading support (\code{cpp_options = list(stan_threads =
+#' TRUE)}) and the threads are passed to [cmdstanr::sample()] /
+#' [cmdstanr::variational()]. Note the total number of threads used is
+#' \code{cores * threads_per_chain} for MCMC, so keep this product at or below
+#' the number of physical cores.
+#' @param grainsize \code{reduce_sum} grainsize, i.e. the recommended number of
+#' participants to sum per partial job. Defaults to 1, which lets the scheduler
+#' choose automatically. Only relevant when \code{threads_per_chain > 1}.
+#' @param prior_only Sample from the prior only (i.e. skip the likelihood), for
+#' prior predictive checks? Only supported by models with a \code{prior_only}
+#' data flag (currently all affect models in \code{rl-affect/}). Defaults to
+#' \code{FALSE}.
 #' @param ... Other arguments passed to [cmdstanr::sample()] and/or
 #' [check_learning_models]. See the
 #' [CmdStan user guide](https://mc-stan.org/docs/2_28/cmdstan-guide/index.html)
@@ -123,6 +183,11 @@ fit_learning_model <- function(df_all,
                                vb_elbo_retry = vb,
                                vb_elbo_threshold = -9999999,
                                vb_max_retries = 100,
+                               vb_sd_check = vb_elbo_retry,
+                               vb_sd_threshold = 0.05,
+                               vb_sd_ignore_pars = character(0),
+                               vb_sd_max_retries = 10,
+                               init = NULL,
                                ppc = vb,
                                par_recovery = FALSE,
                                task_excl = TRUE,
@@ -132,12 +197,33 @@ fit_learning_model <- function(df_all,
                                out_dir = "outputs/cmdstan",
                                outputs = c("raw_df", "summary", "draws_list"),
                                save_outputs = TRUE,
+                               return_outputs = !save_outputs,
                                cores = getOption("mc.cores", 4),
+                               threads_per_chain = cores,
+                               grainsize = 1,
+                               prior_only = FALSE,
                                ...) {
 
   if (is.null(getOption("mc.cores"))) options(mc.cores = cores)
   model <- match.arg(model)
   exp_part <- match.arg(exp_part)
+
+  if (threads_per_chain < 1 || threads_per_chain %% 1 != 0) {
+    stop("threads_per_chain must be a positive integer.")
+  }
+  if (grainsize < 1 || grainsize %% 1 != 0) {
+    stop("grainsize must be a positive integer.")
+  }
+  if (!save_outputs && !return_outputs) {
+    stop(
+      strwrap(
+        "return_outputs = FALSE requires save_outputs = TRUE, otherwise
+        outputs would be neither saved nor returned.", prefix = " ",
+        initial = ""
+      )
+    )
+  }
+  use_threads <- threads_per_chain > 1 && affect
 
   if (exp_part == "test" && affect) {
     stop("Affect models will not work for test data.")
@@ -162,10 +248,11 @@ fit_learning_model <- function(df_all,
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   l <- list(...)
+  # used by find_vb_seed() below regardless of vb, for the cheap ELBO probe
+  if (is.null(l$algorithm)) l$algorithm <- "meanfield"
   if (vb) {
     if (is.null(l$iter)) l$iter <- 10000
     if (is.null(l$output_samples)) l$output_samples <- 1000
-    if (is.null(l$algorithm)) l$algorithm <- "meanfield"
     if (is.null(l$tol_rel_obj)) l$tol_rel_obj <- 0.01
   } else { # clearly nothing is being changed, given here just to show defaults
     if (is.null(l$chains)) l$chains <- 4
@@ -301,6 +388,8 @@ fit_learning_model <- function(df_all,
   }
 
   data_cmdstan$run_gq <- ifelse(ppc, 1, 0)
+  data_cmdstan$prior_only <- ifelse(prior_only, 1, 0)
+  data_cmdstan$grainsize <- as.integer(grainsize)
 
   if (all(outputs == "stan_datalist")) return(data_cmdstan)
 
@@ -345,85 +434,212 @@ fit_learning_model <- function(df_all,
     )
   }
 
-  stan_model <- cmdstanr::cmdstan_model(stan_path)
+  stan_model <- cmdstanr::cmdstan_model(
+    stan_path,
+    cpp_options = if (use_threads) list(stan_threads = TRUE) else list()
+  )
 
   ## fit variational model if relevant
-  if (vb) {
-    if (vb_elbo_retry) {
-      best_seed <- l$seed
-      success <- FALSE
+  best_summary <- NULL
 
-      for (attempt in 1:vb_max_retries) {
-        test_seed <- sample.int(.Machine$integer.max, 1)
-
-        # Run a very short VB to check initial ELBO
-        test_fit <- NULL
-
-        attempt_out_dir <- file.path(
-          tempdir(), paste0("vb_seed_check_", test_seed)
-        )
-        if (!dir.exists(attempt_out_dir)) {
-          dir.create(attempt_out_dir, recursive = TRUE)
-        }
-
-        test_fit <- tryCatch(
-          {
-            stan_model$variational(
-              data = data_cmdstan,
-              seed = test_seed,
-              iter = 100, # Short run just to get initial ELBO
-              refresh = 0,
-              output_samples = 1,
-              save_latent_dynamics = TRUE,
-              show_messages = FALSE,
-              show_exceptions = FALSE,
-              algorithm = l$algorithm,
-              output_dir = attempt_out_dir
-            )
-          }, error = function(e) {
-            NULL
-          }
-        )
-
-        if (!is.null(test_fit)) {
-          latent_file <- tryCatch(
-            test_fit$latent_dynamics_files()[1],
-            error = function(e) ""
-          )
-
-          parsed_elbo <- extract_elbo_from_file(latent_file, target_iter = 100)
-
-          elbo_for_check <- parsed_elbo$target_elbo
-
-          if (!is.na(elbo_for_check) && elbo_for_check > vb_elbo_threshold) {
-            best_seed <- test_seed
-            success <- TRUE
-            break
-          }
-        }
-      }
-      if (!success) {
-        stop("Could not find a seed with an acceptable initial ELBO.")
-      }
-      l$seed <- best_seed
+  # Cheap seed search: run a very short VB fit to check the initial ELBO,
+  # retrying with new random seeds until one clears vb_elbo_threshold. Used
+  # both for the main VB fit below (if vb) and for the VB-derived MCMC
+  # initial values further down (if !vb and vb_elbo_retry is set) - the
+  # between-participant SD retry (vb_sd_check) is only applied to the former.
+  find_vb_seed <- function() {
+    if (!vb_elbo_retry) {
+      return(list(seed = sample.int(.Machine$integer.max, 1), success = TRUE))
     }
 
-    fit <- stan_model$variational(
-      data = data_cmdstan,
-      seed = l$seed,
-      iter = l$iter,
-      refresh = l$refresh,
-      output_samples = l$output_samples,
-      algorithm = l$algorithm,
-      tol_rel_obj = l$tol_rel_obj,
-      output_dir = out_dir
-    )
-  } else if (is.null(l$init)) {
-    message("Getting initial values from variational inference...")
-    gen_init_vb <- function(model, data_list, parameters, affect) {
+    best_seed <- NULL
+    best_elbo <- -Inf
+
+    for (attempt in 1:vb_max_retries) {
+      test_seed <- sample.int(.Machine$integer.max, 1)
+
+      attempt_out_dir <- file.path(
+        tempdir(), paste0("vb_seed_check_", test_seed)
+      )
+      if (!dir.exists(attempt_out_dir)) {
+        dir.create(attempt_out_dir, recursive = TRUE)
+      }
+
+      test_fit <- tryCatch(
+        {
+          stan_model$variational(
+            data = data_cmdstan,
+            seed = test_seed,
+            iter = 100, # Short run just to get initial ELBO
+            refresh = 0,
+            output_samples = 1,
+            save_latent_dynamics = TRUE,
+            show_messages = FALSE,
+            show_exceptions = FALSE,
+            algorithm = "meanfield",
+            threads = if (use_threads) threads_per_chain else NULL,
+            output_dir = attempt_out_dir
+          )
+        }, error = function(e) {
+          NULL
+        }
+      )
+
+      if (!is.null(test_fit)) {
+        latent_file <- tryCatch(
+          test_fit$latent_dynamics_files()[1],
+          error = function(e) ""
+        )
+
+        parsed_elbo <- extract_elbo_from_file(latent_file, target_iter = 100)
+
+        elbo_for_check <- parsed_elbo$target_elbo
+
+        if (!is.na(elbo_for_check) && elbo_for_check > vb_elbo_threshold) {
+          return(list(seed = test_seed, success = TRUE))
+        } else if (!is.na(elbo_for_check) && elbo_for_check > best_elbo) {
+          best_seed <- test_seed
+          best_elbo <- elbo_for_check
+        }
+      }
+    }
+    list(seed = best_seed, success = FALSE)
+  }
+
+  if (vb) {
+    if (vb_elbo_retry || vb_sd_check) {
+      best_fit <- NULL
+      best_seed <- NULL
+      best_n_collapsed <- Inf
+      success <- FALSE
+      sd_attempts <- if (vb_sd_check) vb_sd_max_retries else 1
+
+      for (sd_attempt in seq_len(sd_attempts)) {
+        seed_result <- find_vb_seed()
+        if (is.null(seed_result$seed)) next
+        if (!seed_result$success) {
+          warning(
+            strwrap(
+              "Could not find a seed with an acceptable initial ELBO within
+              vb_max_retries; trying the best seed found...",
+              prefix = " ", initial = ""
+            )
+          )
+        }
+
+        candidate_fit <- tryCatch(
+          stan_model$variational(
+            data = data_cmdstan,
+            seed = seed_result$seed,
+            iter = l$iter,
+            refresh = if (vb_sd_check) 0 else l$refresh,
+            output_samples = l$output_samples,
+            algorithm = l$algorithm,
+            tol_rel_obj = l$tol_rel_obj,
+            show_messages = !vb_sd_check,
+            show_exceptions = !vb_sd_check,
+            threads = if (use_threads) threads_per_chain else NULL,
+            output_dir = out_dir
+          ),
+          error = function(e) NULL
+        )
+        if (is.null(candidate_fit)) next
+
+        if (vb_sd_check) {
+          stan_vars <- candidate_fit$metadata()$stan_variables
+          cand_summary <- candidate_fit$summary(
+            variables = stan_vars[is_learning_model_var(stan_vars)]
+          )
+          n_collapsed <- nrow(
+            check_par_sd(cand_summary, vb_sd_threshold, vb_sd_ignore_pars)$collapsed
+          )
+        } else {
+          cand_summary <- NULL
+          n_collapsed <- 0
+        }
+
+        if (n_collapsed == 0) {
+          if (!is.null(best_fit)) unlink(best_fit$output_files())
+          best_fit <- candidate_fit
+          best_seed <- seed_result$seed
+          best_summary <- cand_summary
+          success <- TRUE
+          if (vb_sd_check) {
+            message(
+              "VB attempt ", sd_attempt, "/", sd_attempts, ": converged, ",
+              "all parameter SDs pass (seed = ", seed_result$seed, ")."
+            )
+          }
+          break
+        } else if (n_collapsed < best_n_collapsed) {
+          if (!is.null(best_fit)) unlink(best_fit$output_files())
+          best_n_collapsed <- n_collapsed
+          best_fit <- candidate_fit
+          best_seed <- seed_result$seed
+          best_summary <- cand_summary
+        } else {
+          unlink(candidate_fit$output_files())
+        }
+        if (vb_sd_check) {
+          message(
+            "VB attempt ", sd_attempt, "/", sd_attempts, ": ", n_collapsed,
+            " parameter group(s) below vb_sd_threshold (seed = ",
+            seed_result$seed, ") - retrying..."
+          )
+        }
+      }
+
+      if (!success) {
+        if (is.null(best_fit)) {
+          stop("Could not obtain a valid VB fit within the retry budget.")
+        }
+        warning(
+          strwrap(
+            paste0(
+              "Could not find a VB fit with no near-zero between-participant
+              parameter SDs after ", sd_attempts, " attempt(s); using the
+              best fit found (", best_n_collapsed, " parameter group(s)
+              still flagged; see vb_sd_threshold / vb_sd_ignore_pars)."
+            ), prefix = " ", initial = ""
+          )
+        )
+      }
+      fit <- best_fit
+      l$seed <- best_seed
+    } else {
+      fit <- stan_model$variational(
+        data = data_cmdstan,
+        seed = l$seed,
+        iter = l$iter,
+        refresh = l$refresh,
+        output_samples = l$output_samples,
+        algorithm = l$algorithm,
+        tol_rel_obj = l$tol_rel_obj,
+        threads = if (use_threads) threads_per_chain else NULL,
+        output_dir = out_dir
+      )
+    }
+  } else {
+    gen_init_vb <- function(model, data_list, parameters, affect, seed = NULL) {
+      seed_result <- if (!is.null(seed)) {
+        list(seed = seed, success = TRUE)
+      } else {
+        find_vb_seed()
+      }
+      if (is.null(seed) && vb_elbo_retry && !seed_result$success) {
+        warning(
+          strwrap(
+            "Could not find an initial-value seed with an acceptable initial
+            ELBO within vb_max_retries; using the best seed found for initial
+            values...", prefix = " ", initial = ""
+          )
+        )
+      }
       fit_vb <- model$variational(
         data = data_list,
-        refresh = l$refresh
+        seed = seed_result$seed,
+        refresh = l$refresh,
+        threads = if (use_threads) threads_per_chain else NULL
       )
       m_vb <- colMeans(fit_vb$draws(format = "df"))
 
@@ -532,12 +748,105 @@ fit_learning_model <- function(df_all,
       pars[["phi"]] <- c(0, 10, 100)
     }
 
-    inits <- gen_init_vb(
-      model = stan_model,
-      data_list = data_cmdstan,
-      parameters = pars,
-      affect = affect
-    )
+    # Deterministic default init built from the (lower, mid, upper) ranges in
+    # pars above: group-level means come from the mid-point (inverted through
+    # that parameter's link function), group-level SDs are a small positive
+    # value, and every individual is initialised at the group mean.
+    gen_init_default <- function(parameters, affect, n_subj) {
+      mid <- vapply(parameters, `[`, numeric(1), 2)
+
+      inv_link <- function(p) {
+        val <- mid[[p]]
+        if (p %in% c("alpha", "alpha_pos", "alpha_neg", "pers", "gm")) {
+          stats::qnorm(val)
+        } else if (p == "beta") {
+          stats::qnorm(val / 10)
+        } else if (p %in% c("rho_pos", "rho_neg", "phi")) {
+          log(val)
+        } else {
+          val # w0, w1_o, w1_b, w2, w3, w3_pos, w3_neg: identity link
+        }
+      }
+
+      ql_pars <- intersect(
+        names(parameters),
+        c(
+          "alpha", "beta", "alpha_pos", "alpha_neg", "rho_pos", "rho_neg",
+          "pers"
+        )
+      )
+      wt_pars <- intersect(
+        names(parameters),
+        c("w0", "w1_o", "w1_b", "w2", "w3", "w3_pos", "w3_neg")
+      )
+      # For the delta/delta-signed weight hierarchy, w2/w3(/w3_pos/w3_neg) are
+      # the *intercept* of a nested non-centered parameterisation, named
+      # "<p>_i_pr" rather than "<p>_pr"; the trial-level second stage has no
+      # group hyperparameter to invert, so it's left to CmdStan's own default.
+      is_delta <- affect && grepl("delta", affect_sfx)
+      nested_wt <- c("w2", "w3", "w3_pos", "w3_neg")
+
+      function() {
+        ret <- list()
+
+        if (!affect) {
+          ret$mu_pr <- vapply(ql_pars, inv_link, numeric(1))
+          ret$sigma <- rep(0.2, length(ql_pars))
+          for (p in ql_pars) ret[[paste0(p, "_pr")]] <- rep(0, n_subj)
+          return(ret)
+        }
+
+        ret$mu_ql <- vapply(ql_pars, inv_link, numeric(1))
+        ret$sigma_ql <- rep(0.2, length(ql_pars))
+        for (p in ql_pars) ret[[paste0(p, "_pr")]] <- rep(0, n_subj)
+
+        if (length(wt_pars) > 0) {
+          wt_mid <- vapply(wt_pars, inv_link, numeric(1))
+          ret$mu_wt <- matrix(rep(wt_mid, each = 3), nrow = 3)
+          ret$sigma_wt <- matrix(0.5, nrow = 3, ncol = length(wt_pars))
+          for (p in wt_pars) {
+            p_pr <- if (is_delta && p %in% nested_wt) {
+              paste0(p, "_i_pr")
+            } else {
+              paste0(p, "_pr")
+            }
+            ret[[p_pr]] <- matrix(0, nrow = n_subj, ncol = 3)
+          }
+        }
+        if ("gm" %in% names(parameters)) {
+          ret$mu_gm <- rep(inv_link("gm"), 3)
+          ret$sigma_gm <- rep(0.5, 3)
+          ret$gm_pr <- matrix(0, nrow = n_subj, ncol = 3)
+        }
+        if ("phi" %in% names(parameters)) {
+          ret$aff_mu_phi <- rep(inv_link("phi"), 3)
+          ret$aff_sigma_phi <- rep(0.5, 3)
+          ret$phi_pr <- matrix(0, nrow = n_subj, ncol = 3)
+        }
+        ret
+      }
+    }
+
+    if (is.null(init)) {
+      inits <- gen_init_default(parameters = pars, affect = affect, n_subj = n_subj)
+    } else if (is.numeric(init) && length(init) == 1) {
+      message(
+        "Getting initial values from variational inference (seed = ", init,
+        ")..."
+      )
+      inits <- gen_init_vb(
+        model = stan_model, data_list = data_cmdstan, parameters = pars,
+        affect = affect, seed = init
+      )
+    } else if (identical(init, "vb")) {
+      message("Getting initial values from variational inference...")
+      inits <- gen_init_vb(
+        model = stan_model, data_list = data_cmdstan, parameters = pars,
+        affect = affect
+      )
+    } else {
+      inits <- init
+    }
   }
 
   ## mcmc sample if relevant
@@ -545,7 +854,7 @@ fit_learning_model <- function(df_all,
     fit <- stan_model$sample(
       data = data_cmdstan,
       seed = l$seed,
-      init = ifelse(is.null(l$init), inits, l$init),
+      init = inits,
       refresh = l$refresh, # default = 100
       chains = l$chains, # default = 4
       iter_warmup = l$iter_warmup, # default = 1000
@@ -553,6 +862,7 @@ fit_learning_model <- function(df_all,
       adapt_delta = l$adapt_delta, # default = 0.8
       step_size = l$step_size, # default = 1
       max_treedepth = l$max_treedepth, # default = 10
+      threads_per_chain = if (use_threads) threads_per_chain else NULL,
       output_dir = out_dir
     )
   }
@@ -566,6 +876,16 @@ fit_learning_model <- function(df_all,
   }
   fit$save_object(file = paste0(out_dir, "/", save_model_as, ".RDS"))
   ret <- list()
+
+  # Saves (if save_outputs) then either returns value itself, or (if
+  # return_outputs = FALSE) just the file path it was saved to - to avoid
+  # holding large fitted objects in memory across many sequential fits.
+  save_or_return <- function(value, suffix) {
+    path <- paste0(out_dir, "/", save_model_as, suffix, ".RDS")
+    if (save_outputs) saveRDS(value, file = path)
+    if (return_outputs) value else path
+  }
+
   if (model_checks) {
     if (vb) {
       ret$mu_par_dens <- check_learning_models(
@@ -580,75 +900,37 @@ fit_learning_model <- function(df_all,
       )
     }
   }
-  if (any(outputs == "model_env")) ret$fit <- fit
+  if (any(outputs == "model_env")) {
+    ret$fit <- if (return_outputs) fit else paste0(out_dir, "/", save_model_as, ".RDS")
+  }
   if (any(outputs == "summary")) {
-    ret$summary <- fit$summary()
-    if (save_outputs) {
-      saveRDS(
-        ret$summary,
-        file = paste0(out_dir, "/", save_model_as, "_summary", ".RDS")
-      )
+    summary_df <- if (!is.null(best_summary)) {
+      best_summary
+    } else {
+      stan_vars <- fit$metadata()$stan_variables
+      fit$summary(variables = stan_vars[is_learning_model_var(stan_vars)])
     }
+    ret$summary <- save_or_return(summary_df, "_summary")
   }
   if (any(outputs == "draws_list")) {
-    ret$draws <- fit$draws(format = "list")
     # the least memory intensive format to load
-    if (save_outputs) {
-      saveRDS(
-        ret$draws,
-        file = paste0(out_dir, "/", save_model_as, "_draws_list", ".RDS")
-      )
-    }
+    ret$draws_list <- save_or_return(fit$draws(format = "list"), "_draws_list")
   }
   if (any(outputs == "stan_datalist")) {
-    ret$stan_datalist <- data_cmdstan
-    if (save_outputs) {
-      saveRDS(
-        ret$stan_datalist,
-        file = paste0(out_dir, "/", save_model_as, "_stan_datalist", ".RDS")
-      )
-    }
+    ret$stan_datalist <- save_or_return(data_cmdstan, "_stan_datalist")
   }
   if (any(outputs == "raw_df")) {
-    ret$raw_df <- raw_df
-    if (save_outputs) {
-      saveRDS(
-        ret$raw_df,
-        file = paste0(out_dir, "/", save_model_as, "_raw_df", ".RDS")
-      )
-    }
+    ret$raw_df <- save_or_return(raw_df, "_raw_df")
   }
   if (any(outputs == "loo_obj")) {
-    if (!vb) {
-      ret$loo_obj <- fit$loo(cores = cores, save_psis = TRUE)
-    } else {
-      ll <- ret$draws[[1]][grep("log_lik", names(ret$draws[[1]]))]
-      log_lik_mat <- t(do.call(rbind, ll))
-
-      log_p <- ret$draws[[1]]$lp__
-      log_g <- ret$draws[[1]]$lp_approx__
-
-      ret$loo_obj <- loo::loo_approximate_posterior(
-        log_lik_mat, log_p, log_g, cores = cores, save_psis = TRUE
-      )
-    }
-    if (save_outputs) {
-      saveRDS(
-        ret$loo_obj,
-        file = paste0(out_dir, "/", save_model_as, "_loo_obj", ".RDS")
-      )
-    }
+    ret$loo_obj <- save_or_return(
+      calculate_elpd_loo(fit, cores = cores), "_loo_obj"
+    )
   }
   if (any(outputs == "diagnostics") && !vb) {
-    ret$diagnostics <- fit$cmdstan_diagnose()
-    if (save_outputs) {
-      saveRDS(
-        ret$diagnostics,
-        file = paste0(
-          out_dir, "/", save_model_as, "_cmdstan_diagnostics", ".RDS"
-        )
-      )
-    }
+    ret$diagnostics <- save_or_return(
+      fit$cmdstan_diagnose(), "_cmdstan_diagnostics"
+    )
   }
 
   ## rename csv output files for improved clarity
@@ -664,6 +946,12 @@ fit_learning_model <- function(df_all,
         ".csv"
       )
     )
+  }
+
+  if (!return_outputs) {
+    rm(fit, data_cmdstan, raw_df)
+    if (exists("best_fit", inherits = FALSE)) rm(best_fit)
+    gc(verbose = FALSE)
   }
   ret
 }
