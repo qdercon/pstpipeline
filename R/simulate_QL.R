@@ -190,7 +190,7 @@ simulate_QL <- function(summary_df = NULL,
 
       if (is_delta_model) {
         wt_a <- wt_df |> dplyr::select(-w0, -w1_o, -w1_b)
-        # duplicate wt_b int_max times, with outc_lag = 0, 1, 2, ..., int_max
+        # duplicate wt_b int_max times, with outc_lag = 1, 2, ..., int_max
         if (signed_delta_model) {
           wt_b <- lapply(1:l$int_max, function(i) wt_a) |>
             dplyr::bind_rows(.id = "outc_lag") |>
